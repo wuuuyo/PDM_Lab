@@ -1,0 +1,990 @@
+// 此文件由 scripts/sync-knowledge.mjs 自动生成，请勿直接编辑
+// 请修改 src/data/knowledge-en.json 后运行: node scripts/sync-knowledge.mjs
+
+window.PM_KNOWLEDGE_EN = {
+  "user-research": {
+    "title": "User Research",
+    "summary": "Understand who users are, what they want, and why they need it",
+    "tags": [
+      "Research",
+      "Insights"
+    ],
+    "content": [
+      "User research is the foundation of product decisions. The goal is not to collect data for its own sake, but to form actionable user insights that guide what you build.",
+      "Common methods include user interviews (to understand motivation in depth), surveys (to validate the scale of a hypothesis), usability testing (to observe real behavior), and data analysis (to uncover behavioral patterns).",
+      "Interview tips: ask more about \"why\" and \"what did you do the last time you faced this problem,\" and less about \"would you use this feature.\"",
+      "Distinguish stated preference (what users say) from revealed preference (what users do). Behavioral data should take precedence.",
+      "Key outputs include personas, user journey maps, and a prioritized list of pain points."
+    ],
+    "cases": [
+      "A food delivery app saw a spike in complaints about \"can't find the rider after ordering.\" After interviewing 12 users, the PM learned the real pain point was \"lack of progress visibility,\" not slow delivery. The team prioritized live tracking and ETA, and NPS rose 18 points.",
+      "Before launching a B2B SaaS product, the team ran card sorting with 8 customers to organize the menu. Customers grouped \"Reports\" and \"Export\" together, while the original design split them across two modules. Merging the entry points lifted first-month activation by 23%."
+    ],
+    "pmApplication": [
+      "In interviews, walk through one research project using background → method → insight → action, and explain how the insight changed the solution.",
+      "At work, schedule at least 3–5 user touchpoints per release (interviews, usability tests, or support call reviews) instead of writing PRDs from assumptions alone.",
+      "Align on deliverables: every research effort should end with actionable conclusions (what to change and what not to change), not just interview notes."
+    ]
+  },
+  "requirement-analysis": {
+    "title": "Requirement Analysis",
+    "summary": "Move from problem to solution and separate real needs from noise",
+    "tags": [
+      "Requirements",
+      "Prioritization"
+    ],
+    "content": [
+      "Requirements are not the same as features. A requirement is the problem the user needs solved; a feature is one way to express a solution.",
+      "The KANO model classifies needs into basic (must-haves), performance (more is better), and delight (unexpected surprises).",
+      "RICE is a common prioritization formula: Reach × Impact × Confidence ÷ Effort.",
+      "To judge whether a requirement is real: Does it come from a genuine user scenario? Is it supported by data or interviews? Will solving it create measurable value?",
+      "A solid requirement document should include background, target users, problem statement, proposed solution, success metrics, and scope boundaries with risks."
+    ],
+    "cases": [
+      "Support kept asking for \"Excel export.\" Deeper investigation revealed the real need was \"month-end reconciliation.\" The team shipped auto-generated reconciliation reports with one-click delivery to finance, cutting manual reconciliation time by 70% versus a simple export.",
+      "Using RICE to evaluate dark mode: high Reach but low Impact and medium Effort, so it ranked below \"payment failure retry.\" Data made the prioritization rationale clear to the design team."
+    ],
+    "pmApplication": [
+      "When asked \"User wants feature X—would you build it?\" break down Need vs. Want first, then propose a validation plan.",
+      "In requirement reviews, label KANO types explicitly: protect basics, control investment in delighters.",
+      "Open every PRD with target users, the problem, and success metrics before listing features."
+    ]
+  },
+  "mvp": {
+    "title": "MVP & Iteration",
+    "summary": "Validate core assumptions at minimum cost",
+    "tags": [
+      "MVP",
+      "Agile"
+    ],
+    "content": [
+      "An MVP (Minimum Viable Product) is not a stripped-down product—it is the smallest experiment that can validate a core hypothesis.",
+      "Validate whether users are willing to pay or spend time first; only then validate whether the feature is easy to use.",
+      "The Build-Measure-Learn loop: build → measure → learn, then iterate quickly.",
+      "Common MVP formats include landing page tests, Wizard of Oz (human simulation), and Concierge MVP (manual service).",
+      "Each release should solve one core problem. Feature bloat makes it impossible to tell whether you succeeded or failed."
+    ],
+    "cases": [
+      "Dropbox's early MVP was a 3-minute demo video that tested whether users would pay for cloud sync—before building a full client.",
+      "A delivery robot project used Wizard of Oz: backend staff manually dispatched orders to simulate \"one-click ordering.\" Activation rose from 20% to 55% before investing in automated dispatch."
+    ],
+    "pmApplication": [
+      "When asked \"How would you build an MVP?\" state the core hypothesis, the smallest experiment, and pass/fail criteria.",
+      "During planning, resist \"version 1 must be everything.\" Each release should validate one key hypothesis.",
+      "After every MVP launch, run a retrospective: Was the hypothesis validated? What should the next iteration test?"
+    ]
+  },
+  "design-thinking": {
+    "title": "Design Thinking",
+    "summary": "A user-centered problem-solving process",
+    "tags": [
+      "Design",
+      "Innovation"
+    ],
+    "content": [
+      "Design thinking has five stages: Empathize → Define → Ideate → Prototype → Test.",
+      "In Empathize, immerse yourself in the user's context. In Define, converge on a clear Point of View.",
+      "Ideate encourages divergence. Common techniques include brainstorming, SCAMPER, and the Six Thinking Hats.",
+      "Prototypes do not need to be perfect. Paper sketches, wireframes, and clickable demos all work—the key is fast feedback.",
+      "In Test, observe behavior rather than opinions alone. Iterate until the problem is effectively solved."
+    ],
+    "cases": [
+      "A bank app's transfer flow was too long. During Empathize, the team found elderly users feared making mistakes. They reframed the problem as \"insufficient confirmation.\" After three rounds of prototype testing, a large-button confirmation screen with spoken amounts cut mis-tap complaints by 40%.",
+      "A campus secondhand marketplace shifted from a feature list to design thinking. A user journey revealed \"trust cost\" as the biggest breakpoint, so the MVP focused on escrow transactions rather than social features."
+    ],
+    "pmApplication": [
+      "In interviews, use the five-stage framework to tell a complete story from problem discovery to shipped solution.",
+      "Kick off requirements with 30 minutes aligning on the Point of View before debating features.",
+      "Invite 5 real users to test prototypes and replace \"I think\" with observation notes."
+    ]
+  },
+  "data-driven": {
+    "title": "Data-Driven Decision Making",
+    "summary": "Use metrics to measure product health",
+    "tags": [
+      "Data",
+      "Metrics"
+    ],
+    "content": [
+      "North Star Metric: the single metric that best reflects core product value, such as DAU, GMV, or retention rate.",
+      "The AARRR pirate framework: Acquisition → Activation → Retention → Revenue → Referral.",
+      "Funnel analysis pinpoints where users drop off so you can optimize the right step.",
+      "Cohort analysis groups users by signup date to compare retention across batches.",
+      "Data informs decisions—it is not the goal itself. Pair quantitative signals with qualitative research to understand why numbers move."
+    ],
+    "cases": [
+      "AARRR in practice: a delivery robot team optimized the one-click order flow and raised activation from 20% to 55%, proving onboarding deserved investment over blind acquisition spend.",
+      "A content app set its North Star to \"weekly effective reading time\" instead of DAU, steering the team toward depth over clickbait. Next-month retention rose 12%."
+    ],
+    "pmApplication": [
+      "Estimation and growth interview questions can both be structured with AARRR.",
+      "Every requirement should name its metric: which number moves after launch, and by how much counts as success.",
+      "When data looks abnormal, ask \"why\" and follow up with user interviews—do not stop at the chart."
+    ]
+  },
+  "agile": {
+    "title": "Agile Product Management",
+    "summary": "Ship value in small steps, continuously",
+    "tags": [
+      "Agile",
+      "Scrum"
+    ],
+    "content": [
+      "Core Scrum roles: Product Owner (sets priorities), Scrum Master (protects the process), and the development team.",
+      "Sprint cycles are typically 1–2 weeks, with each Sprint delivering a demonstrable increment.",
+      "The product backlog is value-sorted. The PO maintains and clarifies requirements.",
+      "Daily standup covers: what I did yesterday, what I will do today, and what is blocking me.",
+      "Retrospectives focus on process improvement, not blame."
+    ],
+    "cases": [
+      "In a 2-week Sprint committed to \"payment retry,\" daily standup surfaced an API dependency blocker. The PO cut secondary analytics the same day and kept the main path on schedule.",
+      "A Sprint retrospective found \"requirement changes not synced to QA.\" The next Sprint added a PRD change log template, and rework dropped 30%."
+    ],
+    "pmApplication": [
+      "When asked about agile experience, explain roles (PO/SM), Sprint rhythm, and how you maintain the backlog.",
+      "Use standup for blockers and risks only; align on details asynchronously afterward.",
+      "In retrospectives, output 1–2 concrete process improvements for the next Sprint."
+    ]
+  },
+  "product-positioning": {
+    "title": "Product Positioning",
+    "summary": "Clarify who you serve, what problem you solve, and why you win",
+    "tags": [
+      "Positioning",
+      "Strategy"
+    ],
+    "content": [
+      "Three positioning questions: Who is the target user? What is the core pain point? What unique value do you offer versus alternatives?",
+      "Positioning is not a slogan—it is a decision filter. Every feature should answer \"Does this fit our positioning?\"",
+      "Useful tools include the Value Proposition Canvas and this template: \"For [user], in [context], we provide [value]. Unlike [competitor], we [differentiation].\"",
+      "Positioning should evolve with market validation, but avoid constant pivots that blur team execution.",
+      "Differentiation can come from features, experience, price, channel, brand, or ecosystem. Pick one or two and go deep."
+    ],
+    "cases": [
+      "Feishu Docs positioned as \"the team collaboration choice\" rather than \"another online Word.\" The team doubled down on @mentions, comments, and multi-dimensional tables while de-emphasizing single-page layout.",
+      "An AI writing tool chose the niche \"PMs writing PRDs\" in a crowded market. Paid conversion was 3× that of generic writing tools."
+    ],
+    "pmApplication": [
+      "When introducing a product in interviews, start with the positioning triangle: who, what problem, differentiation.",
+      "In feature reviews, ask: \"Does this fit current positioning?\" to filter trend-chasing requests.",
+      "Use the positioning statement template on a one-pager in BRDs to align leadership."
+    ]
+  },
+  "user-journey": {
+    "title": "User Journey Map",
+    "summary": "Visualize the full path from awareness to loyalty",
+    "tags": [
+      "Experience",
+      "Journey"
+    ],
+    "content": [
+      "A User Journey Map uses stages on the horizontal axis (awareness → consideration → purchase → usage → advocacy) and behavior, touchpoints, emotions, pain points, and opportunities on the vertical axis.",
+      "The goal is to find experience breakpoints and the highest-leverage improvements—not to list every touchpoint.",
+      "The emotional curve matters: valleys often signal innovation opportunities; peaks can reinforce brand memory.",
+      "Map different personas separately. The same product can follow very different paths for different users.",
+      "Convert outputs into concrete requirements: each \"opportunity\" becomes a shippable improvement."
+    ],
+    "cases": [
+      "An e-commerce journey map showed the post-payment success page as an emotional low—users did not know order status. Adding a progress timeline and logistics push notifications lifted repurchase rate by 8%.",
+      "A B2B onboarding journey revealed the highest drop-off at \"admin configuration.\" A wizard with preset templates raised 7-day retention by 15%."
+    ],
+    "pmApplication": [
+      "Before a major redesign, a journey map aligns the team better than a flat feature list.",
+      "Turn every emotional valley into a backlog item you can ship.",
+      "In interviews about UX improvements, use the journey map to explain \"which step, what we changed.\""
+    ]
+  },
+  "hypothesis-validation": {
+    "title": "Hypothesis Validation",
+    "summary": "Replace debate with experiments and fail fast",
+    "tags": [
+      "Validation",
+      "Experimentation"
+    ],
+    "content": [
+      "A product is a bundle of hypotheses: users have this problem, they will pay, we can build it, we can beat competitors…",
+      "Each hypothesis should be falsifiable, with clear pass/fail criteria defined upfront.",
+      "Validation methods from low to high cost: interviews → surveys → landing pages → prototype tests → MVP → A/B tests.",
+      "Prioritize the riskiest assumptions—usually the most uncertain ones with the highest cost of failure.",
+      "Failure is acceptable; not learning from failure is not. Every experiment should produce learning."
+    ],
+    "cases": [
+      "Hypothesis: \"Users will pay a premium for express delivery.\" The team tested two price tiers via survey and landing page before building full fulfillment capability.",
+      "Hypothesis: \"Community features improve retention.\" They ran a small manually operated group (Concierge MVP) before productizing auto group creation."
+    ],
+    "pmApplication": [
+      "When asked how to validate an idea: list hypotheses → pick the cheapest test → define success criteria.",
+      "At the top of the PRD, state \"hypotheses this release validates\" and \"if it fails, then…\"",
+      "Validate the highest-risk, highest-cost assumptions first—not the easiest features to build."
+    ]
+  },
+  "ice-priority": {
+    "title": "Requirement Prioritization",
+    "summary": "RICE, ICE, and value/cost matrices",
+    "tags": [
+      "Prioritization",
+      "Decision Making"
+    ],
+    "content": [
+      "RICE = Reach (users affected) × Impact (magnitude) × Confidence (certainty) ÷ Effort (work required).",
+      "ICE = Impact × Confidence × Ease. Good for quick rough sorting without decimal precision.",
+      "Value/cost matrix: high value + low cost first; high value + high cost planned; low value cut.",
+      "Prioritization is not one-and-done. Business stage matters—growth phases emphasize acquisition; mature phases emphasize retention and monetization.",
+      "Include strategic alignment: sometimes \"important but not urgent\" strategic bets need reserved capacity."
+    ],
+    "cases": [
+      "With tight resources, login security hardening (high value, low cost) entered the Sprint; \"reskin\" went to backlog; \"rewrite core architecture\" became a separate initiative.",
+      "ICE quickly ranked 20 requirements; RICE refined the top 5 for the release—balancing speed and accuracy."
+    ],
+    "pmApplication": [
+      "On version-planning interview questions: align on goals first, then use a matrix or RICE to explain trade-offs.",
+      "Visualize the matrix when negotiating with stakeholders to break \"we need everything\" deadlocks.",
+      "Review quarterly whether your prioritization model still matches the business stage (growth vs. maturity)."
+    ]
+  },
+  "star": {
+    "title": "STAR Method",
+    "summary": "A structured framework for telling project stories",
+    "tags": [
+      "Interview",
+      "Communication"
+    ],
+    "content": [
+      "S (Situation): Context—what circumstances triggered the project?",
+      "T (Task): Your responsibility—what were you accountable for? What was the goal?",
+      "A (Action): What you did specifically—and why you chose that approach.",
+      "R (Result): Outcomes with data—what changed?",
+      "Example structure: \"In [context], I owned [task]. Through [actions], we achieved [result with metrics].\"",
+      "Avoid \"our team did…\" without highlighting your contribution and reasoning."
+    ],
+    "cases": [
+      "\"The company needed to improve new-user retention (S). I owned onboarding optimization (T). I ran user interviews to find breakpoints, redesigned the guide flow, and A/B tested (A). 7-day retention rose from 32% to 41% (R).\"",
+      "\"The business asked to integrate with a corporate learning platform (S). I led requirements and scheduling (T). I broke down account mapping and grade sync into four smoke-test paths (A). We launched on time and training completion rose 25% (R).\""
+    ],
+    "pmApplication": [
+      "Prepare one 2-minute and one 5-minute STAR story per major project.",
+      "Results must be quantified; without hard numbers, use tangible outcomes like \"cycle shortened\" or \"complaints dropped.\"",
+      "In Action, highlight your decisions—not only what the team did."
+    ]
+  },
+  "competitor-analysis": {
+    "title": "Competitive Analysis Framework",
+    "summary": "Study competitors systematically",
+    "tags": [
+      "Competitive Analysis",
+      "Strategy"
+    ],
+    "content": [
+      "Analysis dimensions: positioning, target users, core features, business model, strengths/weaknesses, and recent moves.",
+      "Porter's Five Forces helps industry analysis: suppliers, buyers, substitutes, new entrants, and rivalry.",
+      "Feature comparison matrix: features on the x-axis, competitors on the y-axis, with support level and differences noted.",
+      "Do not stop at feature lists—analyze the strategic intent behind \"why they built it this way.\"",
+      "Deliverables: competitive report + differentiation opportunities + strategies to adopt or avoid."
+    ],
+    "cases": [
+      "Competitor A's free tier traded revenue for growth. Our B2B positioning avoided a price war and doubled down on private deployment and service SLAs.",
+      "A feature matrix showed all three rivals had \"reports,\" but only one supported custom dimensions. Flexible reporting became a differentiator in the MRD."
+    ],
+    "pmApplication": [
+      "Interview structure: positioning → users → feature comparison → business logic → opportunities and threats.",
+      "Output more than slides—include \"therefore we should…\" action recommendations.",
+      "Refresh competitive intel quarterly; watch strategic shifts, not just feature copying."
+    ]
+  },
+  "estimate-dau": {
+    "title": "Classic Estimation Questions",
+    "summary": "Fermi estimation: from coffee shops in Beijing to DAU",
+    "tags": [
+      "Estimation",
+      "Logic"
+    ],
+    "content": [
+      "Fermi estimation breaks a big question into smaller assumptions you can multiply or add to reach an order of magnitude.",
+      "Example: estimate an app's DAU—internet users × target segment share × penetration × usage frequency.",
+      "Key steps: define scope → build a formula → state reasonable assumptions → calculate → run sensitivity analysis.",
+      "Assumptions need rationale, e.g., \"18–35 age group ~30%\" should cite a source or be labeled as an assumption.",
+      "Interviewers care about the logic chain, not the exact number."
+    ],
+    "cases": [
+      "Estimating coffee shops in Beijing: population × coffee-drinking share × annual visits ÷ per-shop capacity → order of magnitude, then sensitivity on assumptions.",
+      "Estimating short-video app DAU: smartphone users × short-video penetration × daily open rate, with rationale noted at each step."
+    ],
+    "pmApplication": [
+      "Interviews reward clear formulas and assumptions; being off by 2× is often acceptable.",
+      "Use market-size estimates in BRDs for approval and resourcing.",
+      "Close with sensitivity: \"If penetration is half, how does the conclusion change?\""
+    ]
+  },
+  "favorite-product": {
+    "title": "Favorite Product Question",
+    "summary": "A standard approach to a common open-ended interview question",
+    "tags": [
+      "Interview",
+      "Product Sense"
+    ],
+    "content": [
+      "Pick a product you truly understand in detail—not necessarily the most popular one.",
+      "Structure: what it is → what problem it solves → why it excels (feature/experience/business model) → how you would improve it.",
+      "Show product sense: user scenarios, design details, business logic, and data if you know it.",
+      "Improvement ideas should be specific and feasible—critical thinking, not criticism for its own sake.",
+      "Compare 1–2 competitors to explain differentiated value."
+    ],
+    "cases": [
+      "Answering with WeChat: explain connection scenarios (social + payments + mini-program ecosystem), cite a concrete detail (e.g., File Transfer Assistant) to show observational depth, then suggest a specific improvement like search.",
+      "Avoid vague praise like \"the UI looks great\"—anchor on user scenarios and business logic."
+    ],
+    "pmApplication": [
+      "Prepare two products in advance (one mainstream, one niche) so you are not scrambling on interview day.",
+      "Structure: what it is → problem solved → why it works → how to improve.",
+      "Improvements should be concrete and actionable—product thinking, not nitpicking."
+    ]
+  },
+  "ab-test": {
+    "title": "A/B Testing",
+    "summary": "The gold standard for validating product changes",
+    "tags": [
+      "Experimentation",
+      "Data"
+    ],
+    "content": [
+      "A/B testing randomly assigns users to variants and compares outcomes while controlling other variables.",
+      "Prerequisites: sufficient sample size, a single variable, a clear conversion metric, and a reasonable test duration.",
+      "Common pitfalls: stopping too early, peeking at data (p-hacking), and failing to correct for multiple comparisons.",
+      "Statistical significance (typically p < 0.05) means the result is unlikely due to random noise alone.",
+      "Product decisions: significant and positive → roll out; not significant → investigate or extend; negative → roll back."
+    ],
+    "cases": [
+      "Button copy A/B: \"Buy Now\" vs. \"Add to Cart.\" After reaching sample size, conversion rose 0.3pp and shipped to 100%.",
+      "Anti-pattern: Day 2 showed variant B ahead, so the team rolled out fully; a week later results regressed—test had not run full duration or checked significance."
+    ],
+    "pmApplication": [
+      "In interviews, cover five steps: hypothesis → design → split → analyze → decide.",
+      "In PRDs, document single variable, primary metric, minimum sample, and test duration.",
+      "When not significant, diagnose: insufficient sample, wrong metric, or seasonal noise."
+    ]
+  },
+  "pricing": {
+    "title": "Pricing Strategy",
+    "summary": "How to set a price that works",
+    "tags": [
+      "Business",
+      "Pricing"
+    ],
+    "content": [
+      "Cost-plus pricing: cost + margin. Works when costs are transparent and competition is limited.",
+      "Value-based pricing: price on perceived value. Fits clearly differentiated products.",
+      "Competitive pricing: benchmark rivals. Common in commoditized markets.",
+      "Common models: freemium, subscription, usage-based, and tiered pricing.",
+      "Price anchoring: show a high option first so mid-tier feels reasonable."
+    ],
+    "cases": [
+      "SaaS three-tier pricing: Basic anchors, Pro is the main seller, Enterprise is custom—most customers pick the middle (anchoring effect).",
+      "Tool freemium: free tier caps project count; individuals retain and spread word-of-mouth; teams convert to paid."
+    ],
+    "pmApplication": [
+      "On pricing questions, clarify B2B vs. B2C, cost structure, and competitors first.",
+      "Apply value pricing: willingness to pay follows perceived value, not cost.",
+      "Test new pricing at small scale and watch conversion and churn."
+    ]
+  },
+  "growth": {
+    "title": "Growth Model",
+    "summary": "Acquisition, activation, retention, revenue, and referral",
+    "tags": [
+      "Growth",
+      "AARRR"
+    ],
+    "content": [
+      "Acquisition: channel efficiency (CAC). LTV:CAC should exceed 3.",
+      "Activation: conversion to a key first action, e.g., \"publish first post.\"",
+      "Retention: day-1/7/30 retention—retention is the acid test of product value.",
+      "Revenue: ARPU, paid conversion rate, average order value.",
+      "Referral: K-factor = invites × conversion rate. K > 1 enables organic growth."
+    ],
+    "cases": [
+      "Full AARRR case: a delivery robot team improved one-click ordering (activation), which lifted retention and referral—not just paid acquisition.",
+      "A tool had K=0.3 (each user brought 0.3 new users). The team prioritized in-product invite motivation before scaling ad spend."
+    ],
+    "pmApplication": [
+      "Answer growth questions step-by-step through AARRR with one metric and one action per stage.",
+      "Diagnose bottlenecks: find the funnel step with the lowest conversion.",
+      "LTV:CAC > 3 is the baseline for sustainable paid growth."
+    ]
+  },
+  "why-pm": {
+    "title": "Why Product Management",
+    "summary": "A motivation question that tests self-awareness and commitment",
+    "tags": [
+      "Interview",
+      "Motivation"
+    ],
+    "content": [
+      "Interviewers want to know whether you have thought this through or are following a trend.",
+      "Strong structure: personal trigger → understanding of PM work → fit with your strengths → long-term direction.",
+      "Avoid empty lines like \"I like working with people\" or \"products are cool.\"",
+      "Use a real story: user feedback, a product experience, or an internship/project that confirmed your path.",
+      "Show you understand PM connects users, business, and engineering—and owns outcomes, not just wireframes."
+    ],
+    "cases": [
+      "Strong answer: \"During an ops internship, changing one onboarding line significantly lifted conversion, but I did not know who decided or how to improve systematically—that led me to PM and owning user value.\"",
+      "Weak answer: \"Products are cool and I like the internet\"—no specific trigger."
+    ],
+    "pmApplication": [
+      "Prepare a genuine story showing PM means owning outcomes, not drawing prototypes.",
+      "Connect past experience to PM skills: communication, logic, user empathy.",
+      "Signal long-term intent; avoid \"I'll try it and see\" vibes."
+    ]
+  },
+  "demand-vs-want": {
+    "title": "User Needs vs. User Wants",
+    "summary": "A classic distinction that tests requirement insight",
+    "tags": [
+      "Requirements",
+      "Interview"
+    ],
+    "content": [
+      "What users say (Want) is often a proposed solution; what they truly need (Need) is the underlying motivation.",
+      "Classic example: users asked for \"a faster horse.\" The Need was \"get there faster\"—a car is a better answer.",
+      "PMs dig for Needs: use \"Five Whys,\" observe behavior, do not rely on opinions alone.",
+      "Building every Want leads to feature bloat; ignoring Wants erodes trust—guide users through the conversation.",
+      "In answers, cite your own experience discovering the real need and comparing alternatives."
+    ],
+    "cases": [
+      "Classic: users wanted \"a faster horse\"; the Need was \"reach the destination faster\"—the car is the better solution.",
+      "In product: users wanted \"more filters\"; the Need may be \"find the right item quickly\"—better recommendations may beat more filter UI."
+    ],
+    "pmApplication": [
+      "In interviews, walk through Five Whys with your own example to show how you uncovered the Need.",
+      "With stakeholders, restate the Need before debating solutions to build trust.",
+      "In PRDs, separate raw user feedback from analyzed requirement conclusions."
+    ]
+  },
+  "product-lifecycle": {
+    "title": "Product Lifecycle",
+    "summary": "Strategy for introduction, growth, maturity, and decline",
+    "tags": [
+      "Lifecycle",
+      "Strategy"
+    ],
+    "content": [
+      "Introduction: validate PMF; focus on core users and scenarios. Track retention and NPS, not scale.",
+      "Growth: invest in acquisition, optimize the funnel, build moats. Track growth rate and market share.",
+      "Maturity: raise ARPU, cut costs, defend against competitors. Track margin and renewal rate.",
+      "Decline: shrink, pivot, or exit gracefully—avoid wasted investment.",
+      "Different products in one company can sit at different stages; resource allocation should differ."
+    ],
+    "cases": [
+      "Intro-stage social app skipped chasing DAU scale; focused on core cohort retention and NPS before scaling channels in growth.",
+      "Mature e-commerce shifted from acquisition to AOV and repurchase instead of endless subsidies."
+    ],
+    "pmApplication": [
+      "In interviews, identify which stage the company's product is in and answer with matching strategy and metrics.",
+      "Align version planning with lifecycle: validate PMF in introduction; optimize monetization in maturity.",
+      "Avoid piling features on declining products—discuss pivot or sunset instead."
+    ]
+  },
+  "how-to-evaluate-idea": {
+    "title": "How to Evaluate a Product Idea",
+    "summary": "Structured approach: market, users, feasibility, differentiation",
+    "tags": [
+      "Interview",
+      "Evaluation"
+    ],
+    "content": [
+      "Four dimensions: Market (big enough? trending?), Users (painful enough? willing to pay?), Feasibility (can we build it? cost controlled?), Differentiation (why us?).",
+      "Define target users and scenarios before evaluating solutions—do not jump straight to features.",
+      "Support with data or analogies: market sizing, competitive landscape, internal capabilities.",
+      "Name the riskiest assumption and how to validate it cheaply.",
+      "Conclusions can be \"worth pursuing,\" \"validate first,\" or \"do not pursue\"—logic matters more than the verdict."
+    ],
+    "cases": [
+      "Evaluating a campus errand app: market (campus density), users (willingness-to-pay interviews), feasibility (capacity and compliance), differentiation (single campus vs. national platform).",
+      "Conclusion: \"Start with one-campus MVP\" rather than outright reject or full build."
+    ],
+    "pmApplication": [
+      "In interviews, use the four dimensions with 1–2 sentences each plus how you would validate.",
+      "Use the same framework in BRDs for leadership decisions.",
+      "Call out the biggest risk assumption and the lowest-cost validation path."
+    ]
+  },
+  "say-no": {
+    "title": "How to Say No to Requirements",
+    "summary": "Tests prioritization judgment and communication",
+    "tags": [
+      "Communication",
+      "Prioritization"
+    ],
+    "content": [
+      "You are not rejecting the person—you are saying \"not now at this stage.\" Focus on the work, not the individual.",
+      "Standard script: restate the request → explain current priorities and resource limits → offer alternatives or a timeline.",
+      "Use data and strategic alignment: \"This serves user X, but this quarter's goal is Y.\"",
+      "Log requests in the backlog instead of letting them vanish—show respect to the requester.",
+      "For executive or key-account asks, escalate for transparent decision-making rather than blocking alone."
+    ],
+    "cases": [
+      "Sales wanted a custom enterprise feature. The PM restated the ask, explained the quarter's strategy was standardized product, proposed backlog for Q3 plus partial fulfillment via existing config, and invited sales to the prioritization review.",
+      "A exec added a urgent request. The PM showed resource and goal conflict and offered \"if we do A, B slips\" as a transparent choice."
+    ],
+    "pmApplication": [
+      "Interviewers test communication and prioritization: show respect + data + alternatives.",
+      "When declining, stay professional, log the request in backlog.",
+      "Argue with strategy and metrics—not \"engineering has no time.\""
+    ]
+  },
+  "funnel-analysis": {
+    "title": "Funnel Analysis Interview Question",
+    "summary": "Given data, find the problem and propose fixes",
+    "tags": [
+      "Data",
+      "Interview"
+    ],
+    "content": [
+      "Steps: define each funnel step → calculate step conversion → find the biggest drop → form hypotheses → propose validation and optimization.",
+      "Compare period-over-period, by channel, segment, and version—avoid averages that hide problems.",
+      "Common causes: UX friction, poor traffic quality, campaign ended, technical incident, competitor move.",
+      "Optimization levers: widen the top of funnel, improve step conversion, shorten the path (fewer steps).",
+      "Answer with structure: \"If I were PM, I would first… because…\""
+    ],
+    "cases": [
+      "Registration funnel: 1M impressions → 100K clicks → 20K signups → 8K activated. Biggest drop at \"verification code failure on signup page\"—fix UX before buying more ads.",
+      "Channel-level funnels showed one channel with near-zero activation; spend paused and traffic quality investigated."
+    ],
+    "pmApplication": [
+      "In interviews with given data, draw the funnel, compute conversion, locate the largest drop.",
+      "Propose 2–3 testable hypotheses and matching experiments.",
+      "Compare trends and segments—never rely on the overall average alone."
+    ]
+  },
+  "version-planning": {
+    "title": "Version Planning Question",
+    "summary": "How to prioritize features with limited resources",
+    "tags": [
+      "Planning",
+      "Interview"
+    ],
+    "content": [
+      "Align on goals first: what business/user outcome does this release target? What are success metrics?",
+      "List candidate features and rank by RICE or strategic fit.",
+      "Account for dependencies: infrastructure, design capacity, tech debt—avoid plans you cannot finish.",
+      "Keep releases small and themed (e.g., \"improve new-user activation\"), not kitchen-sink releases.",
+      "Explain trade-offs: why A over B—show decision logic, not gut feel."
+    ],
+    "cases": [
+      "Release theme \"improve new-user activation\": after RICE, only onboarding + first-order guide shipped; cosmetic reskin cut.",
+      "Dependency call: payment not ready, so cart feature moved entirely—avoid half-shipped flows."
+    ],
+    "pmApplication": [
+      "In interviews, ask release goal and success metrics before ranking features.",
+      "One theme per release—avoid the everything release.",
+      "Clearly explain \"why A, not B\" trade-off logic."
+    ]
+  },
+  "prd": {
+    "title": "Writing PRDs",
+    "summary": "Communicate requirements clearly to reduce rework",
+    "tags": [
+      "Documentation",
+      "PRD"
+    ],
+    "content": [
+      "PRD essentials: background and goals, user stories, functional specs, interaction notes, edge cases, analytics events, acceptance criteria.",
+      "User story format: As a [role], I want [capability], so that [value].",
+      "Be specific on behavior: inputs, logic, outputs, and error handling.",
+      "Include wireframes or flow diagrams—a picture beats paragraphs.",
+      "Version control: change log, review notes, stakeholder sign-off."
+    ],
+    "cases": [
+      "Corporate learning platform integration PRD broke down account mapping APIs, tag sync rules, notification timing, and five exception dialogs—engineering could split tasks directly.",
+      "BRD for leadership ROI, MRD for market alignment, PRD for engineering—same project, three doc layers from 5 to 50 pages for different audiences."
+    ],
+    "pmApplication": [
+      "Standard PRD seven sections: background, user stories, features, non-functional requirements, flows, prototypes, acceptance criteria.",
+      "Document edge cases and events per feature to reduce review friction.",
+      "Track changes in version history; QA validates against acceptance criteria."
+    ]
+  },
+  "prototype": {
+    "title": "Prototyping",
+    "summary": "Visualize product ideas quickly",
+    "tags": [
+      "Prototype",
+      "UX"
+    ],
+    "content": [
+      "Low-fidelity: paper sketches and wireframes for early concept tests—cheap and fast to iterate.",
+      "High-fidelity: interactive prototypes near real experience—for reviews and engineering alignment.",
+      "Common tools: Figma, Axure, Modao, Instant Design.",
+      "Focus prototypes on information architecture, core flows, and key interactions—not pixel perfection.",
+      "Split with UI design: PM owns structure and flow; designers own visual polish."
+    ],
+    "cases": [
+      "Early paper wireframes tested the main flow; revisions took 30 minutes. After approval, high-fidelity Figma saved visual design cost.",
+      "Review demoed only three core paths; exception flows confirmed asynchronously."
+    ],
+    "pmApplication": [
+      "In interviews, explain when low-fi vs. high-fi fits.",
+      "Prototypes prioritize flow and IA—not pixel-perfect polish.",
+      "Division of labor: PM defines structure; design defines visuals."
+    ]
+  },
+  "roadmap": {
+    "title": "Product Roadmap",
+    "summary": "Plan how the product evolves over time",
+    "tags": [
+      "Planning",
+      "Roadmap"
+    ],
+    "content": [
+      "Roadmaps answer what to build, why, and when—not how to implement.",
+      "Organize by themes, not endless feature lists.",
+      "Use Now / Next / Later to stay flexible and avoid over-commitment.",
+      "Align with strategy: company goals → product goals → feature priority.",
+      "Review and adjust regularly—a roadmap is a living document, not a fixed contract."
+    ],
+    "cases": [
+      "Now: payment experience; Next: membership; Later: cross-border—external commitments by theme, internal backlog stays flexible.",
+      "Roadmap aligned to OKR: quarterly objective was retention, so unrelated acquisition features did not crowd the roadmap."
+    ],
+    "pmApplication": [
+      "Roadmaps answer \"why now,\" not task lists.",
+      "Sync regularly with stakeholders and manage expectations.",
+      "In interviews, describe balancing short-term delivery with long-term vision."
+    ]
+  },
+  "stakeholder": {
+    "title": "Stakeholder Management",
+    "summary": "Coordinate parties and drive projects to completion",
+    "tags": [
+      "Communication",
+      "Collaboration"
+    ],
+    "content": [
+      "Identify stakeholders: leadership, engineering, design, ops, sales, support, user representatives.",
+      "RACI matrix: Responsible (does the work), Accountable (owns the outcome), Consulted (input), Informed (kept in loop).",
+      "Manage up: regular updates on progress, risks, and support needed—use data.",
+      "Cross-functional work: understand each team's KPIs and find win-win options, not zero-sum fights.",
+      "Handle conflict on the issue, not the person—anchor on goals and user value."
+    ],
+    "cases": [
+      "Engineering and ops fought over priority. The PM aligned on shared goal (Q3 retention) and used data to prioritize onboarding over campaign page redesign.",
+      "RACI clarified who approves requirement changes and who executes—reducing \"I thought you had it\" gaps."
+    ],
+    "pmApplication": [
+      "Map stakeholders and their KPIs; design for mutual benefit.",
+      "Manage up: sync risks and support needs early—do not surprise at deadline.",
+      "Resolve conflict with user value and data; stay professional."
+    ]
+  },
+  "metrics-design": {
+    "title": "Metrics Design",
+    "summary": "Define measurable success criteria for the product",
+    "tags": [
+      "Metrics",
+      "OKR"
+    ],
+    "content": [
+      "SMART criteria: Specific, Measurable, Achievable, Relevant, Time-bound.",
+      "Leading vs. lagging indicators: leading (actionable inputs) vs. lagging (outcomes).",
+      "OKR structure: Objective (qualitative goal) + Key Results (quantifiable outcomes).",
+      "Avoid vanity metrics like total registered users—focus on active, retained, and paying users.",
+      "Tie metrics to features: every requirement should have acceptance metrics."
+    ],
+    "cases": [
+      "OKR: O—improve new-user retention; KR1—7-day retention 35%→42%; KR2—core feature day-1 completion 60%→75%.",
+      "Vanity trap: registrations rose but activity flat—shifted focus to activation and retention."
+    ],
+    "pmApplication": [
+      "Bind acceptance metrics to every requirement; review after launch.",
+      "Leading metrics (e.g., guide completion) are levers; lagging metrics (retention) show results.",
+      "On OKR questions: O is qualitative, KRs are quantified and time-bound."
+    ]
+  },
+  "user-story-mapping": {
+    "title": "User Story Mapping",
+    "summary": "Organize the backlog from user goals outward",
+    "tags": [
+      "Planning",
+      "User Stories"
+    ],
+    "content": [
+      "Horizontal axis: user activity flow (e.g., browse → add to cart → pay → support). Vertical axis: priority and release slices.",
+      "Top row: user goal (Job to be Done). Below: user stories and tasks.",
+      "Helps the team see the whole experience instead of isolated backlog tickets.",
+      "Release lines slice versions: v1 completes the main path; later releases add branches and polish.",
+      "Best for kicking off new features or major redesigns—more intuitive than a flat backlog list."
+    ],
+    "cases": [
+      "E-commerce story map horizontal flow: browse → cart → pay → support. Release 1 line covered only browse-to-pay main path.",
+      "Story mapping prevented a backlog of fragments— the team saw end-to-end experience."
+    ],
+    "pmApplication": [
+      "Before new features, align on the full map, then split into Sprints.",
+      "Use the vertical axis for priority and release slicing to control scope.",
+      "In planning interviews, sketch a simplified activity flow to explain release cuts."
+    ]
+  },
+  "analytics-tracking": {
+    "title": "Analytics Instrumentation Basics",
+    "summary": "Event design, property standards, and QA",
+    "tags": [
+      "Instrumentation",
+      "Data"
+    ],
+    "content": [
+      "Instrumentation serves business questions—not \"track everything.\" Define metrics and analysis scenarios first, then events.",
+      "Event naming convention: verb_object_location, e.g., click_buy_button_cart—keep global consistency.",
+      "Event properties: who (user_id), when (timestamp), where (page), what (action), context (extra).",
+      "PRDs must specify event name, trigger, property list, and sample values for dev and QA.",
+      "Post-launch, run instrumentation QA: walk core paths and verify the data platform receives correct fields."
+    ],
+    "cases": [
+      "PRD specified click_buy_button_cart with sku_id and price properties. Post-launch walkthrough found missing cancel_order event—fixed same week.",
+      "Started from the analysis question \"payment failure reason distribution,\" then derived required events—instead of instrumenting the whole site blindly."
+    ],
+    "pmApplication": [
+      "Maintain global event naming; attach event tables to PRDs.",
+      "Run post-launch instrumentation QA checklists.",
+      "Align metric definitions with analysts upfront—avoid conflicting definitions."
+    ]
+  },
+  "review-meeting": {
+    "title": "Requirement Review Meetings",
+    "summary": "Run efficient reviews that reduce rework and misunderstanding",
+    "tags": [
+      "Review",
+      "Collaboration"
+    ],
+    "content": [
+      "Before review: send PRD and prototype early; clarify goal (align on approach vs. final decision).",
+      "During review: explain background and goals before solution; focus on key decisions—details async afterward.",
+      "Record outcomes: open items, owners, deadlines; send notes after the meeting.",
+      "Keep attendance tight: core decision-makers only—avoid spectator reviews.",
+      "Reviews are not blame sessions—debate the work, anchor on user value and data."
+    ],
+    "cases": [
+      "In a 10-step review process, cross-functional review surfaced \"insufficient test environment data\" blocking smoke tests. Data prep was coordinated same day, avoiding QA delay.",
+      "Four-part presentation: why → what → how → acceptance criteria—engineering feedback was clear."
+    ],
+    "pmApplication": [
+      "Send PRD + prototype 24h before; use meeting time for key decisions only.",
+      "Post-meeting notes: conclusions, action items, owners, deadlines.",
+      "Limit attendees to improve decision speed."
+    ]
+  },
+  "info-architecture": {
+    "title": "Information Architecture",
+    "summary": "Organize content and navigation to reduce cognitive load",
+    "tags": [
+      "IA",
+      "UX"
+    ],
+    "content": [
+      "Information architecture (IA) answers: how content is categorized, labeled, navigated, and searched.",
+      "Card sorting lets users group items and validates whether taxonomy matches mental models.",
+      "Navigation principle: shallow and wide beats deep and narrow; always show where the user is (breadcrumbs, highlights).",
+      "Use user language in labels—avoid internal jargon; one concept, one name globally.",
+      "On mobile, consider thumb zones and limit primary nav items (typically ≤5)."
+    ],
+    "cases": [
+      "Card sorting grouped \"Settings\" and \"Account Security\" together while the product split them across two menu levels. Merging increased settings page traffic concentration and sped task completion.",
+      "B2B admin nav consolidated from 12 top-level items to 5 theme domains—new user onboarding time halved."
+    ],
+    "pmApplication": [
+      "Label with user language, not internal codenames.",
+      "On mobile, cap primary entries and respect thumb reach.",
+      "Validate IA changes with usability tests—not gut feel."
+    ]
+  },
+  "b-vs-c": {
+    "title": "B2B vs. B2C",
+    "summary": "Fundamental differences between the two product types",
+    "tags": [
+      "B2B",
+      "B2C"
+    ],
+    "content": [
+      "B2C (To Consumer): user is often the buyer; focus on experience, growth, retention; short decision cycles; fast iteration.",
+      "B2B (To Business): multiple roles (buyer, user, admin); focus on efficiency, ROI, customization; long sales cycles.",
+      "B2C core: traffic, conversion, retention, monetization. B2B core: acquisition, implementation, renewal, expansion.",
+      "B2B PMs must understand customer workflows and org structure; B2C PMs must understand psychology and behavior.",
+      "SaaS is a common B2B model: subscription, low marginal cost, limited network effects."
+    ],
+    "cases": [
+      "Feishu (B2B): multi-role decisions, heavy implementation and renewal—features emphasize permissions, audit, integrations. Douyin (B2C): individual decision-maker, emphasis on experience and algorithmic feed.",
+      "Same company's B2B and B2C lines use completely different KPIs—you cannot copy one growth playbook."
+    ],
+    "pmApplication": [
+      "In interviews, identify product type first, then strategy and metrics.",
+      "B2B: process, contracts, delivery. B2C: retention, growth, experience.",
+      "When choosing a career path, match personal preference and skill profile."
+    ]
+  },
+  "business-model": {
+    "title": "Business Model",
+    "summary": "How a product creates and captures value",
+    "tags": [
+      "Business",
+      "Model"
+    ],
+    "content": [
+      "Business Model Canvas nine blocks: customer segments, value proposition, channels, customer relationships, revenue streams, key resources, key activities, key partners, cost structure.",
+      "Common models: advertising, subscription, transaction fees, value-added services, licensing.",
+      "Platform model: connect supply and demand—stronger network effects mean stronger moats (e.g., Taobao, DiDi).",
+      "Two-sided markets must balance both sides (riders vs. passengers). Cold start is the hardest problem.",
+      "Unit economics: revenue and cost per order or user determine whether scale can be profitable."
+    ],
+    "cases": [
+      "Taobao platform: connects buyers and sellers; revenue from commissions and ads; cold start by supporting one side (merchants) first.",
+      "SaaS subscription: low marginal cost, but must keep delivering value or churn rises."
+    ],
+    "pmApplication": [
+      "Use the Business Model Canvas on competitors and your own product.",
+      "Tie feature priority to revenue paths—monetization-critical capabilities first.",
+      "On commercialization questions, connect user value with unit economics."
+    ]
+  },
+  "platform": {
+    "title": "Platform Products",
+    "summary": "Connect multiple sides and build an ecosystem",
+    "tags": [
+      "Platform",
+      "Ecosystem"
+    ],
+    "content": [
+      "Platform value comes from network effects: more users increase value for every user.",
+      "Cold start tactics: serve one side first (e.g., Uber built driver supply), subsidize, focus on a niche scenario.",
+      "Governance: rules, trust systems, dispute resolution to keep the ecosystem healthy.",
+      "Platform vs. owned inventory: platforms are asset-light and scale fast but control less; owned models are heavy but experience is controllable.",
+      "Examples: WeChat (social + ecosystem), Meituan (local services), Douyin (content + commerce)."
+    ],
+    "cases": [
+      "WeChat ecosystem: mini programs, payments, and official accounts create network effects—new features leverage social graphs for cold start.",
+      "Local services platform cold start: dense supply and demand in one city first, then replicate."
+    ],
+    "pmApplication": [
+      "Platform products need governance rules and trust systems.",
+      "Think about two-sided balance: which side to subsidize, how to prevent fraud.",
+      "On platform questions, explain network effects and cold-start strategy."
+    ]
+  },
+  "ai-product": {
+    "title": "AI Product Thinking",
+    "summary": "Product design in the large-model era",
+    "tags": [
+      "AI",
+      "Trends"
+    ],
+    "content": [
+      "AI products start with the problem to solve—not showing off technology. Tech serves user value.",
+      "Human-in-the-loop: AI assists decisions; humans keep final control, especially in high-stakes scenarios.",
+      "Prompt is product: interaction design, guidance, and error recovery for conversational experiences.",
+      "Evaluation metrics—accuracy, recall, satisfaction, task completion—must be defined per use case.",
+      "Ethics and compliance: data privacy, bias, explainability, content safety."
+    ],
+    "cases": [
+      "Smart support: human-AI handoff for high-risk issues; metrics focus on resolution rate and satisfaction, not model accuracy alone.",
+      "AI writing product used prompt templates to lower the bar; A/B tested onboarding copy for task completion rate."
+    ],
+    "pmApplication": [
+      "Define scenario and evaluation criteria before picking model capabilities.",
+      "Design for failure modes and explainability; keep human confirmation on critical decisions.",
+      "Watch compliance: privacy, content safety, bias."
+    ]
+  },
+  "content-product": {
+    "title": "Content Product Logic",
+    "summary": "Supply, distribution, consumption, and creator ecosystem",
+    "tags": [
+      "Content",
+      "Recommendation"
+    ],
+    "content": [
+      "Content triangle: creators (supply), consumers (demand), platform (distribution and rules).",
+      "Core metrics: time spent, engagement rate, creator activity, content diversity.",
+      "Cold start: PGC foundation + UGC incentives, or start in a vertical niche to build density.",
+      "Recommendation systems drive distribution efficiency—balance exploration (new content) vs. exploitation (hits).",
+      "Examples: Douyin (algorithmic feed), Xiaohongshu (community + search), Bilibili (subculture communities)."
+    ],
+    "cases": [
+      "Douyin: algorithmic distribution with PGC seeding UGC; balances explore/exploit to avoid one-dimensional filter bubbles.",
+      "Xiaohongshu cold start from beauty vertical to build content density before expanding categories."
+    ],
+    "pmApplication": [
+      "Design supply, consumption, and creator incentives together.",
+      "Core metrics: time, engagement, creator activity—not DAU alone.",
+      "Align recommendation product goals with algorithm team's objective function."
+    ]
+  },
+  "ecommerce": {
+    "title": "E-Commerce Product Essentials",
+    "summary": "People, goods, place; conversion funnel and fulfillment",
+    "tags": [
+      "E-Commerce",
+      "Transactions"
+    ],
+    "content": [
+      "People-Goods-Place: right audience, competitive assortment, efficient \"place\" (search, recommendations, campaigns).",
+      "Conversion funnel: impression → click → add to cart → order → pay → repurchase—optimize every step.",
+      "Supply side: merchant onboarding, catalog, inventory, pricing. Demand side: discovery, trust, payment, after-sales.",
+      "Major sales events stress-test tech, supply chain, and support—plan months ahead.",
+      "Differentiation axes: price (Pinduoduo), experience (JD logistics), content (live commerce), membership (Amazon Prime)."
+    ],
+    "cases": [
+      "Three months before a mega sale, payment and inventory plans locked; day-of smoke test on browse → order → pay → inventory deduction.",
+      "Pinduoduo wins on price and social viral loops; JD on logistics—compete on different dimensions, not the same fight."
+    ],
+    "pmApplication": [
+      "Optimize each funnel step; start with the largest data drop-off.",
+      "Mega sales are systems work: engineering, supply chain, support in sync.",
+      "On e-commerce questions, sketch People-Goods-Place and the funnel."
+    ]
+  },
+  "saas-metrics": {
+    "title": "Key SaaS Metrics",
+    "summary": "Core measures for B2B subscription products",
+    "tags": [
+      "SaaS",
+      "B2B"
+    ],
+    "content": [
+      "MRR/ARR: monthly/annual recurring revenue—the core SaaS health signal.",
+      "Churn rate: in B2B, track logo churn and revenue churn separately.",
+      "LTV:CAC should exceed 3; shorter CAC payback period is better.",
+      "NRR (Net Revenue Retention): above 100% means expansion from existing customers exceeds churn—a quality growth signal.",
+      "Product-led growth (PLG): free trial/freemium lowers CAC; product experience drives paid conversion."
+    ],
+    "cases": [
+      "NRR 105%: existing customer expansion exceeded churn—healthy stickiness and upsell.",
+      "LTV:CAC = 2 below healthy threshold—reduce CAC or improve onboarding retention before scaling spend."
+    ],
+    "pmApplication": [
+      "B2B interviews often ask MRR, churn, NRR—know definitions and improvement levers.",
+      "PLG products watch free-to-paid conversion funnels closely.",
+      "Tie feature planning to renewal and expansion metrics."
+    ]
+  },
+  "fintech-basics": {
+    "title": "FinTech Product Basics",
+    "summary": "Compliance, risk control, and trust are non-negotiable",
+    "tags": [
+      "FinTech",
+      "Compliance"
+    ],
+    "content": [
+      "Financial services are heavily regulated: licenses, AML, suitability, disclosures—product plans need legal/compliance review.",
+      "Risk control spans the lifecycle: identity verification, transaction monitoring, fraud detection, credit assessment.",
+      "Trust is expensive to earn and cheap to lose—one security incident can destroy the brand; safety beats flashy features.",
+      "Common categories: payments, wealth management, lending, insurance—each with different regulators and rules.",
+      "PMs should know basics: interest rates, fees, NAV, risk ratings, T+1 settlement, etc."
+    ],
+    "cases": [
+      "Before payment launch, compliance review covered AML, suitability, and disclosure copy signed off by legal.",
+      "A wealth app security incident triggered mass redemptions—financial products carry extreme trust cost."
+    ],
+    "pmApplication": [
+      "For financial features, ask license and compliance boundaries before designing.",
+      "Balance risk and UX: critical steps may need an extra verification step.",
+      "Know basic terms: interest, fees, T+1, risk levels."
+    ]
+  }
+};
