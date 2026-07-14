@@ -466,51 +466,88 @@ function renderAdminFeedbackPage(list) {
   const newCount = list.filter((f) => f.status === 'new').length
 
   return `
-    <div class="page admin-page">
-      ${renderAdminHeader(t('nav.adminFeedback'), t('admin.feedbackDesc', { avg, newCount }), 'feedback')}
-      <div class="skill-toolbar">
-        <input type="search" id="admin-feedback-search" placeholder="搜索邮箱或内容…" value="${escapeHtml(adminFeedbackState.q)}" />
-        <select id="admin-feedback-status">
-          <option value="all" ${adminFeedbackState.status === 'all' ? 'selected' : ''}>全部状态</option>
-          <option value="new" ${adminFeedbackState.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
-          <option value="read" ${adminFeedbackState.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
-          <option value="done" ${adminFeedbackState.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
-        </select>
-      </div>
-      <div class="admin-feedback-table">
-        <div class="admin-feedback-header">
-          <span>时间</span><span>评分</span><span>用户</span><span>建议</span><span>状态</span><span>操作</span>
+    <div class="page admin-page admin-console-page">
+      ${renderAdminHeader(t('nav.adminFeedback'), t('admin.feedbackDesc', { avg, newCount }))}
+
+      <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+          <label class="admin-filter-item">
+            <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
+            <input type="search" id="admin-feedback-search" placeholder="${escapeHtml(t('admin.feedbackSearch'))}" value="${escapeHtml(adminFeedbackState.q)}" />
+          </label>
+          <label class="admin-filter-item">
+            <span>${escapeHtml(t('admin.feedbackFilterStatus'))}</span>
+            <select id="admin-feedback-status">
+              <option value="all" ${adminFeedbackState.status === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.feedbackStatusAll'))}</option>
+              <option value="new" ${adminFeedbackState.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
+              <option value="read" ${adminFeedbackState.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
+              <option value="done" ${adminFeedbackState.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
+            </select>
+          </label>
+          <button type="button" class="btn-ghost admin-filter-reset" id="admin-feedback-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
         </div>
-        ${filtered.length ? filtered.map((f) => `
-          <div class="admin-feedback-row" data-id="${escapeHtml(f.id)}">
-            <span class="admin-feedback-time">${formatDate(f.createdAt)}</span>
-            <span>${renderStars(f.rating)}</span>
-            <span>${escapeHtml(f.email || '-')}</span>
-            <span class="admin-feedback-content">${escapeHtml(f.content)}</span>
-            <span><span class="feedback-status feedback-status-${escapeHtml(f.status)}">${escapeHtml(feedbackStatusLabel(f.status))}</span></span>
-            <span class="admin-feedback-actions">
-              <select class="admin-feedback-status-select" data-id="${escapeHtml(f.id)}">
-                <option value="new" ${f.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
-                <option value="read" ${f.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
-                <option value="done" ${f.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
-              </select>
-            </span>
-          </div>`).join('') : '<p class="empty-hint">暂无反馈</p>'}
+        <div class="admin-filter-meta">${escapeHtml(t('admin.feedbackCount', { n: filtered.length, avg, newCount }))}</div>
       </div>
-      <p class="form-hint">若列表加载失败，请先在 Supabase 执行 supabase/feedback.sql</p>
+
+      <div class="admin-perm-table-wrap">
+        <table class="admin-data-table admin-feedback-data-table">
+          <thead>
+            <tr>
+              <th>${escapeHtml(t('admin.feedbackColTime'))}</th>
+              <th>${escapeHtml(t('admin.feedbackColRating'))}</th>
+              <th>${escapeHtml(t('admin.feedbackColUser'))}</th>
+              <th>${escapeHtml(t('admin.feedbackColContent'))}</th>
+              <th>${escapeHtml(t('admin.feedbackColStatus'))}</th>
+              <th class="admin-data-col-action">${escapeHtml(t('admin.permColAction'))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((f) => `
+              <tr class="admin-data-row" data-id="${escapeHtml(f.id)}">
+                <td class="admin-cell-muted">${formatDate(f.createdAt)}</td>
+                <td>${renderStars(f.rating)}</td>
+                <td><span class="admin-data-primary">${escapeHtml(f.email || '—')}</span></td>
+                <td><span class="admin-cell-clip" title="${escapeHtml(f.content)}">${escapeHtml(f.content)}</span></td>
+                <td><span class="feedback-status feedback-status-${escapeHtml(f.status)}">${escapeHtml(feedbackStatusLabel(f.status))}</span></td>
+                <td class="admin-data-col-action">
+                  <select class="admin-inline-select admin-feedback-status-select" data-id="${escapeHtml(f.id)}" aria-label="${escapeHtml(t('admin.feedbackColStatus'))}">
+                    <option value="new" ${f.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
+                    <option value="read" ${f.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
+                    <option value="done" ${f.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
+                  </select>
+                </td>
+              </tr>`).join('') : `<tr><td colspan="6" class="admin-data-empty">${escapeHtml(t('admin.feedbackEmpty'))}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <p class="form-hint admin-console-footnote">${escapeHtml(t('admin.feedbackSqlHint'))}</p>
     </div>`
 }
 
 function bindAdminFeedbackEvents(list) {
-  document.getElementById('admin-feedback-search')?.addEventListener('input', (e) => {
-    adminFeedbackState.q = e.target.value
+  const rerender = () => {
     document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
     bindAdminFeedbackEvents(list)
+  }
+
+  document.getElementById('admin-feedback-search')?.addEventListener('input', (e) => {
+    adminFeedbackState.q = e.target.value
+    const pos = e.target.selectionStart
+    rerender()
+    const input = document.getElementById('admin-feedback-search')
+    if (input) {
+      input.focus()
+      try { input.setSelectionRange(pos, pos) } catch (_) {}
+    }
   })
   document.getElementById('admin-feedback-status')?.addEventListener('change', (e) => {
     adminFeedbackState.status = e.target.value
-    document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
-    bindAdminFeedbackEvents(list)
+    rerender()
+  })
+  document.getElementById('admin-feedback-filter-reset')?.addEventListener('click', () => {
+    adminFeedbackState.q = ''
+    adminFeedbackState.status = 'all'
+    rerender()
   })
   document.querySelectorAll('.admin-feedback-status-select').forEach((sel) => {
     sel.addEventListener('change', async () => {
@@ -519,8 +556,7 @@ function bindAdminFeedbackEvents(list) {
         const idx = list.findIndex((x) => x.id === updated.id)
         if (idx >= 0) list[idx] = updated
         showToast(t('common.save'), 'success')
-        document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
-        bindAdminFeedbackEvents(list)
+        rerender()
       } catch (e) {
         showToast(e.message || String(e), 'error')
       }
@@ -1753,6 +1789,11 @@ function bindAdminStatsEvents() {
 let adminKnowledgeState = { filter: 'all', status: 'all', q: '' }
 let adminKnowledgeFormState = { tags: [], tagInput: '' }
 
+function adminCategoryLabel(categoryId) {
+  const cat = K.builtinCategories().find((c) => c.id === categoryId)
+  return cat ? catTitle(cat) : categoryId
+}
+
 function renderAdminKnowledgePage(entries) {
   const q = adminKnowledgeState.q.toLowerCase().trim()
   const filtered = entries.filter((e) => {
@@ -1769,46 +1810,76 @@ function renderAdminKnowledgePage(entries) {
   const draftCount = entries.length - publishedCount
 
   return `
-    <div class="page admin-page">
-      ${renderAdminHeader(t('nav.adminKnowledge'), t('admin.knowledgeDesc'), 'knowledge')}
-      <section class="section">
-        <div class="skill-toolbar">
-          <input type="search" id="skill-search" placeholder="搜索标题、正文、章节…" value="${escapeHtml(adminKnowledgeState.q)}" />
-          <select id="skill-filter">
-            <option value="all" ${adminKnowledgeState.filter === 'all' ? 'selected' : ''}>全部来源</option>
-            <option value="pm-bagu" ${adminKnowledgeState.filter === 'pm-bagu' ? 'selected' : ''}>产品经理八股</option>
-            <option value="industry-terms" ${adminKnowledgeState.filter === 'industry-terms' ? 'selected' : ''}>行业通用词语</option>
-            <option value="admin" ${adminKnowledgeState.filter === 'admin' ? 'selected' : ''}>运营新增</option>
-          </select>
-          <select id="skill-status">
-            <option value="all" ${adminKnowledgeState.status === 'all' ? 'selected' : ''}>全部状态</option>
-            <option value="published" ${adminKnowledgeState.status === 'published' ? 'selected' : ''}>已发布全站</option>
-            <option value="draft" ${adminKnowledgeState.status === 'draft' ? 'selected' : ''}>草稿</option>
-          </select>
-          <a href="#/admin/knowledge/new" class="btn-primary">+ 新增知识</a>
-          <button type="button" class="btn-secondary" id="btn-import-catalog">导入内置 Skill</button>
+    <div class="page admin-page admin-console-page">
+      ${renderAdminHeader(t('nav.adminKnowledge'), t('admin.knowledgeDesc'))}
+
+      <div class="admin-filter-bar">
+        <div class="admin-filter-fields">
+          <label class="admin-filter-item">
+            <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
+            <input type="search" id="skill-search" placeholder="${escapeHtml(t('admin.knowledgeSearch'))}" value="${escapeHtml(adminKnowledgeState.q)}" />
+          </label>
+          <label class="admin-filter-item">
+            <span>${escapeHtml(t('admin.knowledgeFilterSource'))}</span>
+            <select id="skill-filter">
+              <option value="all" ${adminKnowledgeState.filter === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeSourceAll'))}</option>
+              <option value="pm-bagu" ${adminKnowledgeState.filter === 'pm-bagu' ? 'selected' : ''}>产品经理八股</option>
+              <option value="industry-terms" ${adminKnowledgeState.filter === 'industry-terms' ? 'selected' : ''}>行业通用词语</option>
+              <option value="admin" ${adminKnowledgeState.filter === 'admin' ? 'selected' : ''}>运营新增</option>
+            </select>
+          </label>
+          <label class="admin-filter-item">
+            <span>${escapeHtml(t('admin.knowledgeFilterStatus'))}</span>
+            <select id="skill-status">
+              <option value="all" ${adminKnowledgeState.status === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeStatusAll'))}</option>
+              <option value="published" ${adminKnowledgeState.status === 'published' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgePublished'))}</option>
+              <option value="draft" ${adminKnowledgeState.status === 'draft' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeDraft'))}</option>
+            </select>
+          </label>
+          <button type="button" class="btn-ghost admin-filter-reset" id="admin-knowledge-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
         </div>
-        <p class="form-hint">共 ${entries.length} 条 · 已发布 ${publishedCount} · 草稿 ${draftCount}。已发布内容对所有用户可见并带「全站」标记。</p>
-        <div class="admin-knowledge-table">
-          <div class="admin-knowledge-header">
-            <span>标题</span><span>来源</span><span>分类</span><span>状态</span><span>操作</span>
-          </div>
-          ${filtered.length ? filtered.map((e) => `
-            <div class="admin-knowledge-row">
-              <div>
-                <strong>${escapeHtml(e.title)}</strong>
-                ${e.section ? `<span class="form-hint">${escapeHtml(e.section)}</span>` : ''}
-              </div>
-              <span>${escapeHtml(SharedK().getSkillLabel(e.sourceSkill))}</span>
-              <span>${escapeHtml(e.categoryId)}</span>
-              <span>${e.published ? '<span class="shared-badge">全站</span>' : '<span class="tag tag-muted">草稿</span>'}</span>
-              <span class="admin-knowledge-actions">
-                <a href="#/admin/knowledge/edit/${encodeURIComponent(e.id)}" class="btn-ghost btn-sm">编辑</a>
-                <button type="button" class="btn-ghost btn-sm btn-admin-del" data-id="${escapeHtml(e.id)}">删除</button>
-              </span>
-            </div>`).join('') : '<p class="empty-hint">暂无知识。可「新增知识」或「导入内置 Skill」开始。</p>'}
+        <div class="admin-filter-actions">
+          <a href="#/admin/knowledge/new" class="btn-primary">${escapeHtml(t('admin.knowledgeAdd'))}</a>
+          <button type="button" class="btn-secondary" id="btn-import-catalog">${escapeHtml(t('admin.knowledgeImport'))}</button>
         </div>
-      </section>
+      </div>
+      <div class="admin-filter-meta-line">${escapeHtml(t('admin.knowledgeCount', { total: entries.length, published: publishedCount, draft: draftCount, shown: filtered.length }))}</div>
+
+      <div class="admin-perm-table-wrap">
+        <table class="admin-data-table admin-knowledge-data-table">
+          <thead>
+            <tr>
+              <th>${escapeHtml(t('admin.knowledgeColTitle'))}</th>
+              <th>${escapeHtml(t('admin.knowledgeColSource'))}</th>
+              <th>${escapeHtml(t('admin.knowledgeColCategory'))}</th>
+              <th>${escapeHtml(t('admin.knowledgeColStatus'))}</th>
+              <th class="admin-data-col-action">${escapeHtml(t('admin.permColAction'))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map((e) => `
+              <tr class="admin-data-row">
+                <td>
+                  <div class="admin-cell-stack">
+                    <span class="admin-data-primary">${escapeHtml(e.title)}</span>
+                    ${e.section ? `<span class="admin-cell-sub">${escapeHtml(e.section)}</span>` : ''}
+                  </div>
+                </td>
+                <td>${escapeHtml(SharedK().getSkillLabel(e.sourceSkill))}</td>
+                <td>${escapeHtml(adminCategoryLabel(e.categoryId))}</td>
+                <td>${e.published
+                  ? `<span class="admin-status-badge is-published">${escapeHtml(t('admin.knowledgePublished'))}</span>`
+                  : `<span class="admin-status-badge is-draft">${escapeHtml(t('admin.knowledgeDraft'))}</span>`}</td>
+                <td class="admin-data-col-action">
+                  <div class="admin-row-actions">
+                    <a href="#/admin/knowledge/edit/${encodeURIComponent(e.id)}" class="btn-ghost btn-sm">${escapeHtml(t('common.edit'))}</a>
+                    <button type="button" class="btn-ghost btn-sm btn-admin-del" data-id="${escapeHtml(e.id)}">${escapeHtml(t('common.delete'))}</button>
+                  </div>
+                </td>
+              </tr>`).join('') : `<tr><td colspan="5" class="admin-data-empty">${escapeHtml(t('admin.knowledgeEmpty'))}</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </div>`
 }
 
@@ -1896,7 +1967,15 @@ function renderAdminKnowledgeEditor(entry) {
 function bindAdminKnowledgeEvents() {
   document.getElementById('skill-search')?.addEventListener('input', (e) => {
     adminKnowledgeState.q = e.target.value
+    const pos = e.target.selectionStart
     renderAdminKnowledgeRoute()
+    requestAnimationFrame(() => {
+      const input = document.getElementById('skill-search')
+      if (input) {
+        input.focus()
+        try { input.setSelectionRange(pos, pos) } catch (_) {}
+      }
+    })
   })
   document.getElementById('skill-filter')?.addEventListener('change', (e) => {
     adminKnowledgeState.filter = e.target.value
@@ -1904,6 +1983,12 @@ function bindAdminKnowledgeEvents() {
   })
   document.getElementById('skill-status')?.addEventListener('change', (e) => {
     adminKnowledgeState.status = e.target.value
+    renderAdminKnowledgeRoute()
+  })
+  document.getElementById('admin-knowledge-filter-reset')?.addEventListener('click', () => {
+    adminKnowledgeState.q = ''
+    adminKnowledgeState.filter = 'all'
+    adminKnowledgeState.status = 'all'
     renderAdminKnowledgeRoute()
   })
   document.getElementById('btn-import-catalog')?.addEventListener('click', async () => {
