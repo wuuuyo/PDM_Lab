@@ -15,6 +15,20 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- 安全函数：判断当前用户是否管理员（绕过 RLS，避免策略递归）
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select is_admin from public.profiles where id = auth.uid()),
+    false
+  );
+$$;
+
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own"
   on public.profiles for select using (auth.uid() = id);
@@ -24,10 +38,10 @@ create policy "profiles_select_authenticated"
   on public.profiles for select using (auth.uid() is not null);
 
 drop policy if exists "profiles_select_admin" on public.profiles;
-create policy "profiles_select_admin"
-  on public.profiles for select using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own"
+  on public.profiles for insert with check (auth.uid() = id);
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
@@ -76,9 +90,7 @@ create policy "usage_insert_own"
 
 drop policy if exists "usage_select_admin" on public.usage_events;
 create policy "usage_select_admin"
-  on public.usage_events for select using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.usage_events for select using (public.is_admin());
 
 -- ========== DAU / MAU 日活表（每用户每天最多一条） ==========
 create table if not exists public.user_daily_activity (
@@ -95,9 +107,7 @@ alter table public.user_daily_activity enable row level security;
 
 drop policy if exists "daily_activity_select_admin" on public.user_daily_activity;
 create policy "daily_activity_select_admin"
-  on public.user_daily_activity for select using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.user_daily_activity for select using (public.is_admin());
 
 -- 记录当日活跃（客户端每日调用一次）
 create or replace function public.record_daily_activity()
@@ -186,27 +196,19 @@ create policy "shared_knowledge_select_published"
 
 drop policy if exists "shared_knowledge_select_admin" on public.shared_knowledge;
 create policy "shared_knowledge_select_admin"
-  on public.shared_knowledge for select using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.shared_knowledge for select using (public.is_admin());
 
 drop policy if exists "shared_knowledge_insert_admin" on public.shared_knowledge;
 create policy "shared_knowledge_insert_admin"
-  on public.shared_knowledge for insert with check (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.shared_knowledge for insert with check (public.is_admin());
 
 drop policy if exists "shared_knowledge_update_admin" on public.shared_knowledge;
 create policy "shared_knowledge_update_admin"
-  on public.shared_knowledge for update using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.shared_knowledge for update using (public.is_admin());
 
 drop policy if exists "shared_knowledge_delete_admin" on public.shared_knowledge;
 create policy "shared_knowledge_delete_admin"
-  on public.shared_knowledge for delete using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  on public.shared_knowledge for delete using (public.is_admin());
 
 -- ========== 学习论坛 ==========
 create table if not exists public.forum_posts (

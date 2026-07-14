@@ -5,7 +5,7 @@ function generateId() {
 const { loadReviews, saveReviews, saveCustomKnowledge, loadCustomKnowledge, getStorageStats, exportBackup, importBackup, initStorage, toggleFavorite, isFavorited, loadKnowledgeGroups, saveKnowledgeGroups, loadArticleNotes, getArticleNotesForRef, addArticleNote, updateArticleNote, deleteArticleNote } = window.PDMStorage
 const PDMCloud = window.PDMCloud
 const K = window.PDMKnowledge
-const Auth = () => window.PDMAuth || { isLoggedIn: () => false, isAdmin: () => false, getSession: () => null, isConfigured: () => false }
+const Auth = () => window.PDMAuth || { isLoggedIn: () => false, isAdmin: () => false, isSuperAdmin: () => false, getRole: () => 'user', getSession: () => null, isConfigured: () => false }
 const Analytics = () => window.PDMAnalytics
 const SharedK = () => window.PDMSharedKnowledge
 const DailyPush = () => window.PDMDailyPush
@@ -74,280 +74,661 @@ function getUserInitials(email, displayName) {
   return '?'
 }
 
-function renderSidebarAccount(activePath) {
+function getSidebarCollapsed() {
+  try { return localStorage.getItem('pm-lab-sidebar-collapsed') === '1' } catch (_) { return false }
+}
+
+function setSidebarCollapsed(collapsed) {
+  try { localStorage.setItem('pm-lab-sidebar-collapsed', collapsed ? '1' : '0') } catch (_) {}
+  document.documentElement.classList.toggle('sidebar-collapsed', collapsed)
+  const btn = document.getElementById('sidebar-collapse-btn')
+  if (btn) {
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
+    btn.title = collapsed ? t('nav.sidebarExpand') : t('nav.sidebarCollapse')
+    btn.setAttribute('aria-label', collapsed ? t('nav.sidebarExpand') : t('nav.sidebarCollapse'))
+  }
+  // 手机端展开时显示遮罩
+  const isMobile = window.matchMedia('(max-width: 900px)').matches
+  document.documentElement.classList.toggle('sidebar-mobile-open', isMobile && !collapsed)
+  const backdrop = document.getElementById('sidebar-backdrop')
+  if (backdrop) {
+    if (isMobile && !collapsed) backdrop.removeAttribute('hidden')
+    else backdrop.setAttribute('hidden', '')
+  }
+}
+
+function Perm() {
+  return window.PDMPermissions || {
+    can: () => true,
+    routeFeature: () => null,
+    getFeatures: () => [],
+    featureLabel: (f) => f.labelZh || f.id,
+    actionLabel: (a) => a,
+    normalizePerms: (p) => p || {},
+    defaultPermMap: () => ({}),
+  }
+}
+
+function renderPermissionDenied() {
+  return `
+    <div class="page login-required-page">
+      <h1>${escapeHtml(t('auth.forbiddenTitle'))}</h1>
+      <p>${escapeHtml(t('auth.forbiddenDesc'))}</p>
+      <a href="#/" class="btn-primary">${escapeHtml(t('common.backHome'))}</a>
+    </div>`
+}
+
+function renderTopbarCrumbs(crumbs) {
+  const el = document.getElementById('topbar-crumbs')
+  if (!el) return
+  if (!crumbs?.length) {
+    el.innerHTML = `<span class="topbar-crumb-current">${escapeHtml(t('nav.home'))}</span>`
+    return
+  }
+  el.innerHTML = crumbs.map((c, i) => {
+    const last = i === crumbs.length - 1
+    if (last || !c.href) {
+      return `<span class="topbar-crumb-current">${escapeHtml(c.label)}</span>`
+    }
+    return `<a href="${c.href}" class="topbar-crumb">${escapeHtml(c.label)}</a><span class="topbar-crumb-sep">/</span>`
+  }).join('')
+}
+
+function buildCrumbsFromRoute(parts) {
+  const home = { href: '#/', label: t('common.home') }
+  if (!parts.length) return [{ label: t('nav.home') }]
+  const p0 = parts[0]
+  if (p0 === 'login') return [home, { label: t('auth.pageTitle') }]
+  if (p0 === 'reset-password') return [home, { label: t('auth.resetTitle') }]
+  if (p0 === 'industry') {
+    const c = [home, { href: '#/industry', label: t('nav.industry') }]
+    if (parts[1] === 'learning-path') c.push({ label: t('home.pathTeaserCta') })
+    else if (parts[2]) c.push({ label: t('common.loading') })
+    return c
+  }
+  if (p0 === 'tools') {
+    const c = [home, { href: '#/tools', label: t('nav.tools') }]
+    if (parts[1]) c.push({ label: parts[1] })
+    return c
+  }
+  if (p0 === 'forum') {
+    const c = [home, { href: '#/forum', label: t('nav.forum') }]
+    if (parts[1] === 'new') c.push({ label: t('auth.pageTitle') })
+    else if (parts[1] === 'post') c.push({ label: '…' })
+    return c
+  }
+  if (p0 === 'category' && parts[1]) {
+    const cat = K.getCategoryByIdMerged(parts[1])
+    return [home, { label: catTitle(cat) || parts[1] }]
+  }
+  if (p0 === 'article' && parts[1] && parts[2]) {
+    const cat = K.getCategoryByIdMerged(parts[1])
+    const item = K.getItemByIdMerged(parts[1], parts[2])
+    return [
+      home,
+      { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] },
+      { label: item?.title || parts[2] },
+    ]
+  }
+  if (p0 === 'favorites') return [home, { label: t('nav.favorites') }]
+  if (p0 === 'notes') return [home, { label: t('nav.articleNotes') }]
+  if (p0 === 'my-knowledge') {
+    const c = [home, { href: '#/my-knowledge', label: t('nav.myKnowledge') }]
+    if (parts[1] === 'add') c.push({ label: t('common.add') })
+    else if (parts[1] === 'edit') c.push({ label: t('common.edit') })
+    else if (parts[1] === 'view' && parts[2]) {
+      const item = typeof loadCustomKnowledge === 'function'
+        ? loadCustomKnowledge().find((x) => x.id === parts[2])
+        : null
+      c.push({ label: item?.title || parts[2] })
+    }
+    return c
+  }
+  if (p0 === 'reviews' || p0 === 'memory') return [home, { label: t('nav.reviews') }]
+  if (p0 === 'daily-learn') return [home, { label: t('nav.dailyLearn') }]
+  if (p0 === 'feedback') return [home, { label: t('nav.feedback') }]
+  if (p0 === 'admin') {
+    const c = [home, { href: '#/admin', label: t('nav.sectionAdmin') }]
+    if (!parts[1]) c.push({ label: t('nav.adminStats') })
+    if (parts[1] === 'knowledge') c.push({ href: '#/admin/knowledge', label: t('nav.adminKnowledge') })
+    if (parts[1] === 'permissions') c.push({ label: t('nav.adminPermissions') })
+    if (parts[1] === 'feedback') c.push({ label: t('nav.adminFeedback') })
+    if (parts[2] === 'new') c.push({ label: t('common.add') })
+    if (parts[2] === 'edit') c.push({ label: t('common.edit') })
+    return c
+  }
+  return [home]
+}
+
+let topbarSearchDocBound = false
+function bindTopbarSearch() {
+  const input = document.getElementById('topbar-search-input')
+  const results = document.getElementById('topbar-search-results')
+  if (!input || !results) return
+  input.placeholder = t('nav.searchPlaceholder')
+
+  const hide = () => results.setAttribute('hidden', '')
+  const show = (html) => {
+    results.innerHTML = html
+    results.removeAttribute('hidden')
+  }
+
+  input.oninput = () => {
+    const q = input.value.trim()
+    if (!q) { hide(); return }
+    const found = K.searchKnowledgeMerged(q).slice(0, 8)
+    if (!found.length) {
+      show(`<div class="topbar-search-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`)
+      return
+    }
+    show(found.map(({ category, item, source }) => {
+      const catLabel = source === 'my'
+        ? category.title
+        : t(`categories.${category.id}.title`, null, category.title)
+      return `<button type="button" class="topbar-search-item" data-src="${source || 'public'}" data-cat="${category.id}" data-item="${item.id}">
+        <span class="result-title">${escapeHtml(item.title)}</span>
+        <span class="result-meta">${escapeHtml(catLabel)}${source === 'my' ? escapeHtml(t('nav.searchSourceMy')) : ''}</span>
+      </button>`
+    }).join(''))
+    results.querySelectorAll('.topbar-search-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.src === 'my') navigate(`/my-knowledge/view/${btn.dataset.item}`)
+        else navigate(`/article/${btn.dataset.cat}/${btn.dataset.item}`)
+        input.value = ''
+        hide()
+      })
+    })
+  }
+
+  input.onkeydown = (e) => {
+    if (e.key === 'Escape') hide()
+  }
+
+  if (!topbarSearchDocBound) {
+    topbarSearchDocBound = true
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('topbar-search')?.contains(e.target)) {
+        document.getElementById('topbar-search-results')?.setAttribute('hidden', '')
+      }
+    })
+  }
+}
+
+let mobileNavBound = false
+function bindMobileNavChrome() {
+  if (mobileNavBound) return
+  mobileNavBound = true
+  document.getElementById('topbar-menu-btn')?.addEventListener('click', () => {
+    setSidebarCollapsed(!getSidebarCollapsed())
+  })
+  document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
+    setSidebarCollapsed(true)
+  })
+}
+
+function renderTopAccount(activePath) {
+  const el = document.getElementById('topbar-account')
+  if (!el) return
+
   if (Auth().isLoggedIn()) {
     const session = Auth().getSession()
     const profile = Auth().getProfile?.() || null
     const email = session?.user?.email || ''
     const displayName = profile?.display_name?.trim()
-    const subtitle = displayName || getEmailOrgLabel(email)
     const initials = getUserInitials(email, displayName)
-    return `
-    <div class="sidebar-account sidebar-account-logged-in">
-      <a href="#/daily-learn" class="sidebar-account-main" title="${escapeHtml(t('nav.accountSettingsTitle'))}">
-        <span class="sidebar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
-        <span class="sidebar-account-text">
-          <span class="sidebar-account-email">${escapeHtml(email)}</span>
-          <span class="sidebar-account-sub">${escapeHtml(subtitle)}</span>
-        </span>
-      </a>
-      <div class="sidebar-account-actions">
-        <button type="button" class="sidebar-account-settings" id="sidebar-account-menu-btn" aria-label="${escapeHtml(t('nav.accountMenuAria'))}" title="${escapeHtml(t('nav.accountMenuAria'))}">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M12.5 8.8a1.2 1.2 0 00.2 1.3l.04.04a1.45 1.45 0 11-2.05 2.05l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.73 1.1v.12a1.45 1.45 0 11-2.9 0v-.06a1.2 1.2 0 00-.79-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.45 1.45 0 11-2.05-2.05l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.73h-.12a1.45 1.45 0 110-2.9h.06a1.2 1.2 0 001.1-.79 1.2 1.2 0 00-.2-1.3l-.04-.04a1.45 1.45 0 112.05-2.05l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 001.1-.79 1.45 1.45 0 112.9 0v.06a1.2 1.2 0 00.79 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.45 1.45 0 112.05 2.05l-.04.04a1.2 1.2 0 00-.2 1.3 1.2 1.2 0 001.1.79h.12a1.45 1.45 0 110 2.9h-.06a1.2 1.2 0 00-1.1.79z" stroke="currentColor" stroke-width="1.3"/>
-          </svg>
-        </button>
-        <div class="sidebar-account-menu" id="sidebar-account-menu" hidden>
-          <a href="#/daily-learn" class="sidebar-account-menu-item">${escapeHtml(t('nav.dailyLearnSettings'))}</a>
-          ${Auth().isAdmin() ? `<a href="#/admin" class="sidebar-account-menu-item">${escapeHtml(t('nav.adminStats'))}</a>` : ''}
-          ${Auth().isAdmin() ? `<a href="#/admin/knowledge" class="sidebar-account-menu-item">${escapeHtml(t('nav.adminKnowledge'))}</a>` : ''}
-          <button type="button" class="sidebar-account-menu-item sidebar-account-menu-danger" id="sidebar-logout">${escapeHtml(t('nav.logout'))}</button>
-        </div>
+    el.innerHTML = `
+    <div class="topbar-account topbar-account-logged-in">
+      <button type="button" class="topbar-account-trigger topbar-account-icon-only" id="topbar-account-menu-btn" aria-label="${escapeHtml(t('nav.accountMenuAria'))}" title="${escapeHtml(email)}">
+        <span class="topbar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
+      </button>
+      <div class="topbar-account-menu" id="topbar-account-menu" hidden>
+        <div class="topbar-account-menu-email">${escapeHtml(email)}</div>
+        <a href="#/daily-learn" class="topbar-account-menu-item">${escapeHtml(t('nav.dailyLearnSettings'))}</a>
+        ${Auth().isAdmin() ? `<a href="#/admin" class="topbar-account-menu-item">${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
+        <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
+        <button type="button" class="topbar-account-menu-item topbar-account-menu-danger" id="topbar-logout">${escapeHtml(t('nav.logout'))}</button>
       </div>
     </div>`
+    return
   }
 
-  return `
-    <a href="#/login" class="sidebar-account sidebar-account-guest ${activePath === '/login' ? 'active' : ''}">
-      <span class="sidebar-account-avatar sidebar-account-avatar-guest" aria-hidden="true">○</span>
-      <span class="sidebar-account-text">
-        <span class="sidebar-account-email">${escapeHtml(t('nav.loginRegister'))}</span>
-        <span class="sidebar-account-sub">${escapeHtml(t('nav.guestHint'))}</span>
-      </span>
-      <span class="sidebar-account-settings sidebar-account-settings-link" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.3"/>
-          <path d="M12.5 8.8a1.2 1.2 0 00.2 1.3l.04.04a1.45 1.45 0 11-2.05 2.05l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.73 1.1v.12a1.45 1.45 0 11-2.9 0v-.06a1.2 1.2 0 00-.79-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.45 1.45 0 11-2.05-2.05l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.73h-.12a1.45 1.45 0 110-2.9h.06a1.2 1.2 0 001.1-.79 1.2 1.2 0 00-.2-1.3l-.04-.04a1.45 1.45 0 112.05-2.05l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 001.1-.79 1.45 1.45 0 112.9 0v.06a1.2 1.2 0 00.79 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.45 1.45 0 112.05 2.05l-.04.04a1.2 1.2 0 00-.2 1.3 1.2 1.2 0 001.1.79h.12a1.45 1.45 0 110 2.9h-.06a1.2 1.2 0 00-1.1.79z" stroke="currentColor" stroke-width="1.3"/>
-        </svg>
+  el.innerHTML = `
+    <a href="#/login" class="topbar-account topbar-account-guest topbar-account-icon-only ${activePath === '/login' ? 'active' : ''}" title="${escapeHtml(t('nav.loginRegister'))}" aria-label="${escapeHtml(t('nav.loginRegister'))}">
+      <span class="topbar-account-avatar topbar-account-avatar-guest" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c.8-2.2 2.4-3.3 4.5-3.3s3.7 1.1 4.5 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       </span>
     </a>`
-}
-
-function renderForbidden() {
-  return `<div class="page"><p>${escapeHtml(t('common.forbidden'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
 }
 
 function renderLocaleSwitcher() {
   const el = document.getElementById('locale-switcher')
   if (!el) return
   const current = window.PMLabI18n?.getLocale() || 'zh-CN'
+  const label = current === 'en-US' ? 'En' : '中'
+  const next = current === 'en-US' ? 'zh-CN' : 'en-US'
   el.innerHTML = `
-    <div role="group" aria-label="${escapeHtml(t('locale.label'))}">
-      <button type="button" class="locale-btn ${current === 'zh-CN' ? 'active' : ''}" data-locale="zh-CN">${escapeHtml(t('locale.zh'))}</button>
-      <button type="button" class="locale-btn ${current === 'en-US' ? 'active' : ''}" data-locale="en-US">${escapeHtml(t('locale.en'))}</button>
+    <button type="button" class="locale-toggle" data-locale="${next}" aria-label="${escapeHtml(t('locale.label'))}" title="${escapeHtml(t('locale.label'))}">${label}</button>`
+}
+
+function renderForbidden() {
+  return `<div class="page"><p>${escapeHtml(t('common.forbidden'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
+}
+
+function renderAdminTabs(active) {
+  const tabs = [
+    { id: 'stats', href: '#/admin', label: t('nav.adminStats') },
+    { id: 'knowledge', href: '#/admin/knowledge', label: t('nav.adminKnowledge') },
+    { id: 'permissions', href: '#/admin/permissions', label: t('nav.adminPermissions') },
+    { id: 'feedback', href: '#/admin/feedback', label: t('nav.adminFeedback') },
+  ]
+  return `<nav class="admin-tabs" aria-label="${escapeHtml(t('nav.sectionAdmin'))}">${tabs.map((tab) => (
+    tab.id === active
+      ? `<span class="admin-tab active">${escapeHtml(tab.label)}</span>`
+      : `<a href="${tab.href}" class="admin-tab">${escapeHtml(tab.label)}</a>`
+  )).join('')}</nav>`
+}
+
+function resolveProfileRole(u) {
+  if (!u) return 'user'
+  if (u.role === 'super_admin' || u.role === 'admin' || u.role === 'user') return u.role
+  const email = (u.email || '').toLowerCase()
+  const cfg = Auth().getConfig?.() || {}
+  if (email && Array.isArray(cfg.adminEmails) && cfg.adminEmails.map((e) => String(e).toLowerCase()).includes(email)) {
+    return 'super_admin'
+  }
+  return u.is_admin ? 'admin' : 'user'
+}
+
+function roleLabel(role) {
+  if (role === 'super_admin') return t('admin.roleSuper')
+  if (role === 'admin') return t('admin.roleAdmin')
+  return t('admin.roleUser')
+}
+
+function renderAdminHeader(title, desc, activeTab) {
+  return `
+    <header class="admin-shell-head">
+      <div class="admin-shell-eyebrow">${escapeHtml(t('nav.sectionAdmin'))}</div>
+      <h1 class="admin-shell-title">${escapeHtml(title)}</h1>
+      ${desc ? `<p class="admin-shell-desc">${escapeHtml(desc)}</p>` : ''}
+      ${renderAdminTabs(activeTab)}
+    </header>`
+}
+
+function feedbackStatusLabel(status) {
+  if (status === 'read') return t('feedback.statusRead')
+  if (status === 'done') return t('feedback.statusDone')
+  return t('feedback.statusNew')
+}
+
+function renderStars(rating, interactive = false, selected = 0) {
+  const n = interactive ? 5 : Math.max(0, Math.min(5, Number(rating) || 0))
+  if (!interactive) {
+    return `<span class="feedback-stars" aria-label="${n}/5">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</span>`
+  }
+  return `<div class="feedback-rating" role="radiogroup" aria-label="${escapeHtml(t('feedback.ratingLabel'))}">
+    ${[1, 2, 3, 4, 5].map((i) => `
+      <button type="button" class="feedback-star-btn ${selected >= i ? 'active' : ''}" data-rating="${i}" aria-label="${i}">★</button>
+    `).join('')}
+  </div>`
+}
+
+function renderFeedbackPage(mine = []) {
+  return `
+    <div class="page feedback-page">
+      <header class="memory-header">
+        <h1>${escapeHtml(t('feedback.title'))}</h1>
+        <p>${escapeHtml(t('feedback.desc'))}</p>
+      </header>
+      ${!Auth().isLoggedIn() ? `
+        <div class="login-required-page" style="padding-top:24px">
+          <p>${escapeHtml(t('feedback.requiredLogin'))}</p>
+          <a href="#/login" class="btn-primary">${escapeHtml(t('auth.cta'))}</a>
+        </div>
+      ` : `
+        <form id="feedback-form" class="form-card feedback-form">
+          <div class="form-group">
+            <label>${escapeHtml(t('feedback.ratingLabel'))}</label>
+            <p class="form-hint">${escapeHtml(t('feedback.ratingHint'))}</p>
+            ${renderStars(0, true, 0)}
+            <input type="hidden" id="feedback-rating" value="" />
+          </div>
+          <div class="form-group">
+            <label for="feedback-content">${escapeHtml(t('feedback.contentLabel'))}</label>
+            <textarea id="feedback-content" rows="5" placeholder="${escapeHtml(t('feedback.contentPlaceholder'))}" required></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="feedback-submit">${escapeHtml(t('feedback.submit'))}</button>
+          </div>
+        </form>
+        <section class="section">
+          <h2 class="section-title">${escapeHtml(t('feedback.myTitle'))}</h2>
+          <div class="feedback-mine-list">
+            ${mine.length ? mine.map((f) => `
+              <article class="feedback-mine-card">
+                <div class="feedback-mine-meta">
+                  ${renderStars(f.rating)}
+                  <span class="feedback-status feedback-status-${escapeHtml(f.status)}">${escapeHtml(feedbackStatusLabel(f.status))}</span>
+                  <span class="feedback-time">${formatDate(f.createdAt)}</span>
+                </div>
+                <p>${escapeHtml(f.content)}</p>
+              </article>`).join('') : `<p class="empty-hint">${escapeHtml(t('feedback.emptyMine'))}</p>`}
+          </div>
+        </section>
+      `}
     </div>`
+}
+
+function bindFeedbackEvents() {
+  let rating = 0
+  const ratingInput = document.getElementById('feedback-rating')
+  document.querySelectorAll('.feedback-star-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      rating = Number(btn.dataset.rating) || 0
+      if (ratingInput) ratingInput.value = String(rating)
+      document.querySelectorAll('.feedback-star-btn').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.rating) <= rating)
+      })
+    })
+  })
+
+  document.getElementById('feedback-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const content = document.getElementById('feedback-content')?.value || ''
+    const r = Number(ratingInput?.value || rating || 0)
+    try {
+      await window.PDMFeedback.submitFeedback({ rating: r, content })
+      showToast(t('feedback.toastOk'), 'success')
+      const mine = await window.PDMFeedback.fetchMyFeedback()
+      document.getElementById('main').innerHTML = renderFeedbackPage(mine)
+      bindFeedbackEvents()
+    } catch (err) {
+      showToast(err.message || String(err), 'error')
+    }
+  })
+}
+
+async function renderFeedbackRoute() {
+  const main = document.getElementById('main')
+  if (!Auth().isLoggedIn()) {
+    main.innerHTML = renderFeedbackPage([])
+    return
+  }
+  main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
+  try {
+    const mine = await window.PDMFeedback.fetchMyFeedback()
+    main.innerHTML = renderFeedbackPage(mine)
+    bindFeedbackEvents()
+  } catch (e) {
+    main.innerHTML = renderFeedbackPage([])
+    bindFeedbackEvents()
+    if (e.message) showToast(e.message, 'error')
+  }
+}
+
+let adminFeedbackState = { status: 'all', q: '' }
+
+function renderAdminFeedbackPage(list) {
+  const q = adminFeedbackState.q.trim().toLowerCase()
+  const filtered = list.filter((f) => {
+    if (adminFeedbackState.status !== 'all' && f.status !== adminFeedbackState.status) return false
+    if (!q) return true
+    return `${f.email} ${f.content}`.toLowerCase().includes(q)
+  })
+  const avg = list.length
+    ? (list.reduce((s, f) => s + f.rating, 0) / list.length).toFixed(1)
+    : '—'
+  const newCount = list.filter((f) => f.status === 'new').length
+
+  return `
+    <div class="page admin-page">
+      ${renderAdminHeader(t('nav.adminFeedback'), t('admin.feedbackDesc', { avg, newCount }), 'feedback')}
+      <div class="skill-toolbar">
+        <input type="search" id="admin-feedback-search" placeholder="搜索邮箱或内容…" value="${escapeHtml(adminFeedbackState.q)}" />
+        <select id="admin-feedback-status">
+          <option value="all" ${adminFeedbackState.status === 'all' ? 'selected' : ''}>全部状态</option>
+          <option value="new" ${adminFeedbackState.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
+          <option value="read" ${adminFeedbackState.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
+          <option value="done" ${adminFeedbackState.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
+        </select>
+      </div>
+      <div class="admin-feedback-table">
+        <div class="admin-feedback-header">
+          <span>时间</span><span>评分</span><span>用户</span><span>建议</span><span>状态</span><span>操作</span>
+        </div>
+        ${filtered.length ? filtered.map((f) => `
+          <div class="admin-feedback-row" data-id="${escapeHtml(f.id)}">
+            <span class="admin-feedback-time">${formatDate(f.createdAt)}</span>
+            <span>${renderStars(f.rating)}</span>
+            <span>${escapeHtml(f.email || '-')}</span>
+            <span class="admin-feedback-content">${escapeHtml(f.content)}</span>
+            <span><span class="feedback-status feedback-status-${escapeHtml(f.status)}">${escapeHtml(feedbackStatusLabel(f.status))}</span></span>
+            <span class="admin-feedback-actions">
+              <select class="admin-feedback-status-select" data-id="${escapeHtml(f.id)}">
+                <option value="new" ${f.status === 'new' ? 'selected' : ''}>${escapeHtml(t('feedback.statusNew'))}</option>
+                <option value="read" ${f.status === 'read' ? 'selected' : ''}>${escapeHtml(t('feedback.statusRead'))}</option>
+                <option value="done" ${f.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
+              </select>
+            </span>
+          </div>`).join('') : '<p class="empty-hint">暂无反馈</p>'}
+      </div>
+      <p class="form-hint">若列表加载失败，请先在 Supabase 执行 supabase/feedback.sql</p>
+    </div>`
+}
+
+function bindAdminFeedbackEvents(list) {
+  document.getElementById('admin-feedback-search')?.addEventListener('input', (e) => {
+    adminFeedbackState.q = e.target.value
+    document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
+    bindAdminFeedbackEvents(list)
+  })
+  document.getElementById('admin-feedback-status')?.addEventListener('change', (e) => {
+    adminFeedbackState.status = e.target.value
+    document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
+    bindAdminFeedbackEvents(list)
+  })
+  document.querySelectorAll('.admin-feedback-status-select').forEach((sel) => {
+    sel.addEventListener('change', async () => {
+      try {
+        const updated = await window.PDMFeedback.updateFeedbackStatus(sel.dataset.id, sel.value)
+        const idx = list.findIndex((x) => x.id === updated.id)
+        if (idx >= 0) list[idx] = updated
+        showToast(t('common.save'), 'success')
+        document.getElementById('main').innerHTML = renderAdminFeedbackPage(list)
+        bindAdminFeedbackEvents(list)
+      } catch (e) {
+        showToast(e.message || String(e), 'error')
+      }
+    })
+  })
+}
+
+async function renderAdminFeedbackRoute() {
+  const main = document.getElementById('main')
+  main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
+  try {
+    const list = await window.PDMFeedback.fetchAllFeedback()
+    main.innerHTML = renderAdminFeedbackPage(list)
+    bindAdminFeedbackEvents(list)
+  } catch (e) {
+    main.innerHTML = `<div class="page"><p>${escapeHtml(e.message)}</p><p class="form-hint">请先在 Supabase 执行 supabase/feedback.sql</p>${renderAdminTabs('feedback')}</div>`
+  }
 }
 
 function renderSidebar(activePath) {
   const el = document.getElementById('sidebar')
   const merged = K.getMergedCategories()
-  const navItems = merged.map(cat => {
-    const active = activePath.includes(cat.id) ? 'active' : ''
-    return `<a href="#/category/${cat.id}" class="nav-item ${active}">
-      <span class="nav-icon">${cat.icon}</span>
-      <span class="nav-title">${escapeHtml(catTitle(cat))}</span>
-      <span class="nav-count">${cat.items.length}</span>
-    </a>`
-  }).join('')
+  const can = (id, action = 'view') => Perm().can(id, action)
+  const collapsed = getSidebarCollapsed()
 
   el.innerHTML = `
     <div class="sidebar-header">
-      <a href="#/" class="logo">
+      <a href="#/" class="logo" title="PM Lab">
         <span class="logo-mark">PM</span>
         <span class="logo-text">Lab</span>
       </a>
-      <p class="logo-sub">${escapeHtml(t('nav.brandSubtitle'))}</p>
-    </div>
-    <div class="search-wrapper" id="search-wrapper">
-      <div class="search-bar">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn" aria-label="${escapeHtml(collapsed ? t('nav.sidebarExpand') : t('nav.sidebarCollapse'))}" title="${escapeHtml(collapsed ? t('nav.sidebarExpand') : t('nav.sidebarCollapse'))}">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M11 3L6 8L11 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <input type="text" id="search-input" placeholder="${escapeHtml(t('nav.searchPlaceholder'))}" />
-      </div>
-      <div class="search-results" id="search-results" style="display:none"></div>
+      </button>
+      <p class="logo-sub">${escapeHtml(t('nav.brandSubtitle'))}</p>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section nav-section-home">
-        <a href="#/" class="nav-item nav-item-home ${activePath === '/' ? 'active' : ''}">
-          <span class="nav-icon">⌂</span>
+        <a href="#/" class="nav-item nav-item-home ${activePath === '/' ? 'active' : ''}" title="${escapeHtml(t('nav.home'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 7.2L8 2.8l5.5 4.4V13a1 1 0 0 1-1 1H9.2V9.6H6.8V14H3.5a1 1 0 0 1-1-1V7.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.home'))}</span>
         </a>
       </div>
       <div class="nav-section">
         <span class="nav-label">${escapeHtml(t('nav.sectionLearning'))}</span>
-        <a href="#/industry" class="nav-item ${activePath.includes('/industry') ? 'active' : ''}">
-          <span class="nav-icon">◉</span>
+        ${can('industry') ? `<a href="#/industry" class="nav-item ${activePath.includes('/industry') ? 'active' : ''}" title="${escapeHtml(t('nav.industry'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M3 8h10M3 11.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.industry'))}</span>
-        </a>
-        <a href="#/tools" class="nav-item ${activePath.includes('/tools') ? 'active' : ''}">
-          <span class="nav-icon">◇</span>
+        </a>` : ''}
+        ${can('tools') ? `<a href="#/tools" class="nav-item ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 11.5V6.6L8 3.7l4 2.9v4.9H4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.tools'))}</span>
-        </a>
-        <a href="#/forum" class="nav-item ${activePath.includes('/forum') ? 'active' : ''}">
-          <span class="nav-icon">💬</span>
+        </a>` : ''}
+        ${can('forum') ? `<a href="#/forum" class="nav-item ${activePath.includes('/forum') ? 'active' : ''}" title="${escapeHtml(t('nav.forum'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><circle cx="10.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><path d="M3 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1M8 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.forum'))}</span>
-        </a>
+        </a>` : ''}
       </div>
       <div class="nav-section">
         <span class="nav-label">${escapeHtml(t('nav.sectionKnowledge'))}</span>
-        ${navItems}
+        ${merged.map(cat => {
+          if (!can(cat.id)) return ''
+          const active = activePath.includes(cat.id) ? 'active' : ''
+          return `<a href="#/category/${cat.id}" class="nav-item ${active}" title="${escapeHtml(catTitle(cat))}">
+      <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+      <span class="nav-title">${escapeHtml(catTitle(cat))}</span>
+      <span class="nav-count">${cat.items.length}</span>
+    </a>`
+        }).join('')}
       </div>
       <div class="nav-section">
         <span class="nav-label">${escapeHtml(t('nav.sectionPersonal'))}</span>
-        <a href="#/favorites" class="nav-item ${activePath === '/favorites' ? 'active' : ''}">
-          <span class="nav-icon">★</span>
+        ${can('favorites') ? `<a href="#/favorites" class="nav-item ${activePath === '/favorites' ? 'active' : ''}" title="${escapeHtml(t('nav.favorites'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2.8l1.4 2.9 3.2.5-2.3 2.2.5 3.2L8 10.1l-2.8 1.5.5-3.2L3.4 6.2l3.2-.5L8 2.8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.favorites'))}</span>
-        </a>
-        <a href="#/notes" class="nav-item ${activePath === '/notes' ? 'active' : ''}">
-          <span class="nav-icon">✎</span>
+        </a>` : ''}
+        ${can('notes') ? `<a href="#/notes" class="nav-item ${activePath === '/notes' ? 'active' : ''}" title="${escapeHtml(t('nav.articleNotes'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 3.5h6.5L12.5 5.5V12.5H4V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 7h4M6 9.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.articleNotes'))}</span>
-        </a>
-        <a href="#/my-knowledge" class="nav-item ${activePath.includes('/my-knowledge') ? 'active' : ''}">
-          <span class="nav-icon">◎</span>
+        </a>` : ''}
+        ${can('myKnowledge') ? `<a href="#/my-knowledge" class="nav-item ${activePath.includes('/my-knowledge') ? 'active' : ''}" title="${escapeHtml(t('nav.myKnowledge'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="4" width="10" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 7h4M6 9.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.myKnowledge'))}</span>
-        </a>
-        <a href="#/reviews" class="nav-item ${activePath === '/reviews' || activePath === '/memory' ? 'active' : ''}">
-          <span class="nav-icon">◆</span>
+        </a>` : ''}
+        ${can('reviews') ? `<a href="#/reviews" class="nav-item ${activePath === '/reviews' || activePath === '/memory' ? 'active' : ''}" title="${escapeHtml(t('nav.reviews'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 11.5V4.5h8v5.2H7.2L4 11.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.reviews'))}</span>
-        </a>
-        ${Auth().isLoggedIn() ? `
-        <a href="#/daily-learn" class="nav-item ${activePath === '/daily-learn' ? 'active' : ''}">
-          <span class="nav-icon">◇</span>
+        </a>` : ''}
+        ${Auth().isLoggedIn() && can('dailyLearn') ? `
+        <a href="#/daily-learn" class="nav-item ${activePath === '/daily-learn' ? 'active' : ''}" title="${escapeHtml(t('nav.dailyLearn'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.2" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.2l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.dailyLearn'))}</span>
         </a>` : ''}
-        ${Auth().isAdmin() ? `
-        <a href="#/admin" class="nav-item ${activePath === '/admin' && !activePath.includes('/admin/knowledge') ? 'active' : ''}">
-          <span class="nav-icon">▣</span>
-          <span class="nav-title">${escapeHtml(t('nav.adminStats'))}</span>
-        </a>
-        <a href="#/admin/knowledge" class="nav-item ${activePath.includes('/admin/knowledge') ? 'active' : ''}">
-          <span class="nav-icon">▤</span>
-          <span class="nav-title">${escapeHtml(t('nav.adminKnowledge'))}</span>
+        ${can('feedback') ? `<a href="#/feedback" class="nav-item ${activePath === '/feedback' ? 'active' : ''}" title="${escapeHtml(t('nav.feedback'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5h9v7.2H7.2L4 12.5V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 6.2h4M6 8.6h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.feedback'))}</span>
         </a>` : ''}
       </div>
+      ${Auth().isAdmin() ? `
+      <div class="nav-section nav-section-admin">
+        <span class="nav-label">${escapeHtml(t('nav.sectionAdmin'))}</span>
+        <a href="#/admin" class="nav-item ${activePath === '/admin' || activePath === '/admin/' ? 'active' : ''}" title="${escapeHtml(t('nav.adminStats'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 12.5V8.2M8 12.5V4.5M12.5 12.5V6.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.adminStats'))}</span>
+        </a>
+        <a href="#/admin/knowledge" class="nav-item ${activePath.includes('/admin/knowledge') ? 'active' : ''}" title="${escapeHtml(t('nav.adminKnowledge'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6.5h4M6 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.adminKnowledge'))}</span>
+        </a>
+        <a href="#/admin/permissions" class="nav-item ${activePath.includes('/admin/permissions') ? 'active' : ''}" title="${escapeHtml(t('nav.adminPermissions'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="7" width="6" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M6.3 7V5.6a1.7 1.7 0 0 1 3.4 0V7" stroke="currentColor" stroke-width="1.3"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.adminPermissions'))}</span>
+        </a>
+        <a href="#/admin/feedback" class="nav-item ${activePath.includes('/admin/feedback') ? 'active' : ''}" title="${escapeHtml(t('nav.adminFeedback'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5h9v7.2H7.2L4 12.5V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.adminFeedback'))}</span>
+        </a>
+      </div>` : ''}
     </nav>
-    ${renderSidebarAccount(activePath)}
   `
 
-  const input = document.getElementById('search-input')
-  const results = document.getElementById('search-results')
-  input.addEventListener('input', () => {
-    const q = input.value.trim()
-    if (!q) { results.style.display = 'none'; return }
-    const found = K.searchKnowledgeMerged(q).slice(0, 6)
-    if (found.length === 0) {
-      results.innerHTML = `<div class="search-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`
-    } else {
-      results.innerHTML = found.map(({ category, item, source }) => {
-        const catLabel = source === 'my'
-          ? category.title
-          : t(`categories.${category.id}.title`, null, category.title)
-        return `<button class="search-result-item" data-src="${source || 'public'}" data-cat="${category.id}" data-item="${item.id}">
-          <span class="result-title">${escapeHtml(item.title)}</span>
-          <span class="result-meta">${escapeHtml(catLabel)}${source === 'my' ? escapeHtml(t('nav.searchSourceMy')) : ''}</span>
-        </button>`
-      }).join('')
-      results.querySelectorAll('.search-result-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const src = btn.dataset.src
-          if (src === 'my') {
-            navigate(`/my-knowledge/view/${btn.dataset.item}`)
-          } else {
-            navigate(`/article/${btn.dataset.cat}/${btn.dataset.item}`)
-          }
-          input.value = ''
-          results.style.display = 'none'
-        })
-      })
-    }
-    results.style.display = 'block'
-  })
-
-  document.addEventListener('click', (e) => {
-    if (!document.getElementById('search-wrapper')?.contains(e.target)) {
-      results.style.display = 'none'
-    }
+  setSidebarCollapsed(getSidebarCollapsed())
+  document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
+    setSidebarCollapsed(!getSidebarCollapsed())
   })
 }
 
 function renderHomeTile(tile) {
-  return `<a href="${tile.href}" class="home-tile">
-    <span class="home-tile-icon" aria-hidden="true">${tile.icon}</span>
-    <span class="home-tile-body">
-      <span class="home-tile-title">${escapeHtml(tile.title)}</span>
-      <span class="home-tile-desc">${escapeHtml(tile.desc)}</span>
+  return `<a href="${tile.href}" class="home-cap">
+    <span class="home-cap-icon" aria-hidden="true">${tile.icon}</span>
+    <span class="home-cap-copy">
+      <span class="home-cap-title">${escapeHtml(tile.title)}</span>
+      <span class="home-cap-desc">${escapeHtml(tile.desc)}</span>
     </span>
-    <span class="home-tile-arrow" aria-hidden="true">→</span>
   </a>`
 }
 
-function renderHomePathTeaser() {
-  const path = window.PDMIndustry?.getRecommendedPath?.()
-  if (!path) return ''
-  return `
-    <a href="#/industry/learning-path/${path.id}" class="home-path-teaser">
-      <span class="home-tile-icon home-path-teaser-icon" aria-hidden="true">⤳</span>
-      <span class="home-path-teaser-body">
-        <span class="home-path-teaser-label">${escapeHtml(t('home.pathTeaserBadge'))}</span>
-        <span class="home-path-teaser-title">${escapeHtml(path.title)}</span>
-        <span class="home-path-teaser-desc">${escapeHtml(t('home.pathTeaserDesc'))}</span>
-      </span>
-      <span class="home-path-teaser-cta">${escapeHtml(t('home.pathTeaserCta'))} →</span>
-    </a>`
-}
-
 function renderHome() {
-  const learnTiles = [
-    { icon: '◉', href: '#/industry', title: t('home.featIndustryTitle'), desc: t('home.featIndustryDesc') },
-    { icon: '▤', href: '#/category/methodology', title: t('home.featKnowledgeTitle'), desc: t('home.featKnowledgeDesc') },
-    { icon: '⚙', href: '#/tools', title: t('home.featToolsTitle'), desc: t('home.featToolsDesc') },
-    { icon: '◎', href: '#/forum', title: t('home.featForumTitle'), desc: t('home.featForumDesc') },
+  const stats = K.getKnowledgeStats?.() || { totalCount: 0 }
+  const caps = [
+    {
+      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M4 10h12M4 14.5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+      href: '#/industry',
+      title: t('home.featIndustryTitle'),
+      desc: t('home.featIndustryDesc'),
+    },
+    {
+      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3.5" width="12" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7.5h6M7 10.5h6M7 13.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+      href: '#/category/methodology',
+      title: t('home.featKnowledgeTitle'),
+      desc: t('home.featKnowledgeDesc'),
+    },
+    {
+      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 14.5V8.2L10 4.5l5 3.7v6.3H5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.2 14.5v-3.2h3.6v3.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+      href: '#/tools',
+      title: t('home.featToolsTitle'),
+      desc: t('home.featToolsDesc'),
+    },
+    {
+      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/><path d="M3.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7M9.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+      href: '#/forum',
+      title: t('home.featForumTitle'),
+      desc: t('home.featForumDesc'),
+    },
   ]
-  const workspaceTiles = [
-    { icon: '★', href: '#/favorites', title: t('home.featFavoritesTitle'), desc: t('home.featFavoritesDesc') },
-    { icon: '✎', href: '#/notes', title: t('home.featNotesTitle'), desc: t('home.featNotesDesc') },
-    { icon: '◇', href: '#/daily-learn', title: t('home.featDailyTitle'), desc: t('home.featDailyDesc') },
-    { icon: '◆', href: '#/reviews', title: t('home.featReviewsTitle'), desc: t('home.featReviewsDesc') },
-  ]
-  const steps = [
-    { num: 1, icon: '◉', href: '#/industry', title: t('home.step1Title'), desc: t('home.step1Desc') },
-    { num: 2, icon: '▤', href: '#/category/methodology', title: t('home.step2Title'), desc: t('home.step2Desc') },
-    { num: 3, icon: '⚙', href: '#/tools', title: t('home.step3Title'), desc: t('home.step3Desc') },
-  ]
+  const path = window.PDMIndustry?.getRecommendedPath?.()
+  const cats = K.getMergedCategories()
+  const total = stats.totalCount || cats.reduce((s, c) => s + c.items.length, 0)
 
   return `
-    <div class="page home-page">
-      <header class="home-hero">
-        <div class="home-hero-brand">
-          <span class="home-hero-mark">PM</span>
-          <span class="home-hero-name">Lab</span>
-        </div>
-        <p class="home-hero-tag">${escapeHtml(t('nav.brandSubtitle'))}</p>
-        <h1>${escapeHtml(t('home.heroTitle'))}</h1>
-        <p class="home-hero-desc">${escapeHtml(t('home.heroDesc'))}</p>
-        <div class="home-hero-actions">
-          <a href="#/category/methodology" class="btn-primary">${escapeHtml(t('home.ctaStart'))}</a>
-          <a href="#/industry" class="btn-secondary">${escapeHtml(t('home.ctaNewcomer'))}</a>
-        </div>
-      </header>
+    <div class="page home-page home-codex">
+      <section class="home-stage">
+        <div class="home-stage-glow" aria-hidden="true"></div>
+        <p class="home-stage-kicker">${escapeHtml(t('nav.brandSubtitle'))}</p>
+        <h1 class="home-stage-title">
+          <span class="home-stage-brand">PM Lab</span>
+        </h1>
+        <p class="home-stage-line">${escapeHtml(t('home.heroTitle'))}</p>
 
-      <section class="home-section">
-        <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.sectionLearn'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.sectionLearnDesc'))}</p>
+        <div class="home-composer" role="group" aria-label="${escapeHtml(t('home.composerLabel'))}">
+          <span class="home-composer-prefix" aria-hidden="true">/</span>
+          <input type="text" id="home-composer-input" class="home-composer-input" placeholder="${escapeHtml(t('home.composerPlaceholder'))}" autocomplete="off" />
+          <a href="#/category/methodology" class="btn-primary home-composer-btn" id="home-composer-go">${escapeHtml(t('home.ctaStart'))}</a>
         </div>
-        <div class="home-tile-grid">${learnTiles.map(renderHomeTile).join('')}</div>
-      </section>
 
-      <section class="home-section">
-        <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.sectionWorkspace'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.sectionWorkspaceDesc'))}</p>
+        <div class="home-stage-meta">
+          <span>${escapeHtml(t('home.metaTopics', { n: total }))}</span>
+          <span class="dot">·</span>
+          <a href="#/industry">${escapeHtml(t('home.ctaNewcomer'))}</a>
+          ${path ? `<span class="dot">·</span><a href="#/industry/learning-path/${path.id}">${escapeHtml(t('home.pathTeaserCta'))}</a>` : ''}
         </div>
-        <div class="home-tile-grid home-tile-grid-compact">${workspaceTiles.map(renderHomeTile).join('')}</div>
       </section>
 
       <section class="home-section">
@@ -355,36 +736,71 @@ function renderHome() {
           <h2 class="home-section-title">${escapeHtml(t('home.sectionStart'))}</h2>
           <p class="home-section-desc">${escapeHtml(t('home.sectionStartDesc'))}</p>
         </div>
-        <div class="home-steps">
-          ${steps.map((step, i) => `
-            <a href="${step.href}" class="home-step">
-              <span class="home-step-num">${step.num}</span>
-              <span class="home-step-icon" aria-hidden="true">${step.icon}</span>
-              <span class="home-step-title">${escapeHtml(step.title)}</span>
-              <span class="home-step-desc">${escapeHtml(step.desc)}</span>
+        <ol class="home-flow">
+          <li>
+            <a href="#/industry" class="home-flow-item">
+              <span class="home-flow-num">01</span>
+              <span class="home-flow-title">${escapeHtml(t('home.step1Title'))}</span>
+              <span class="home-flow-desc">${escapeHtml(t('home.step1Desc'))}</span>
             </a>
-            ${i < steps.length - 1 ? '<span class="home-step-connector" aria-hidden="true">→</span>' : ''}
-          `).join('')}
-        </div>
-        ${renderHomePathTeaser()}
+          </li>
+          <li>
+            <a href="#/category/methodology" class="home-flow-item">
+              <span class="home-flow-num">02</span>
+              <span class="home-flow-title">${escapeHtml(t('home.step2Title'))}</span>
+              <span class="home-flow-desc">${escapeHtml(t('home.step2Desc'))}</span>
+            </a>
+          </li>
+          <li>
+            <a href="#/tools" class="home-flow-item">
+              <span class="home-flow-num">03</span>
+              <span class="home-flow-title">${escapeHtml(t('home.step3Title'))}</span>
+              <span class="home-flow-desc">${escapeHtml(t('home.step3Desc'))}</span>
+            </a>
+          </li>
+        </ol>
       </section>
 
-      <section class="home-section home-section-last">
+      <section class="home-section home-caps-section home-section-last">
         <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.categoriesTitle'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.categoriesDesc'))}</p>
+          <h2 class="home-section-title">${escapeHtml(t('home.sectionLearn'))}</h2>
         </div>
-        <div class="home-cat-grid">
-          ${K.getMergedCategories().map((cat) => `
-            <a href="#/category/${cat.id}" class="home-cat-card">
-              <span class="home-cat-icon">${cat.icon}</span>
-              <span class="home-cat-title">${escapeHtml(catTitle(cat))}</span>
-              <span class="home-cat-count">${escapeHtml(t('home.itemCount', { n: cat.items.length }))}</span>
-            </a>
-          `).join('')}
-        </div>
+        <div class="home-cap-grid">${caps.map(renderHomeTile).join('')}</div>
       </section>
     </div>`
+}
+
+function bindHomeEvents() {
+  const input = document.getElementById('home-composer-input')
+  const go = document.getElementById('home-composer-go')
+  if (!input || !go) return
+
+  const run = () => {
+    const q = input.value.trim()
+    if (q) {
+      const found = K.searchKnowledgeMerged(q)
+      if (found[0]) {
+        const { category, item, source } = found[0]
+        if (source === 'my') navigate(`/my-knowledge/view/${item.id}`)
+        else navigate(`/article/${category.id}/${item.id}`)
+        return
+      }
+      showToast(t('nav.searchEmpty'), 'info')
+      return
+    }
+    navigate('/category/methodology')
+  }
+
+  go.addEventListener('click', (e) => {
+    e.preventDefault()
+    run()
+  })
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      run()
+    }
+  })
 }
 
 function renderCategory(categoryId) {
@@ -410,11 +826,27 @@ function renderCategory(categoryId) {
               <h3>${item.title}${item.isShared ? ` <span class="shared-badge">${escapeHtml(t('article.sharedShort'))}</span>` : ''}</h3><p>${item.summary}</p>
               <div class="article-tags">${item.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
             </div>
-            <span class="article-arrow">→</span>
           </a>
         `).join('')}
       </div>
     </div>`
+}
+
+function renderKnowledgeParagraphs(lines) {
+  return (lines || []).map((p) => {
+    const text = String(p)
+    if (text.startsWith('【') && text.endsWith('】')) {
+      return `<h3 class="article-subhead">${escapeHtml(text.slice(1, -1))}</h3>`
+    }
+    if (text.includes('\n')) {
+      return `<p class="article-preline">${escapeHtml(text).replace(/\n/g, '<br>')}</p>`
+    }
+    // 表格式条目（含 · 或多处冒号）用等宽感列表展现
+    if (text.includes(' · ') || /^[^：]{1,20}：/.test(text)) {
+      return `<p class="article-kv">${escapeHtml(text)}</p>`
+    }
+    return `<p>${escapeHtml(text)}</p>`
+  }).join('')
 }
 
 function renderKnowledgeDetailBody(item) {
@@ -423,8 +855,12 @@ function renderKnowledgeDetailBody(item) {
   const pmApp = item.pmApplication || []
   const hasStructured = cases.length > 0 || pmApp.length > 0
 
+  if (!explain.length && !cases.length && !pmApp.length) {
+    return `<div class="article-body"><p class="empty-hint">${escapeHtml(t('common.notFound'))}</p></div>`
+  }
+
   if (!hasStructured) {
-    return `<div class="article-body">${explain.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}</div>`
+    return `<div class="article-body">${renderKnowledgeParagraphs(explain)}</div>`
   }
 
   return `
@@ -435,7 +871,7 @@ function renderKnowledgeDetailBody(item) {
           <h2>${escapeHtml(t('article.sectionExplainTitle'))}</h2>
         </div>
         <div class="article-section-body">
-          ${explain.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}
+          ${renderKnowledgeParagraphs(explain)}
         </div>
       </section>
 
@@ -449,7 +885,7 @@ function renderKnowledgeDetailBody(item) {
           ${cases.map((c, i) => `
             <div class="case-card">
               <span class="case-card-index">${escapeHtml(t('article.caseIndex', { n: i + 1 }))}</span>
-              <p>${escapeHtml(c)}</p>
+              <p class="article-preline">${escapeHtml(c).replace(/\n/g, '<br>')}</p>
             </div>`).join('')}
         </div>
       </section>` : ''}
@@ -712,7 +1148,6 @@ function renderMyKnowledgeHub() {
                   <p>${escapeHtml(item.summary)}</p>
                   <div class="article-tags">${item.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
                 </div>
-                <span class="article-arrow">→</span>
               </a>`).join('') : '<p class="empty-hint">暂无知识，点击「新增知识」开始记录</p>'}
           </div>
         </main>
@@ -964,7 +1399,6 @@ function renderFavoritesPage() {
                 ${item.tags.slice(0, 3).map((tg) => `<span class="tag">${escapeHtml(tg)}</span>`).join('')}
               </div>
             </div>
-            <span class="article-arrow">→</span>
           </a>`
         }).join('') : `<p class="empty-hint">${escapeHtml(t('favorites.empty'))}</p>`}
       </div>
@@ -1122,25 +1556,80 @@ function renderLoginRequired(message) {
     </div>`
 }
 
+const AUTH_REMEMBER_KEY = 'pm-lab-auth-remember'
+
+function loadRememberedAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_REMEMBER_KEY)
+    if (!raw) return { remember: false, email: '' }
+    const data = JSON.parse(raw)
+    return { remember: Boolean(data.remember), email: data.email || '' }
+  } catch {
+    return { remember: false, email: '' }
+  }
+}
+
+function saveRememberedAuth(remember, email) {
+  try {
+    if (remember && email) localStorage.setItem(AUTH_REMEMBER_KEY, JSON.stringify({ remember: true, email }))
+    else localStorage.removeItem(AUTH_REMEMBER_KEY)
+  } catch (_) {}
+}
+
 function renderLoginPage() {
   const configured = Auth().isConfigured()
+  const remembered = loadRememberedAuth()
   return `
     <div class="page auth-page">
-      <div class="auth-card">
+      <div class="auth-card auth-card-rich">
+        <div class="auth-card-brand">PM Lab</div>
         <h1>${escapeHtml(t('auth.pageTitle'))}</h1>
         <p class="auth-desc">${escapeHtml(t('auth.pageDesc'))}</p>
         ${!configured ? `<p class="auth-warn">${escapeHtml(t('auth.notConfigured'))}</p>` : ''}
+        <form id="auth-form" class="auth-form" autocomplete="on">
+          <div class="form-group">
+            <label for="auth-email">${escapeHtml(t('auth.email'))}</label>
+            <input id="auth-email" name="email" type="email" inputmode="email" autocomplete="username" placeholder="your@email.com" value="${escapeHtml(remembered.email)}" required />
+          </div>
+          <div class="form-group">
+            <div class="auth-label-row">
+              <label for="auth-password">${escapeHtml(t('auth.password'))}</label>
+              <button type="button" class="auth-text-btn" id="auth-forgot">${escapeHtml(t('auth.forgotPassword'))}</button>
+            </div>
+            <div class="auth-password-field">
+              <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="${escapeHtml(t('auth.passwordPlaceholder'))}" required minlength="6" />
+              <button type="button" class="auth-eye" id="auth-toggle-password" aria-label="${escapeHtml(t('auth.showPassword'))}">${escapeHtml(t('auth.showPassword'))}</button>
+            </div>
+          </div>
+          <label class="auth-remember">
+            <input type="checkbox" id="auth-remember" ${remembered.remember ? 'checked' : ''} />
+            <span>${escapeHtml(t('auth.rememberMe'))}</span>
+          </label>
+          <div class="form-actions auth-actions">
+            <button type="submit" class="btn-primary" id="auth-login" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.login'))}</button>
+            <button type="button" class="btn-secondary" id="auth-register" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.register'))}</button>
+          </div>
+        </form>
+      </div>
+    </div>`
+}
+
+function renderResetPasswordPage() {
+  const configured = Auth().isConfigured()
+  return `
+    <div class="page auth-page">
+      <div class="auth-card auth-card-rich">
+        <div class="auth-card-brand">PM Lab</div>
+        <h1>${escapeHtml(t('auth.resetTitle'))}</h1>
+        <p class="auth-desc">${escapeHtml(t('auth.resetDesc'))}</p>
+        ${!configured ? `<p class="auth-warn">${escapeHtml(t('auth.notConfigured'))}</p>` : ''}
         <div class="form-group">
-          <label>${escapeHtml(t('auth.email'))}</label>
-          <input id="auth-email" type="email" placeholder="your@email.com" />
-        </div>
-        <div class="form-group">
-          <label>${escapeHtml(t('auth.password'))}</label>
-          <input id="auth-password" type="password" placeholder="${escapeHtml(t('auth.passwordPlaceholder'))}" />
+          <label for="auth-new-password">${escapeHtml(t('auth.newPassword'))}</label>
+          <input id="auth-new-password" type="password" autocomplete="new-password" placeholder="${escapeHtml(t('auth.passwordPlaceholder'))}" minlength="6" />
         </div>
         <div class="form-actions auth-actions">
-          <button class="btn-primary" id="auth-login" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.login'))}</button>
-          <button class="btn-secondary" id="auth-register" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.register'))}</button>
+          <button type="button" class="btn-primary" id="auth-update-password" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.savePassword'))}</button>
+          <a href="#/login" class="btn-ghost">${escapeHtml(t('auth.backToLogin'))}</a>
         </div>
       </div>
     </div>`
@@ -1207,14 +1696,7 @@ function renderAdminPage(stats) {
   const topEvents = Object.entries(stats.eventCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
   return `
     <div class="page admin-page">
-      <header class="memory-header">
-        <h1>数据统计</h1>
-        <p>用户注册、登录与功能使用概览（仅管理员可见）</p>
-        <div class="admin-tabs">
-          <span class="admin-tab active">数据统计</span>
-          <a href="#/admin/knowledge" class="admin-tab">知识管理</a>
-        </div>
-      </header>
+      ${renderAdminHeader(t('nav.adminStats'), t('admin.statsDesc'), 'stats')}
       <div class="admin-stats-grid">
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.totalUsers}</span><span class="admin-stat-label">注册用户</span></div>
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.dau}</span><span class="admin-stat-label">DAU（今日活跃）</span></div>
@@ -1267,14 +1749,7 @@ function renderAdminKnowledgePage(entries) {
 
   return `
     <div class="page admin-page">
-      <header class="memory-header">
-        <h1>知识管理</h1>
-        <p>在网页直接编辑 Skill 词条、新增知识，并选择是否发布到全站用户（无需 Cursor）</p>
-        <div class="admin-tabs">
-          <a href="#/admin" class="admin-tab">数据统计</a>
-          <span class="admin-tab active">知识管理</span>
-        </div>
-      </header>
+      ${renderAdminHeader(t('nav.adminKnowledge'), t('admin.knowledgeDesc'), 'knowledge')}
       <section class="section">
         <div class="skill-toolbar">
           <input type="search" id="skill-search" placeholder="搜索标题、正文、章节…" value="${escapeHtml(adminKnowledgeState.q)}" />
@@ -1338,13 +1813,8 @@ function renderAdminKnowledgeEditor(entry) {
 
   return `
     <div class="page admin-page">
-      <header class="memory-header">
-        <h1>${isEdit ? '编辑知识' : '新增知识'}</h1>
-        <p>保存后可选择是否立即发布到全站用户</p>
-        <div class="admin-tabs">
-          <a href="#/admin/knowledge" class="admin-tab">← 返回列表</a>
-        </div>
-      </header>
+      ${renderAdminHeader(isEdit ? '编辑知识' : '新增知识', '保存后可选择是否立即发布到全站用户', 'knowledge')}
+      <p class="form-hint" style="margin-top:-12px;margin-bottom:20px"><a href="#/admin/knowledge">← 返回列表</a></p>
       <div class="form-card knowledge-form admin-knowledge-form">
         <div class="form-row">
           <div class="form-group">
@@ -1551,46 +2021,60 @@ function renderDailyLearnPage() {
     <div class="page daily-learn-page">
       <header class="memory-header">
         <h1>每日学习</h1>
-        <p>自定义推送时间，每天为你精选 3 条知识（需保持页面打开或允许浏览器通知）</p>
+        <p>自定义推送时间，每天精选 3 条知识（需保持页面打开或允许浏览器通知）</p>
       </header>
-      <section class="section daily-learn-settings">
-        <h2 class="section-title">推送设置</h2>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="push-enabled" ${settings.enabled ? 'checked' : ''} />
-            开启每日推送
-          </label>
+
+      <section class="daily-learn-card">
+        <div class="daily-learn-card-head">
+          <h2>推送设置</h2>
+          <p>固定节奏，优先避开近 7 天已推送内容</p>
         </div>
-        <div class="form-group">
-          <label>推送时间（每天）</label>
-          <input type="time" id="push-time" value="${settings.time || '09:00'}" />
+
+        <label class="daily-learn-switch">
+          <input type="checkbox" id="push-enabled" ${settings.enabled ? 'checked' : ''} />
+          <span class="daily-learn-switch-ui" aria-hidden="true"></span>
+          <span class="daily-learn-switch-copy">
+            <strong>开启每日推送</strong>
+            <span>到点后自动挑选今日知识</span>
+          </span>
+        </label>
+
+        <div class="daily-learn-field">
+          <span class="daily-learn-label">推送时间</span>
+          <input type="time" id="push-time" class="daily-learn-time" value="${settings.time || '09:00'}" />
         </div>
-        <div class="form-group">
-          <label>知识分类（不选则全库随机）</label>
-          <div class="push-category-chips">
+
+        <div class="daily-learn-field">
+          <span class="daily-learn-label">知识分类</span>
+          <span class="daily-learn-hint">不选则全库随机 · 每次固定 3 条</span>
+          <div class="daily-learn-cats" role="group" aria-label="知识分类">
             ${cats.map((c) => `
-              <label class="chip-label">
+              <label class="daily-learn-cat">
                 <input type="checkbox" class="push-cat" value="${c.id}" ${(settings.categories || []).includes(c.id) ? 'checked' : ''} />
-                ${c.title}
+                <span class="daily-learn-cat-box" aria-hidden="true"></span>
+                <span class="daily-learn-cat-text">${escapeHtml(catTitle(c))}</span>
               </label>`).join('')}
           </div>
         </div>
-        <p class="form-hint">每次固定推送 <strong>3</strong> 条，优先避开近 7 天已推送过的内容。</p>
-        <div class="form-actions">
+
+        <div class="daily-learn-actions">
           <button type="button" class="btn-primary" id="btn-save-push">保存设置</button>
           <button type="button" class="btn-secondary" id="btn-push-now">立即推送今日 3 条</button>
           <button type="button" class="btn-ghost" id="btn-push-notify">开启浏览器通知</button>
         </div>
       </section>
-      <section class="section">
-        <h2 class="section-title">今日推送 ${settings.lastPushDate === today ? `（${settings.time || '09:00'}）` : ''}</h2>
+
+      <section class="daily-learn-card daily-learn-today">
+        <div class="daily-learn-card-head">
+          <h2>今日推送 ${settings.lastPushDate === today ? `· ${settings.time || '09:00'}` : ''}</h2>
+        </div>
         ${todayItems.length ? `
           <div class="daily-push-cards">
             ${todayItems.map((item) => `
               <a href="#/article/${item.categoryId}/${item.itemId}" class="daily-push-card">
                 <h3>${escapeHtml(item.title)}</h3>
                 <p>${escapeHtml(item.summary || '')}</p>
-                <span class="memory-banner-action">去学习 →</span>
+                <span class="memory-banner-action">去学习</span>
               </a>`).join('')}
           </div>` : '<p class="empty-hint">今日尚未推送。可点击「立即推送」或等到设定时间（需打开网站）。</p>'}
       </section>
@@ -1671,48 +2155,99 @@ function renderCloudPanel() {
 }
 
 function bindLoginEvents() {
-  document.getElementById('auth-login')?.addEventListener('click', async () => {
-    const email = document.getElementById('auth-email')?.value?.trim()
-    const password = document.getElementById('auth-password')?.value
-    if (!email || !password) return showToast('请填写邮箱和密码', 'error')
+  const emailEl = document.getElementById('auth-email')
+  const passwordEl = document.getElementById('auth-password')
+  const rememberEl = document.getElementById('auth-remember')
+
+  const persistRemember = () => {
+    saveRememberedAuth(Boolean(rememberEl?.checked), emailEl?.value?.trim() || '')
+  }
+
+  // 有记住的邮箱时，焦点落到密码，方便浏览器密码管理器联动填充
+  if (rememberEl?.checked && emailEl?.value) passwordEl?.focus()
+  else emailEl?.focus()
+
+  rememberEl?.addEventListener('change', persistRemember)
+  emailEl?.addEventListener('change', () => {
+    if (rememberEl?.checked) persistRemember()
+  })
+
+  document.getElementById('auth-toggle-password')?.addEventListener('click', () => {
+    if (!passwordEl) return
+    const show = passwordEl.type === 'password'
+    passwordEl.type = show ? 'text' : 'password'
+    const btn = document.getElementById('auth-toggle-password')
+    if (btn) btn.textContent = show ? t('auth.hidePassword') : t('auth.showPassword')
+  })
+
+  document.getElementById('auth-forgot')?.addEventListener('click', async () => {
+    const email = emailEl?.value?.trim()
+    if (!email) return showToast(t('auth.needEmail'), 'error')
+    try {
+      await Auth().resetPasswordForEmail(email)
+      persistRemember()
+      showToast(t('auth.resetSent'), 'success')
+    } catch (e) { showToast(e.message, 'error') }
+  })
+
+  document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const email = emailEl?.value?.trim()
+    const password = passwordEl?.value
+    if (!email || !password) return showToast(t('auth.needBoth'), 'error')
     try {
       await Auth().signInWithEmail(email, password)
+      persistRemember()
       await Analytics()?.trackDailyActive?.()
       await PDMCloud.init()
       if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
-      showToast('登录成功', 'success')
+      showToast(t('auth.toastLoggedIn'), 'success')
       navigate('/')
-    } catch (e) { showToast(e.message, 'error') }
+    } catch (err) { showToast(err.message, 'error') }
   })
+
   document.getElementById('auth-register')?.addEventListener('click', async () => {
-    const email = document.getElementById('auth-email')?.value?.trim()
-    const password = document.getElementById('auth-password')?.value
-    if (!email || !password) return showToast('请填写邮箱和密码', 'error')
-    if (password.length < 6) return showToast('密码至少 6 位', 'error')
+    const email = emailEl?.value?.trim()
+    const password = passwordEl?.value
+    if (!email || !password) return showToast(t('auth.needBoth'), 'error')
+    if (password.length < 6) return showToast(t('auth.passwordTooShort'), 'error')
     try {
       const data = await Auth().signUpWithEmail(email, password)
+      persistRemember()
       if (data.session) {
         await Analytics()?.trackDailyActive?.()
         await PDMCloud.init()
         if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
-        showToast('注册成功', 'success')
+        showToast(t('auth.toastRegistered'), 'success')
         navigate('/')
-      } else showToast('注册成功，请查收邮件确认后登录', 'info')
+      } else showToast(t('auth.toastConfirmEmail'), 'info')
+    } catch (err) { showToast(err.message, 'error') }
+  })
+}
+
+function bindResetPasswordEvents() {
+  document.getElementById('auth-update-password')?.addEventListener('click', async () => {
+    const password = document.getElementById('auth-new-password')?.value
+    if (!password || password.length < 6) return showToast(t('auth.passwordTooShort'), 'error')
+    try {
+      await Auth().updatePassword(password)
+      showToast(t('auth.passwordUpdated'), 'success')
+      navigate('/')
     } catch (e) { showToast(e.message, 'error') }
   })
 }
 
 function bindLocaleEvents() {
-  document.querySelectorAll('.locale-btn').forEach((btn) => {
+  document.querySelectorAll('.locale-toggle, .locale-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       window.PMLabI18n?.setLocale(btn.dataset.locale)
     })
   })
 }
 
-function bindSidebarAccountEvents() {
-  const menuBtn = document.getElementById('sidebar-account-menu-btn')
-  const menu = document.getElementById('sidebar-account-menu')
+function bindTopAccountEvents() {
+  const menuBtn = document.getElementById('topbar-account-menu-btn')
+  const menu = document.getElementById('topbar-account-menu')
 
   const closeMenu = () => {
     menu?.setAttribute('hidden', '')
@@ -1728,10 +2263,10 @@ function bindSidebarAccountEvents() {
 
   document.addEventListener('click', (e) => {
     if (!menu || menu.hasAttribute('hidden')) return
-    if (!e.target.closest('.sidebar-account-actions')) closeMenu()
+    if (!e.target.closest('.topbar-account')) closeMenu()
   })
 
-  document.getElementById('sidebar-logout')?.addEventListener('click', async () => {
+  document.getElementById('topbar-logout')?.addEventListener('click', async () => {
     closeMenu()
     await Auth().signOut()
     showToast(t('auth.toastLoggedOut'), 'info')
@@ -1927,24 +2462,309 @@ function bindReviewEvents() {
   })
 }
 
+let adminPermState = { userId: null, draft: null, roleDraft: null, users: [], q: '' }
+
+async function fetchAdminUsersWithPerms() {
+  const sb = Auth().getClient()
+  if (!sb || !Auth().isAdmin()) throw new Error('无权限')
+  let data = null
+  let error = null
+  ;({ data, error } = await sb
+    .from('profiles')
+    .select('id, email, display_name, is_admin, role, permissions, last_login_at, created_at')
+    .order('created_at', { ascending: false }))
+  if (error && /role/i.test(error.message || '')) {
+    ;({ data, error } = await sb
+      .from('profiles')
+      .select('id, email, display_name, is_admin, permissions, last_login_at, created_at')
+      .order('created_at', { ascending: false }))
+  }
+  if (error) throw error
+  return (data || []).map((u) => ({ ...u, role: resolveProfileRole(u) }))
+}
+
+function renderAdminPermissionsPage(users) {
+  const q = adminPermState.q.trim().toLowerCase()
+  const filtered = users.filter((u) => {
+    if (!q) return true
+    return `${u.email || ''} ${u.display_name || ''} ${roleLabel(resolveProfileRole(u))}`.toLowerCase().includes(q)
+  })
+  const selected = filtered.find((u) => u.id === adminPermState.userId) || filtered[0] || null
+  if (selected && adminPermState.userId !== selected.id) {
+    adminPermState.userId = selected.id
+    adminPermState.draft = Perm().normalizePerms(selected.permissions)
+    adminPermState.roleDraft = resolveProfileRole(selected)
+  }
+  if (selected && !adminPermState.roleDraft) {
+    adminPermState.roleDraft = resolveProfileRole(selected)
+  }
+  const draft = adminPermState.draft || (selected ? Perm().normalizePerms(selected.permissions) : Perm().defaultPermMap())
+  const features = Perm().getFeatures()
+  const selectedRole = selected ? (adminPermState.roleDraft || resolveProfileRole(selected)) : 'user'
+  const canBindRole = Auth().isSuperAdmin?.() === true
+  const roleLocked = selectedRole === 'super_admin' || !canBindRole
+  const featureLocked = selectedRole !== 'user'
+
+  return `
+    <div class="page admin-page">
+      ${renderAdminHeader(t('nav.adminPermissions'), t('admin.permDesc'), 'permissions')}
+      <div class="admin-perm-layout">
+        <aside class="admin-perm-users">
+          <input type="search" id="admin-perm-search" placeholder="${escapeHtml(t('admin.permSearch'))}" value="${escapeHtml(adminPermState.q)}" />
+          <div class="admin-perm-user-list">
+            ${filtered.map((u) => {
+              const role = resolveProfileRole(u)
+              return `
+              <button type="button" class="admin-perm-user ${u.id === selected?.id ? 'active' : ''}" data-user-id="${escapeHtml(u.id)}">
+                <span class="admin-perm-user-email">${escapeHtml(u.email || '-')}</span>
+                <span class="admin-role-badge admin-role-${role}">${escapeHtml(roleLabel(role))}</span>
+              </button>`
+            }).join('') || `<p class="empty-hint">${escapeHtml(t('admin.permEmpty'))}</p>`}
+          </div>
+        </aside>
+        <section class="admin-perm-editor">
+          ${selected ? `
+            <div class="admin-perm-editor-head">
+              <div>
+                <h2>${escapeHtml(selected.email || selected.id)}</h2>
+                <p class="form-hint">${escapeHtml(selected.display_name || t('admin.permNoName'))}</p>
+              </div>
+              <div class="admin-perm-actions">
+                <button type="button" class="btn-primary" id="admin-perm-save">${escapeHtml(t('common.save'))}</button>
+              </div>
+            </div>
+
+            <div class="admin-rbac-card">
+              <div class="admin-rbac-card-head">
+                <h3>${escapeHtml(t('admin.roleBindTitle'))}</h3>
+                <p>${escapeHtml(canBindRole ? t('admin.roleBindHint') : t('admin.roleBindNeedSuper'))}</p>
+              </div>
+              <div class="admin-role-picker" role="group" aria-label="${escapeHtml(t('admin.roleBindTitle'))}">
+                ${selectedRole === 'super_admin' ? `
+                <div class="admin-role-option active admin-role-option-super">
+                  <span class="admin-role-option-title">${escapeHtml(t('admin.roleSuper'))}</span>
+                  <span class="admin-role-option-desc">${escapeHtml(t('admin.roleSuperDesc'))}</span>
+                </div>` : `
+                <label class="admin-role-option ${selectedRole === 'user' ? 'active' : ''} ${roleLocked ? 'disabled' : ''}">
+                  <input type="radio" name="admin-role" value="user" ${selectedRole === 'user' ? 'checked' : ''} ${roleLocked ? 'disabled' : ''} />
+                  <span class="admin-role-option-title">${escapeHtml(t('admin.roleUser'))}</span>
+                  <span class="admin-role-option-desc">${escapeHtml(t('admin.roleUserDesc'))}</span>
+                </label>
+                <label class="admin-role-option ${selectedRole === 'admin' ? 'active' : ''} ${roleLocked ? 'disabled' : ''}">
+                  <input type="radio" name="admin-role" value="admin" ${selectedRole === 'admin' ? 'checked' : ''} ${roleLocked ? 'disabled' : ''} />
+                  <span class="admin-role-option-title">${escapeHtml(t('admin.roleAdmin'))}</span>
+                  <span class="admin-role-option-desc">${escapeHtml(t('admin.roleAdminDesc'))}</span>
+                </label>`}
+              </div>
+            </div>
+
+            <div class="admin-rbac-card ${featureLocked ? 'is-muted' : ''}">
+              <div class="admin-rbac-card-head admin-rbac-card-head-row">
+                <div>
+                  <h3>${escapeHtml(t('admin.featurePermTitle'))}</h3>
+                  <p>${escapeHtml(featureLocked ? t('admin.permAdminHint') : t('admin.permEditHint'))}</p>
+                </div>
+                <button type="button" class="btn-secondary" id="admin-perm-reset" ${featureLocked ? 'disabled' : ''}>${escapeHtml(t('admin.permReset'))}</button>
+              </div>
+              <div class="admin-perm-grid">
+                <div class="admin-perm-grid-head">
+                  <span>${escapeHtml(t('admin.permFeature'))}</span>
+                  <span>${escapeHtml(t('admin.permView'))}</span>
+                  <span>${escapeHtml(t('admin.permEdit'))}</span>
+                </div>
+                ${features.map((f) => {
+                  const node = draft[f.id] || {}
+                  const hasEdit = f.actions.includes('edit')
+                  return `<div class="admin-perm-row" data-feature="${f.id}">
+                    <span class="admin-perm-feature">${escapeHtml(Perm().featureLabel(f))}</span>
+                    <label class="admin-perm-check"><input type="checkbox" data-action="view" ${node.view !== false ? 'checked' : ''} ${featureLocked ? 'disabled' : ''} /></label>
+                    <label class="admin-perm-check">${hasEdit
+                      ? `<input type="checkbox" data-action="edit" ${node.edit ? 'checked' : ''} ${featureLocked ? 'disabled' : ''} />`
+                      : '<span class="admin-perm-na">—</span>'}</label>
+                  </div>`
+                }).join('')}
+              </div>
+            </div>
+          ` : `<p class="empty-hint">${escapeHtml(t('admin.permEmpty'))}</p>`}
+        </section>
+      </div>
+    </div>`
+}
+
+function bindAdminPermissionsEvents(users) {
+  adminPermState.users = users
+  document.getElementById('admin-perm-search')?.addEventListener('input', (e) => {
+    adminPermState.q = e.target.value
+    const main = document.getElementById('main')
+    main.innerHTML = renderAdminPermissionsPage(users)
+    bindAdminPermissionsEvents(users)
+  })
+
+  document.querySelectorAll('.admin-perm-user').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const user = users.find((u) => u.id === btn.dataset.userId)
+      if (!user) return
+      adminPermState.userId = user.id
+      adminPermState.draft = Perm().normalizePerms(user.permissions)
+      adminPermState.roleDraft = resolveProfileRole(user)
+      const main = document.getElementById('main')
+      main.innerHTML = renderAdminPermissionsPage(users)
+      bindAdminPermissionsEvents(users)
+    })
+  })
+
+  document.querySelectorAll('input[name="admin-role"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!Auth().isSuperAdmin?.()) return
+      adminPermState.roleDraft = input.value === 'admin' ? 'admin' : 'user'
+      const main = document.getElementById('main')
+      main.innerHTML = renderAdminPermissionsPage(users)
+      bindAdminPermissionsEvents(users)
+    })
+  })
+
+  document.querySelectorAll('.admin-perm-row input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const row = input.closest('.admin-perm-row')
+      const feature = row?.dataset.feature
+      const action = input.dataset.action
+      if (!feature || !action || !adminPermState.draft) return
+      if (!adminPermState.draft[feature]) adminPermState.draft[feature] = {}
+      adminPermState.draft[feature][action] = input.checked
+      if (action === 'view' && !input.checked && adminPermState.draft[feature].edit) {
+        adminPermState.draft[feature].edit = false
+        const editInput = row.querySelector('input[data-action="edit"]')
+        if (editInput) editInput.checked = false
+      }
+    })
+  })
+
+  document.getElementById('admin-perm-reset')?.addEventListener('click', () => {
+    adminPermState.draft = Perm().defaultPermMap()
+    const main = document.getElementById('main')
+    main.innerHTML = renderAdminPermissionsPage(users)
+    bindAdminPermissionsEvents(users)
+  })
+
+  document.getElementById('admin-perm-save')?.addEventListener('click', async () => {
+    const userId = adminPermState.userId
+    if (!userId) return
+    const selected = users.find((u) => u.id === userId)
+    if (!selected) return
+    const currentRole = resolveProfileRole(selected)
+    const nextRole = currentRole === 'super_admin'
+      ? 'super_admin'
+      : (adminPermState.roleDraft === 'admin' ? 'admin' : 'user')
+    try {
+      const sb = Auth().getClient()
+      if (!sb) throw new Error(t('auth.notConfigured'))
+      if (currentRole === 'super_admin' && nextRole !== 'super_admin') {
+        throw new Error(t('admin.roleSuperLocked'))
+      }
+      if (nextRole !== currentRole && !Auth().isSuperAdmin?.()) {
+        throw new Error(t('admin.roleBindNeedSuper'))
+      }
+      const payload = {
+        updated_at: new Date().toISOString(),
+        is_admin: nextRole === 'admin' || nextRole === 'super_admin',
+      }
+      if (nextRole === 'user' && adminPermState.draft) {
+        payload.permissions = adminPermState.draft
+      }
+      // role 列可能尚未执行 sql：先尝试带 role，失败则回退
+      let error = null
+      ;({ error } = await sb.from('profiles').update({ ...payload, role: nextRole }).eq('id', userId))
+      if (error && /role/i.test(error.message || '')) {
+        ;({ error } = await sb.from('profiles').update(payload).eq('id', userId))
+      }
+      if (error) throw error
+      const idx = users.findIndex((u) => u.id === userId)
+      if (idx >= 0) {
+        users[idx] = {
+          ...users[idx],
+          role: nextRole,
+          is_admin: payload.is_admin,
+          permissions: payload.permissions ?? users[idx].permissions,
+        }
+      }
+      adminPermState.roleDraft = nextRole
+      showToast(t('admin.permSaved'), 'success')
+      const main = document.getElementById('main')
+      main.innerHTML = renderAdminPermissionsPage(users)
+      bindAdminPermissionsEvents(users)
+    } catch (e) {
+      showToast(e.message || String(e), 'error')
+    }
+  })
+}
+
+async function renderAdminPermissionsRoute() {
+  const main = document.getElementById('main')
+  main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
+  try {
+    const users = await fetchAdminUsersWithPerms()
+    adminPermState.users = users
+    if (!adminPermState.userId && users[0]) {
+      adminPermState.userId = users[0].id
+      adminPermState.draft = Perm().normalizePerms(users[0].permissions)
+      adminPermState.roleDraft = resolveProfileRole(users[0])
+    }
+    main.innerHTML = renderAdminPermissionsPage(users)
+    bindAdminPermissionsEvents(users)
+  } catch (e) {
+    main.innerHTML = `<div class="page admin-page">${renderAdminHeader(t('nav.adminPermissions'), '', 'permissions')}<p>${escapeHtml(e.message)}</p><p class="form-hint">${escapeHtml(t('admin.permSqlHint'))}</p></div>`
+  }
+}
+
 function render() {
   const { parts } = parseRoute()
   const path = '/' + parts.join('/')
+
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    if (localStorage.getItem('pm-lab-sidebar-collapsed') == null) setSidebarCollapsed(true)
+  }
+
   renderLocaleSwitcher()
+  renderTopAccount(path)
   renderSidebar(path)
+  renderTopbarCrumbs(buildCrumbsFromRoute(parts))
   bindLocaleEvents()
-  bindSidebarAccountEvents()
+  bindTopAccountEvents()
+  bindTopbarSearch()
+  bindMobileNavChrome()
   bindSyncEvents()
 
   const forbiddenHtml = renderForbidden()
 
   const main = document.getElementById('main')
+  const routePerm = Perm().routeFeature(parts)
+  if (routePerm?.feature && routePerm.feature !== 'admin' && !Perm().can(routePerm.feature, routePerm.action)) {
+    main.innerHTML = renderPermissionDenied()
+    return
+  }
+
   if (parts.length === 0) {
     main.innerHTML = renderHome()
+    bindHomeEvents()
     Analytics()?.track('page_view', { page: 'home' })
   } else if (parts[0] === 'login') {
     main.innerHTML = renderLoginPage()
     bindLoginEvents()
+  } else if (parts[0] === 'reset-password') {
+    main.innerHTML = renderResetPasswordPage()
+    bindResetPasswordEvents()
+  } else if (parts[0] === 'admin' && parts[1] === 'feedback') {
+    if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
+    else renderAdminFeedbackRoute()
+  } else if (parts[0] === 'admin' && parts[1] === 'permissions') {
+    if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
+    else renderAdminPermissionsRoute()
+  } else if (parts[0] === 'feedback') {
+    if (!Perm().can('feedback', 'edit') && !Perm().can('feedback', 'view')) {
+      main.innerHTML = renderPermissionDenied()
+    } else {
+      renderFeedbackRoute()
+    }
   } else if (parts[0] === 'admin' && parts[1] === 'knowledge' && parts[2] === 'new') {
     if (!Auth().isAdmin()) {
       main.innerHTML = forbiddenHtml
@@ -1996,6 +2816,7 @@ function render() {
     Analytics()?.track('page_view', { page: 'tools' })
   } else if (parts[0] === 'forum' && parts[1] === 'new') {
     if (!Auth().isLoggedIn()) main.innerHTML = renderLoginRequired(t('auth.requiredForum'))
+    else if (!Perm().can('forum', 'edit')) main.innerHTML = renderPermissionDenied()
     else {
       main.innerHTML = Sections().renderForumNew()
       Sections().bindForumNew()

@@ -44,7 +44,13 @@
     if (!isConfigured()) return null
     if (client) return client
     const { url, anonKey } = getConfig()
-    client = window.supabase.createClient(url, anonKey)
+    client = window.supabase.createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
     return client
   }
 
@@ -60,10 +66,24 @@
     return Boolean(session?.user)
   }
 
-  function isAdmin() {
-    if (profile?.is_admin) return true
+  function getRole() {
+    if (profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'user') {
+      return profile.role
+    }
     const email = session?.user?.email
-    return email && getConfig().adminEmails.includes(email)
+    const admins = getConfig().adminEmails.map((e) => String(e).toLowerCase())
+    if (email && admins.includes(String(email).toLowerCase())) return 'super_admin'
+    if (profile?.is_admin) return 'admin'
+    return 'user'
+  }
+
+  function isAdmin() {
+    const role = getRole()
+    return role === 'admin' || role === 'super_admin'
+  }
+
+  function isSuperAdmin() {
+    return getRole() === 'super_admin'
   }
 
   async function refreshSession() {
@@ -81,10 +101,20 @@
     if (!sb || !session?.user) return null
     const { data, error } = await sb
       .from('profiles')
-      .select('*')
+      .select('id, email, display_name, is_admin, role, login_count, last_login_at, created_at, updated_at, permissions')
       .eq('id', session.user.id)
       .maybeSingle()
-    if (error) throw error
+    if (error) {
+      // 兼容尚未执行 rbac.sql / permissions.sql 的环境
+      const fallback = await sb
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle()
+      if (fallback.error) throw fallback.error
+      profile = fallback.data
+      return profile
+    }
     profile = data
     return profile
   }
@@ -143,6 +173,24 @@
     if (window.PDMAnalytics) window.PDMAnalytics.track('logout')
   }
 
+  async function resetPasswordForEmail(email) {
+    await loadSupabaseLib()
+    const sb = getClient()
+    if (!sb) throw new Error('网站尚未配置云服务，请联系管理员')
+    const redirectTo = `${location.origin}${location.pathname}#/reset-password`
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) throw error
+  }
+
+  async function updatePassword(newPassword) {
+    await loadSupabaseLib()
+    const sb = getClient()
+    if (!sb) throw new Error('网站尚未配置云服务，请联系管理员')
+    const { data, error } = await sb.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    return data
+  }
+
   async function init() {
     if (!isConfigured()) return { configured: false, loggedIn: false }
     try {
@@ -153,13 +201,17 @@
     await refreshSession()
     const sb = getClient()
     if (sb) {
-      sb.auth.onAuthStateChange((_event, newSession) => {
+      sb.auth.onAuthStateChange((event, newSession) => {
         session = newSession
         if (newSession?.user) loadProfile()
         else profile = null
+        // 邮件重置链接会写入 session；落到独立改密页，避免和 hash 路由冲撞
+        if (event === 'PASSWORD_RECOVERY' && !location.hash.includes('reset-password')) {
+          location.hash = '#/reset-password'
+        }
       })
     }
-    return { configured: true, loggedIn: isLoggedIn(), email: session?.user?.email, isAdmin: isAdmin() }
+    return { configured: true, loggedIn: isLoggedIn(), email: session?.user?.email, isAdmin: isAdmin(), role: getRole() }
   }
 
   window.PDMAuth = {
@@ -168,10 +220,14 @@
     getClient,
     getSession,
     getProfile,
+    getRole,
     isLoggedIn,
     isAdmin,
+    isSuperAdmin,
     signInWithEmail,
     signUpWithEmail,
+    resetPasswordForEmail,
+    updatePassword,
     signOut,
     refreshSession,
     init,

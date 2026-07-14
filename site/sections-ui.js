@@ -78,7 +78,6 @@
                     <p>${window.escapeHtml(item.summary)}</p>
                     <div class="article-tags">${item.tags.map((t) => `<span class="tag">${window.escapeHtml(t)}</span>`).join('')}</div>
                   </div>
-                  <span class="article-arrow">→</span>
                 </a>`).join('')}
             </div>
           </section>`).join('')}
@@ -168,7 +167,7 @@
               <div class="category-card-icon">${c.icon}</div>
               <h3>${window.escapeHtml(c.title)}</h3>
               <p>${window.escapeHtml(c.description)}</p>
-              <div class="category-card-footer"><span>${window.escapeHtml(ui('toolsUi', 'itemCount', { n: c.tools.length }))}</span><span class="arrow">→</span></div>
+              <div class="category-card-footer"><span>${window.escapeHtml(ui('toolsUi', 'itemCount', { n: c.tools.length }))}</span></div>
             </a>`).join('')}
         </div>
         <div id="tools-search-results" class="tools-search-results" style="display:none"></div>
