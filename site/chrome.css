@@ -374,8 +374,25 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
   color: var(--text-primary);
 }
 
-.admin-perm-page {
-  max-width: 1120px;
+.admin-retention-section {
+  margin-bottom: 24px;
+}
+
+.admin-retention-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-elevated);
+}
+
+.admin-retention-row .form-hint {
+  margin: 0;
+  max-width: 40rem;
 }
 
 .admin-filter-bar {

@@ -19,11 +19,18 @@
       if (!sb) return
       const user = Auth.getSession()?.user
       const page = (location.hash.slice(1) || '/').split('?')[0]
+      let meta = metadata && typeof metadata === 'object' ? metadata : {}
+      try {
+        const raw = JSON.stringify(meta)
+        if (raw.length > 2000) meta = { truncated: true }
+      } catch (_) {
+        meta = {}
+      }
       await sb.from('usage_events').insert({
         user_id: user?.id || null,
-        event_type: eventType,
-        page,
-        metadata,
+        event_type: String(eventType || 'event').slice(0, 64),
+        page: String(page || '/').slice(0, 200),
+        metadata: meta,
       })
     } catch (err) {
       console.warn('Analytics:', err.message)

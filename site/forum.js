@@ -83,28 +83,37 @@
   async function createPost(title, body) {
     const Auth = window.PDMAuth
     if (!Auth.isLoggedIn()) throw new Error('请先登录')
+    const t = (title || '').trim()
+    const b = (body || '').trim()
+    if (!t) throw new Error('请填写标题')
+    if (t.length > 100) throw new Error('标题最多 100 字')
+    if (!b) throw new Error('请填写内容')
+    if (b.length > 5000) throw new Error('正文最多 5000 字')
     const sb = await getClient()
     const user = Auth.getSession().user
     const { data, error } = await sb.from('forum_posts').insert({
       user_id: user.id,
-      title: title.trim(),
-      body: body.trim(),
+      title: t,
+      body: b,
       author_email: user.email,
     }).select().single()
     if (error) throw error
-    if (window.PDMAnalytics) window.PDMAnalytics.track('forum_post', { title })
+    if (window.PDMAnalytics) window.PDMAnalytics.track('forum_post', { title: t.slice(0, 80) })
     return data
   }
 
   async function createComment(postId, body) {
     const Auth = window.PDMAuth
     if (!Auth.isLoggedIn()) throw new Error('请先登录')
+    const b = (body || '').trim()
+    if (!b) throw new Error('请填写评论')
+    if (b.length > 2000) throw new Error('评论最多 2000 字')
     const sb = await getClient()
     const user = Auth.getSession().user
     const { data, error } = await sb.from('forum_comments').insert({
       post_id: postId,
       user_id: user.id,
-      body: body.trim(),
+      body: b,
     }).select().single()
     if (error) throw error
     if (window.PDMAnalytics) window.PDMAnalytics.track('forum_comment', { postId })

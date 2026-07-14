@@ -1686,13 +1686,22 @@ function renderAdminPage(stats) {
   const topEvents = Object.entries(stats.eventCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
   return `
     <div class="page admin-page">
-      ${renderAdminHeader(t('nav.adminStats'), t('admin.statsDesc'), 'stats')}
+      ${renderAdminHeader(t('nav.adminStats'), t('admin.statsDesc'))}
       <div class="admin-stats-grid">
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.totalUsers}</span><span class="admin-stat-label">注册用户</span></div>
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.dau}</span><span class="admin-stat-label">DAU（今日活跃）</span></div>
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.mau}</span><span class="admin-stat-label">MAU（近 30 日）</span></div>
         <div class="admin-stat-card"><span class="admin-stat-num">${stats.totalEvents}</span><span class="admin-stat-label">行为记录总数</span></div>
       </div>
+      <section class="section admin-retention-section">
+        <div class="admin-retention-row">
+          <div>
+            <h2 class="section-title" style="margin-bottom:4px">${escapeHtml(t('admin.retentionTitle'))}</h2>
+            <p class="form-hint">${escapeHtml(t('admin.retentionHint'))}</p>
+          </div>
+          <button type="button" class="btn-secondary" id="btn-cleanup-events">${escapeHtml(t('admin.retentionCleanup'))}</button>
+        </div>
+      </section>
       <section class="section">
         <h2 class="section-title">近 7 日 DAU 趋势</h2>
         ${renderDauTrend(stats.dauTrend)}
@@ -1717,6 +1726,28 @@ function renderAdminPage(stats) {
         </div>
       </section>
     </div>`
+}
+
+function bindAdminStatsEvents() {
+  document.getElementById('btn-cleanup-events')?.addEventListener('click', async () => {
+    if (!confirm(t('admin.retentionConfirm'))) return
+    try {
+      const sb = Auth().getClient()
+      if (!sb) throw new Error(t('auth.notConfigured'))
+      const { data, error } = await sb.rpc('cleanup_usage_events', { p_days: 90 })
+      if (error) throw error
+      const deleted = data?.deleted ?? 0
+      showToast(t('admin.retentionDone', { n: deleted }), 'success')
+      const stats = await fetchAdminStats()
+      document.getElementById('main').innerHTML = renderAdminPage(stats)
+      bindAdminStatsEvents()
+    } catch (e) {
+      const msg = e.message || String(e)
+      showToast(/function|schema cache|404/i.test(msg)
+        ? t('admin.retentionSqlHint')
+        : msg, 'error')
+    }
+  })
 }
 
 let adminKnowledgeState = { filter: 'all', status: 'all', q: '' }
@@ -2849,6 +2880,7 @@ function render() {
       main.innerHTML = '<div class="page"><p>加载统计数据…</p></div>'
       fetchAdminStats().then(stats => {
         main.innerHTML = renderAdminPage(stats)
+        bindAdminStatsEvents()
         Analytics()?.track('admin_view')
       }).catch(e => {
         main.innerHTML = `<div class="page"><p>${escapeHtml(e.message)}</p></div>`

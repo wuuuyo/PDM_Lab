@@ -175,6 +175,16 @@ window.PM_LAB_LOCALES['en-US'] = {
     permEdit: 'Edit',
     permSaved: 'Saved',
     permSqlHint: 'If a column is missing, run supabase/rbac.sql and permissions.sql in Supabase.',
+    retentionTitle: 'Retention',
+    retentionHint: 'Delete usage events older than 90 days to free database space. Sync payload limit is 512KB.',
+    retentionCleanup: 'Clean old events',
+    retentionConfirm: 'Delete usage_events older than 90 days? This cannot be undone.',
+    retentionDone: 'Deleted {n} events',
+    retentionSqlHint: 'Run supabase/retention.sql in Supabase first.',
+  },
+  cloud: {
+    payloadTooLarge: 'Sync data is about {kb}KB, over the {limitKb}KB limit. Trim notes or personal knowledge and retry.',
+    payloadTooLargeServer: 'Cloud sync payload exceeds 512KB. Please trim notes or personal knowledge.',
   },
   feedback: {
     title: 'Feedback',

@@ -173,6 +173,16 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     permEdit: '编辑',
     permSaved: '已保存',
     permSqlHint: '若提示列不存在，请先在 Supabase 执行 supabase/rbac.sql 与 permissions.sql',
+    retentionTitle: '数据留存',
+    retentionHint: '清理 90 天前的行为埋点，释放数据库空间。个人同步包上限 512KB。',
+    retentionCleanup: '清理旧埋点',
+    retentionConfirm: '确定删除 90 天前的 usage_events 吗？此操作不可撤销。',
+    retentionDone: '已清理 {n} 条埋点',
+    retentionSqlHint: '请先在 Supabase 执行 supabase/retention.sql',
+  },
+  cloud: {
+    payloadTooLarge: '同步数据约 {kb}KB，超过 {limitKb}KB 上限。请精简笔记或我的知识库后再试。',
+    payloadTooLargeServer: '云端同步数据过大（超过 512KB），请精简笔记或我的知识库。',
   },
   feedback: {
     title: '意见反馈',
