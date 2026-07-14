@@ -15,9 +15,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 const outFile = path.join(root, 'site/config.js')
 
-const url = (process.env.PDM_SUPABASE_URL || '').trim()
+const url = normalizeSupabaseUrl(process.env.PDM_SUPABASE_URL || '')
 const anonKey = (process.env.PDM_SUPABASE_ANON_KEY || '').trim()
 const emailsRaw = (process.env.PDM_ADMIN_EMAILS || '').trim()
+
+function normalizeSupabaseUrl(raw) {
+  let u = String(raw || '').trim()
+  if (!u) return ''
+  u = u.replace(/\/+$/, '')
+  u = u.replace(/\/(rest|auth|storage|functions)\/v1$/i, '')
+  return u
+}
 
 if (!url || !anonKey) {
   console.log('未设置 PDM_SUPABASE_URL / PDM_SUPABASE_ANON_KEY，保留现有 site/config.js')
@@ -29,7 +37,7 @@ const adminEmails = emailsRaw
   : []
 
 const content = `// 由 scripts/write-config.mjs 根据环境变量生成，请勿手改线上文件
-window.PDM_CONFIG = window.PDM_CONFIG || {
+window.PDM_CONFIG = {
   supabaseUrl: ${JSON.stringify(url)},
   supabaseAnonKey: ${JSON.stringify(anonKey)},
   adminEmails: ${JSON.stringify(adminEmails)},

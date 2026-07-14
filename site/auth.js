@@ -7,10 +7,18 @@
   let session = null
   let profile = null
 
+  function normalizeSupabaseUrl(raw) {
+    let u = String(raw || '').trim()
+    if (!u) return ''
+    u = u.replace(/\/+$/, '')
+    u = u.replace(/\/(rest|auth|storage|functions)\/v1$/i, '')
+    return u
+  }
+
   function getConfig() {
     const cfg = window.PDM_CONFIG || {}
     return {
-      url: cfg.supabaseUrl || '',
+      url: normalizeSupabaseUrl(cfg.supabaseUrl || ''),
       anonKey: cfg.supabaseAnonKey || '',
       adminEmails: Array.isArray(cfg.adminEmails) ? cfg.adminEmails : [],
     }
