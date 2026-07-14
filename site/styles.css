@@ -663,8 +663,17 @@ html.sidebar-collapsed .nav-icon {
 
 .home-composer-btn {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border-radius: 12px;
-  padding: 10px 16px;
+}
+
+.home-composer-btn svg {
+  display: block;
 }
 
 .home-stage-meta {
@@ -4009,11 +4018,12 @@ html.sidebar-collapsed .nav-icon {
 
 @media (max-width: 560px) {
   .home-composer {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .home-composer-btn {
-    width: 100%;
+    width: 42px;
+    height: 42px;
   }
 
   .home-rail {
