@@ -208,8 +208,6 @@ create policy "shared_knowledge_delete_admin"
     exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
   );
 
-  );
-
 -- ========== 学习论坛 ==========
 create table if not exists public.forum_posts (
   id uuid primary key default gen_random_uuid(),

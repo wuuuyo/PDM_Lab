@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "sync": "node scripts/sync-knowledge.mjs",
     "import:kb": "node scripts/import-knowledge-base.mjs",
-    "sync:all": "node scripts/import-knowledge-base.mjs && node scripts/sync-knowledge.mjs && node scripts/build-skills-catalog.mjs",
+    "write:config": "node scripts/write-config.mjs",
+    "sync:all": "node scripts/import-knowledge-base.mjs && node scripts/sync-knowledge.mjs && node scripts/build-skills-catalog.mjs && node scripts/write-config.mjs",
+    "build:site": "node scripts/sync-knowledge.mjs && node scripts/write-config.mjs",
     "build:skills": "node scripts/build-skills-catalog.mjs"
   },
   "dependencies": {

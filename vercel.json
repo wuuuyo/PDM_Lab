@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/sync-knowledge.mjs",
+  "buildCommand": "node scripts/sync-knowledge.mjs && node scripts/write-config.mjs",
   "outputDirectory": "site",
   "installCommand": ""
 }
