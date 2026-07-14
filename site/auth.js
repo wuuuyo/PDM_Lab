@@ -101,11 +101,11 @@
     if (!sb || !session?.user) return null
     const { data, error } = await sb
       .from('profiles')
-      .select('id, email, display_name, is_admin, role, login_count, last_login_at, created_at, updated_at, permissions')
+      .select('id, email, display_name, is_admin, role, is_disabled, login_count, last_login_at, created_at, updated_at, permissions')
       .eq('id', session.user.id)
       .maybeSingle()
     if (error) {
-      // 兼容尚未执行 rbac.sql / permissions.sql 的环境
+      // 兼容尚未执行 rbac.sql / permissions.sql / app-roles.sql 的环境
       const fallback = await sb
         .from('profiles')
         .select('*')
@@ -117,6 +117,13 @@
     }
     profile = data
     return profile
+  }
+
+  async function ensureActiveAccount() {
+    if (profile?.is_disabled) {
+      await signOut()
+      throw new Error(window.PMLabI18n?.t?.('auth.accountDisabled') || '账号已被禁用，请联系管理员')
+    }
   }
 
   async function touchLogin() {
@@ -141,6 +148,7 @@
     if (error) throw error
     session = data.session
     await loadProfile()
+    await ensureActiveAccount()
     await touchLogin()
     if (window.PDMAnalytics) window.PDMAnalytics.track('login', { method: 'email' })
     return session
@@ -199,6 +207,10 @@
       return { configured: true, loggedIn: false, error: err.message }
     }
     await refreshSession()
+    if (profile?.is_disabled) {
+      await signOut()
+      return { configured: true, loggedIn: false, error: 'account_disabled' }
+    }
     const sb = getClient()
     if (sb) {
       sb.auth.onAuthStateChange((event, newSession) => {

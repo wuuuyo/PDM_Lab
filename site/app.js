@@ -188,14 +188,7 @@ function buildCrumbsFromRoute(parts) {
   if (p0 === 'daily-learn') return [home, { label: t('nav.dailyLearn') }]
   if (p0 === 'feedback') return [home, { label: t('nav.feedback') }]
   if (p0 === 'admin') {
-    const c = [home, { href: '#/admin', label: t('nav.sectionAdmin') }]
-    if (!parts[1]) c.push({ label: t('nav.adminStats') })
-    if (parts[1] === 'knowledge') c.push({ href: '#/admin/knowledge', label: t('nav.adminKnowledge') })
-    if (parts[1] === 'permissions') c.push({ label: t('nav.adminPermissions') })
-    if (parts[1] === 'feedback') c.push({ label: t('nav.adminFeedback') })
-    if (parts[2] === 'new') c.push({ label: t('common.add') })
-    if (parts[2] === 'edit') c.push({ label: t('common.edit') })
-    return c
+    return []
   }
   return [home]
 }
@@ -674,9 +667,13 @@ function renderSidebar(activePath) {
           <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6.5h4M6 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
           <span class="nav-title">${escapeHtml(t('nav.adminKnowledge'))}</span>
         </a>
-        <a href="#/admin/permissions" class="nav-item ${activePath.includes('/admin/permissions') ? 'active' : ''}" title="${escapeHtml(t('nav.adminPermissions'))}">
+        <a href="#/admin/accounts" class="nav-item ${activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') ? 'active' : ''}" title="${escapeHtml(t('nav.adminAccounts'))}">
+          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 12.2c.8-2 2.4-3 4.5-3s3.7 1 4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          <span class="nav-title">${escapeHtml(t('nav.adminAccounts'))}</span>
+        </a>
+        <a href="#/admin/roles" class="nav-item ${activePath.includes('/admin/roles') ? 'active' : ''}" title="${escapeHtml(t('nav.adminRoles'))}">
           <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="7" width="6" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M6.3 7V5.6a1.7 1.7 0 0 1 3.4 0V7" stroke="currentColor" stroke-width="1.3"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminPermissions'))}</span>
+          <span class="nav-title">${escapeHtml(t('nav.adminRoles'))}</span>
         </a>
         <a href="#/admin/feedback" class="nav-item ${activePath.includes('/admin/feedback') ? 'active' : ''}" title="${escapeHtml(t('nav.adminFeedback'))}">
           <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5h9v7.2H7.2L4 12.5V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
@@ -2316,6 +2313,7 @@ function bindLoginEvents() {
     try {
       await Auth().signInWithEmail(email, password)
       persistRemember()
+      await Perm().loadRolePermissions?.()
       await Analytics()?.trackDailyActive?.()
       await PDMCloud.init()
       if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
@@ -2333,6 +2331,7 @@ function bindLoginEvents() {
       const data = await Auth().signUpWithEmail(email, password)
       persistRemember()
       if (data.session) {
+        await Perm().loadRolePermissions?.()
         await Analytics()?.trackDailyActive?.()
         await PDMCloud.init()
         if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
@@ -2580,333 +2579,14 @@ function bindReviewEvents() {
   })
 }
 
-let adminPermState = { userId: null, draft: null, roleDraft: null, users: [], q: '', roleFilter: 'all', panelOpen: false }
-
-async function fetchAdminUsersWithPerms() {
-  const sb = Auth().getClient()
-  if (!sb || !Auth().isAdmin()) throw new Error('无权限')
-  let data = null
-  let error = null
-  ;({ data, error } = await sb
-    .from('profiles')
-    .select('id, email, display_name, is_admin, role, permissions, last_login_at, created_at')
-    .order('created_at', { ascending: false }))
-  if (error && /role/i.test(error.message || '')) {
-    ;({ data, error } = await sb
-      .from('profiles')
-      .select('id, email, display_name, is_admin, permissions, last_login_at, created_at')
-      .order('created_at', { ascending: false }))
-  }
-  if (error) throw error
-  return (data || []).map((u) => ({ ...u, role: resolveProfileRole(u) }))
+async function renderAdminAccountsRoute() {
+  if (window.PDMAdminRbac?.renderAccountsRoute) return window.PDMAdminRbac.renderAccountsRoute()
+  document.getElementById('main').innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
 }
 
-function getFilteredAdminUsers(users) {
-  const q = adminPermState.q.trim().toLowerCase()
-  const roleFilter = adminPermState.roleFilter || 'all'
-  return users.filter((u) => {
-    const role = resolveProfileRole(u)
-    if (roleFilter !== 'all' && role !== roleFilter) return false
-    if (!q) return true
-    return `${u.email || ''} ${u.display_name || ''} ${roleLabel(role)}`.toLowerCase().includes(q)
-  })
-}
-
-function renderAdminPermissionsDetail(selected, canBindRole) {
-  if (!selected) return ''
-  const draft = adminPermState.draft || Perm().normalizePerms(selected.permissions)
-  const features = Perm().getFeatures()
-  const selectedRole = adminPermState.roleDraft || resolveProfileRole(selected)
-  const roleLocked = selectedRole === 'super_admin' || !canBindRole
-  const featureLocked = selectedRole !== 'user'
-
-  return `
-    <section class="admin-perm-panel" id="admin-perm-panel">
-      <div class="admin-perm-panel-head">
-        <div>
-          <div class="admin-perm-panel-kicker">${escapeHtml(t('admin.permConfig'))}</div>
-          <h2>${escapeHtml(selected.email || selected.id)}</h2>
-          <p>${escapeHtml(selected.display_name || t('admin.permNoName'))}</p>
-        </div>
-        <div class="admin-perm-actions">
-          <button type="button" class="btn-ghost" id="admin-perm-close">${escapeHtml(t('common.cancel'))}</button>
-          <button type="button" class="btn-primary" id="admin-perm-save">${escapeHtml(t('common.save'))}</button>
-        </div>
-      </div>
-
-      <div class="admin-perm-panel-body">
-        <div class="admin-rbac-block">
-          <div class="admin-rbac-block-head">
-            <h3>${escapeHtml(t('admin.roleBindTitle'))}</h3>
-            <p>${escapeHtml(canBindRole ? t('admin.roleBindHint') : t('admin.roleBindNeedSuper'))}</p>
-          </div>
-          <div class="admin-role-seg" role="group" aria-label="${escapeHtml(t('admin.roleBindTitle'))}">
-            ${selectedRole === 'super_admin' ? `
-              <span class="admin-role-seg-item active locked">${escapeHtml(t('admin.roleSuper'))}</span>
-            ` : `
-              <button type="button" class="admin-role-seg-item ${selectedRole === 'user' ? 'active' : ''}" data-role="user" ${roleLocked ? 'disabled' : ''}>${escapeHtml(t('admin.roleUser'))}</button>
-              <button type="button" class="admin-role-seg-item ${selectedRole === 'admin' ? 'active' : ''}" data-role="admin" ${roleLocked ? 'disabled' : ''}>${escapeHtml(t('admin.roleAdmin'))}</button>
-            `}
-          </div>
-        </div>
-
-        <div class="admin-rbac-block ${featureLocked ? 'is-muted' : ''}">
-          <div class="admin-rbac-block-head admin-rbac-block-head-row">
-            <div>
-              <h3>${escapeHtml(t('admin.featurePermTitle'))}</h3>
-              <p>${escapeHtml(featureLocked ? t('admin.permAdminHint') : t('admin.permEditHint'))}</p>
-            </div>
-            <button type="button" class="btn-secondary" id="admin-perm-reset" ${featureLocked ? 'disabled' : ''}>${escapeHtml(t('admin.permReset'))}</button>
-          </div>
-          <div class="admin-perm-table-wrap admin-perm-feature-table">
-            <div class="admin-perm-grid-head">
-              <span>${escapeHtml(t('admin.permFeature'))}</span>
-              <span>${escapeHtml(t('admin.permView'))}</span>
-              <span>${escapeHtml(t('admin.permEdit'))}</span>
-            </div>
-            ${features.map((f) => {
-              const node = draft[f.id] || {}
-              const hasEdit = f.actions.includes('edit')
-              return `<div class="admin-perm-row" data-feature="${f.id}">
-                <span class="admin-perm-feature">${escapeHtml(Perm().featureLabel(f))}</span>
-                <label class="admin-perm-check"><input type="checkbox" data-action="view" ${node.view !== false ? 'checked' : ''} ${featureLocked ? 'disabled' : ''} /></label>
-                <label class="admin-perm-check">${hasEdit
-                  ? `<input type="checkbox" data-action="edit" ${node.edit ? 'checked' : ''} ${featureLocked ? 'disabled' : ''} />`
-                  : '<span class="admin-perm-na">—</span>'}</label>
-              </div>`
-            }).join('')}
-          </div>
-        </div>
-      </div>
-    </section>`
-}
-
-function renderAdminPermissionsPage(users) {
-  const filtered = getFilteredAdminUsers(users)
-  const selected = adminPermState.panelOpen
-    ? (users.find((u) => u.id === adminPermState.userId) || null)
-    : null
-  if (selected && !adminPermState.draft) {
-    adminPermState.draft = Perm().normalizePerms(selected.permissions)
-  }
-  if (selected && !adminPermState.roleDraft) {
-    adminPermState.roleDraft = resolveProfileRole(selected)
-  }
-  const canBindRole = Auth().isSuperAdmin?.() === true
-  const roleFilter = adminPermState.roleFilter || 'all'
-
-  return `
-    <div class="page admin-page admin-perm-page">
-      ${renderAdminHeader(t('nav.adminPermissions'), t('admin.permDesc'), 'permissions')}
-
-      <div class="admin-filter-bar">
-        <div class="admin-filter-fields">
-          <label class="admin-filter-item admin-filter-item-search">
-            <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
-            <input type="search" id="admin-perm-search" placeholder="${escapeHtml(t('admin.permSearch'))}" value="${escapeHtml(adminPermState.q)}" />
-          </label>
-          <label class="admin-filter-item admin-filter-item-sm">
-            <span>${escapeHtml(t('admin.permFilterRole'))}</span>
-            <select id="admin-perm-role-filter">
-              <option value="all" ${roleFilter === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.permRoleAll'))}</option>
-              <option value="user" ${roleFilter === 'user' ? 'selected' : ''}>${escapeHtml(t('admin.roleUser'))}</option>
-              <option value="admin" ${roleFilter === 'admin' ? 'selected' : ''}>${escapeHtml(t('admin.roleAdmin'))}</option>
-              <option value="super_admin" ${roleFilter === 'super_admin' ? 'selected' : ''}>${escapeHtml(t('admin.roleSuper'))}</option>
-            </select>
-          </label>
-          <div class="admin-filter-item admin-filter-item-btn">
-            <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
-            <button type="button" class="btn-ghost admin-filter-reset" id="admin-perm-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
-          </div>
-        </div>
-        <div class="admin-filter-item admin-filter-item-btn admin-filter-trailing">
-          <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
-          <div class="admin-filter-meta">${escapeHtml(t('admin.permCount', { n: filtered.length }))}</div>
-        </div>
-      </div>
-
-      <div class="admin-perm-table-wrap">
-        <table class="admin-data-table">
-          <thead>
-            <tr>
-              <th>${escapeHtml(t('admin.permColEmail'))}</th>
-              <th>${escapeHtml(t('admin.permColName'))}</th>
-              <th>${escapeHtml(t('admin.permColRole'))}</th>
-              <th>${escapeHtml(t('admin.permColLastLogin'))}</th>
-              <th>${escapeHtml(t('admin.permColCreated'))}</th>
-              <th class="admin-data-col-action">${escapeHtml(t('admin.permColAction'))}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filtered.length ? filtered.map((u) => {
-              const role = resolveProfileRole(u)
-              const active = selected?.id === u.id
-              return `<tr class="admin-data-row ${active ? 'active' : ''}" data-user-id="${escapeHtml(u.id)}">
-                <td><span class="admin-data-primary">${escapeHtml(u.email || '-')}</span></td>
-                <td>${escapeHtml(u.display_name || '—')}</td>
-                <td><span class="admin-role-badge admin-role-${role}">${escapeHtml(roleLabel(role))}</span></td>
-                <td>${u.last_login_at ? formatDate(u.last_login_at) : '—'}</td>
-                <td>${u.created_at ? formatDate(u.created_at) : '—'}</td>
-                <td class="admin-data-col-action">
-                  <button type="button" class="btn-ghost btn-sm admin-perm-config" data-user-id="${escapeHtml(u.id)}">${escapeHtml(t('admin.permConfig'))}</button>
-                </td>
-              </tr>`
-            }).join('') : `<tr><td colspan="6" class="admin-data-empty">${escapeHtml(t('admin.permEmpty'))}</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-      ${selected ? renderAdminPermissionsDetail(selected, canBindRole) : ''}
-    </div>`
-}
-
-function bindAdminPermissionsEvents(users) {
-  adminPermState.users = users
-  const rerender = () => {
-    const main = document.getElementById('main')
-    main.innerHTML = renderAdminPermissionsPage(users)
-    bindAdminPermissionsEvents(users)
-  }
-
-  document.getElementById('admin-perm-search')?.addEventListener('input', (e) => {
-    adminPermState.q = e.target.value
-    const pos = e.target.selectionStart
-    rerender()
-    const input = document.getElementById('admin-perm-search')
-    if (input) {
-      input.focus()
-      try { input.setSelectionRange(pos, pos) } catch (_) {}
-    }
-  })
-
-  document.getElementById('admin-perm-role-filter')?.addEventListener('change', (e) => {
-    adminPermState.roleFilter = e.target.value || 'all'
-    rerender()
-  })
-
-  document.getElementById('admin-perm-filter-reset')?.addEventListener('click', () => {
-    adminPermState.q = ''
-    adminPermState.roleFilter = 'all'
-    rerender()
-  })
-
-  const openUser = (userId) => {
-    const user = users.find((u) => u.id === userId)
-    if (!user) return
-    adminPermState.userId = user.id
-    adminPermState.draft = Perm().normalizePerms(user.permissions)
-    adminPermState.roleDraft = resolveProfileRole(user)
-    adminPermState.panelOpen = true
-    rerender()
-    document.getElementById('admin-perm-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }
-
-  document.querySelectorAll('.admin-perm-config').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation()
-      openUser(btn.dataset.userId)
-    })
-  })
-
-  document.querySelectorAll('.admin-data-row').forEach((row) => {
-    row.addEventListener('click', () => openUser(row.dataset.userId))
-  })
-
-  document.getElementById('admin-perm-close')?.addEventListener('click', () => {
-    adminPermState.panelOpen = false
-    rerender()
-  })
-
-  document.querySelectorAll('.admin-role-seg-item[data-role]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (!Auth().isSuperAdmin?.() || btn.disabled) return
-      adminPermState.roleDraft = btn.dataset.role === 'admin' ? 'admin' : 'user'
-      rerender()
-    })
-  })
-
-  document.querySelectorAll('.admin-perm-row input[type="checkbox"]').forEach((input) => {
-    input.addEventListener('change', () => {
-      const row = input.closest('.admin-perm-row')
-      const feature = row?.dataset.feature
-      const action = input.dataset.action
-      if (!feature || !action || !adminPermState.draft) return
-      if (!adminPermState.draft[feature]) adminPermState.draft[feature] = {}
-      adminPermState.draft[feature][action] = input.checked
-      if (action === 'view' && !input.checked && adminPermState.draft[feature].edit) {
-        adminPermState.draft[feature].edit = false
-        const editInput = row.querySelector('input[data-action="edit"]')
-        if (editInput) editInput.checked = false
-      }
-    })
-  })
-
-  document.getElementById('admin-perm-reset')?.addEventListener('click', () => {
-    adminPermState.draft = Perm().defaultPermMap()
-    rerender()
-  })
-
-  document.getElementById('admin-perm-save')?.addEventListener('click', async () => {
-    const userId = adminPermState.userId
-    if (!userId) return
-    const selected = users.find((u) => u.id === userId)
-    if (!selected) return
-    const currentRole = resolveProfileRole(selected)
-    const nextRole = currentRole === 'super_admin'
-      ? 'super_admin'
-      : (adminPermState.roleDraft === 'admin' ? 'admin' : 'user')
-    try {
-      const sb = Auth().getClient()
-      if (!sb) throw new Error(t('auth.notConfigured'))
-      if (currentRole === 'super_admin' && nextRole !== 'super_admin') {
-        throw new Error(t('admin.roleSuperLocked'))
-      }
-      if (nextRole !== currentRole && !Auth().isSuperAdmin?.()) {
-        throw new Error(t('admin.roleBindNeedSuper'))
-      }
-      const payload = {
-        updated_at: new Date().toISOString(),
-        is_admin: nextRole === 'admin' || nextRole === 'super_admin',
-      }
-      if (nextRole === 'user' && adminPermState.draft) {
-        payload.permissions = adminPermState.draft
-      }
-      let error = null
-      ;({ error } = await sb.from('profiles').update({ ...payload, role: nextRole }).eq('id', userId))
-      if (error && /role/i.test(error.message || '')) {
-        ;({ error } = await sb.from('profiles').update(payload).eq('id', userId))
-      }
-      if (error) throw error
-      const idx = users.findIndex((u) => u.id === userId)
-      if (idx >= 0) {
-        users[idx] = {
-          ...users[idx],
-          role: nextRole,
-          is_admin: payload.is_admin,
-          permissions: payload.permissions ?? users[idx].permissions,
-        }
-      }
-      adminPermState.roleDraft = nextRole
-      showToast(t('admin.permSaved'), 'success')
-      rerender()
-    } catch (e) {
-      showToast(e.message || String(e), 'error')
-    }
-  })
-}
-
-async function renderAdminPermissionsRoute() {
-  const main = document.getElementById('main')
-  main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
-  try {
-    const users = await fetchAdminUsersWithPerms()
-    adminPermState.users = users
-    adminPermState.panelOpen = false
-    main.innerHTML = renderAdminPermissionsPage(users)
-    bindAdminPermissionsEvents(users)
-  } catch (e) {
-    main.innerHTML = `<div class="page admin-page">${renderAdminHeader(t('nav.adminPermissions'), '', 'permissions')}<p>${escapeHtml(e.message)}</p><p class="form-hint">${escapeHtml(t('admin.permSqlHint'))}</p></div>`
-  }
+async function renderAdminRolesRoute() {
+  if (window.PDMAdminRbac?.renderRolesRoute) return window.PDMAdminRbac.renderRolesRoute()
+  document.getElementById('main').innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
 }
 
 function render() {
@@ -2949,9 +2629,15 @@ function render() {
   } else if (parts[0] === 'admin' && parts[1] === 'feedback') {
     if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
     else renderAdminFeedbackRoute()
-  } else if (parts[0] === 'admin' && parts[1] === 'permissions') {
+  } else if (parts[0] === 'admin' && (parts[1] === 'accounts' || parts[1] === 'permissions')) {
     if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
-    else renderAdminPermissionsRoute()
+    else if (parts[1] === 'permissions') {
+      navigate('/admin/accounts')
+      return
+    } else renderAdminAccountsRoute()
+  } else if (parts[0] === 'admin' && parts[1] === 'roles') {
+    if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
+    else renderAdminRolesRoute()
   } else if (parts[0] === 'feedback') {
     if (!Perm().can('feedback', 'edit') && !Perm().can('feedback', 'view')) {
       main.innerHTML = renderPermissionDenied()
@@ -3096,6 +2782,7 @@ initStorage()
     window.PMLabI18n?.onChange(() => render())
     return Auth().init()
   })
+  .then(() => Perm().loadRolePermissions?.())
   .then(() => Analytics()?.trackDailyActive?.())
   .then(() => SharedK()?.init?.())
   .then(() => PDMCloud.init())
