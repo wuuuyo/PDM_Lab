@@ -471,11 +471,11 @@ function renderAdminFeedbackPage(list) {
 
       <div class="admin-filter-bar">
         <div class="admin-filter-fields">
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-search">
             <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
             <input type="search" id="admin-feedback-search" placeholder="${escapeHtml(t('admin.feedbackSearch'))}" value="${escapeHtml(adminFeedbackState.q)}" />
           </label>
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-sm">
             <span>${escapeHtml(t('admin.feedbackFilterStatus'))}</span>
             <select id="admin-feedback-status">
               <option value="all" ${adminFeedbackState.status === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.feedbackStatusAll'))}</option>
@@ -484,9 +484,15 @@ function renderAdminFeedbackPage(list) {
               <option value="done" ${adminFeedbackState.status === 'done' ? 'selected' : ''}>${escapeHtml(t('feedback.statusDone'))}</option>
             </select>
           </label>
-          <button type="button" class="btn-ghost admin-filter-reset" id="admin-feedback-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          <div class="admin-filter-item admin-filter-item-btn">
+            <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="button" class="btn-ghost admin-filter-reset" id="admin-feedback-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          </div>
         </div>
-        <div class="admin-filter-meta">${escapeHtml(t('admin.feedbackCount', { n: filtered.length, avg, newCount }))}</div>
+        <div class="admin-filter-item admin-filter-item-btn admin-filter-trailing">
+          <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+          <div class="admin-filter-meta">${escapeHtml(t('admin.feedbackCount', { n: filtered.length, avg, newCount }))}</div>
+        </div>
       </div>
 
       <div class="admin-perm-table-wrap">
@@ -1815,11 +1821,11 @@ function renderAdminKnowledgePage(entries) {
 
       <div class="admin-filter-bar">
         <div class="admin-filter-fields">
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-search">
             <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
             <input type="search" id="skill-search" placeholder="${escapeHtml(t('admin.knowledgeSearch'))}" value="${escapeHtml(adminKnowledgeState.q)}" />
           </label>
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-sm">
             <span>${escapeHtml(t('admin.knowledgeFilterSource'))}</span>
             <select id="skill-filter">
               <option value="all" ${adminKnowledgeState.filter === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeSourceAll'))}</option>
@@ -1828,7 +1834,7 @@ function renderAdminKnowledgePage(entries) {
               <option value="admin" ${adminKnowledgeState.filter === 'admin' ? 'selected' : ''}>运营新增</option>
             </select>
           </label>
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-sm">
             <span>${escapeHtml(t('admin.knowledgeFilterStatus'))}</span>
             <select id="skill-status">
               <option value="all" ${adminKnowledgeState.status === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeStatusAll'))}</option>
@@ -1836,11 +1842,17 @@ function renderAdminKnowledgePage(entries) {
               <option value="draft" ${adminKnowledgeState.status === 'draft' ? 'selected' : ''}>${escapeHtml(t('admin.knowledgeDraft'))}</option>
             </select>
           </label>
-          <button type="button" class="btn-ghost admin-filter-reset" id="admin-knowledge-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          <div class="admin-filter-item admin-filter-item-btn">
+            <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="button" class="btn-ghost admin-filter-reset" id="admin-knowledge-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          </div>
         </div>
-        <div class="admin-filter-actions">
-          <a href="#/admin/knowledge/new" class="btn-primary">${escapeHtml(t('admin.knowledgeAdd'))}</a>
-          <button type="button" class="btn-secondary" id="btn-import-catalog">${escapeHtml(t('admin.knowledgeImport'))}</button>
+        <div class="admin-filter-item admin-filter-item-btn admin-filter-trailing">
+          <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+          <div class="admin-filter-actions">
+            <a href="#/admin/knowledge/new" class="btn-primary">${escapeHtml(t('admin.knowledgeAdd'))}</a>
+            <button type="button" class="btn-secondary" id="btn-import-catalog">${escapeHtml(t('admin.knowledgeImport'))}</button>
+          </div>
         </div>
       </div>
       <div class="admin-filter-meta-line">${escapeHtml(t('admin.knowledgeCount', { total: entries.length, published: publishedCount, draft: draftCount, shown: filtered.length }))}</div>
@@ -2689,11 +2701,11 @@ function renderAdminPermissionsPage(users) {
 
       <div class="admin-filter-bar">
         <div class="admin-filter-fields">
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-search">
             <span>${escapeHtml(t('admin.permFilterSearch'))}</span>
             <input type="search" id="admin-perm-search" placeholder="${escapeHtml(t('admin.permSearch'))}" value="${escapeHtml(adminPermState.q)}" />
           </label>
-          <label class="admin-filter-item">
+          <label class="admin-filter-item admin-filter-item-sm">
             <span>${escapeHtml(t('admin.permFilterRole'))}</span>
             <select id="admin-perm-role-filter">
               <option value="all" ${roleFilter === 'all' ? 'selected' : ''}>${escapeHtml(t('admin.permRoleAll'))}</option>
@@ -2702,9 +2714,15 @@ function renderAdminPermissionsPage(users) {
               <option value="super_admin" ${roleFilter === 'super_admin' ? 'selected' : ''}>${escapeHtml(t('admin.roleSuper'))}</option>
             </select>
           </label>
-          <button type="button" class="btn-ghost admin-filter-reset" id="admin-perm-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          <div class="admin-filter-item admin-filter-item-btn">
+            <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="button" class="btn-ghost admin-filter-reset" id="admin-perm-filter-reset">${escapeHtml(t('admin.permFilterReset'))}</button>
+          </div>
         </div>
-        <div class="admin-filter-meta">${escapeHtml(t('admin.permCount', { n: filtered.length }))}</div>
+        <div class="admin-filter-item admin-filter-item-btn admin-filter-trailing">
+          <span class="admin-filter-label-spacer" aria-hidden="true">&nbsp;</span>
+          <div class="admin-filter-meta">${escapeHtml(t('admin.permCount', { n: filtered.length }))}</div>
+        </div>
       </div>
 
       <div class="admin-perm-table-wrap">
