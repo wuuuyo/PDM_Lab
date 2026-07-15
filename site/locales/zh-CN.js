@@ -1,8 +1,8 @@
 window.PM_LAB_LOCALES = window.PM_LAB_LOCALES || {}
 window.PM_LAB_LOCALES['zh-CN'] = {
-  site: { title: 'PM Lab · 产品经理成长实验室' },
+  site: { title: 'PM Lab · 产品小白实验室' },
   nav: {
-    brandSubtitle: '产品经理成长实验室',
+    brandSubtitle: '产品小白实验室',
     searchPlaceholder: '搜索知识点...',
     searchEmpty: '未找到相关内容',
     searchSourceMy: ' · 我的',

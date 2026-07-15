@@ -6,6 +6,7 @@
   let client = null
   let session = null
   let profile = null
+  let authListenerBound = false
 
   function normalizeSupabaseUrl(raw) {
     let u = String(raw || '').trim()
@@ -40,6 +41,12 @@
     })
   }
 
+  function notifyAuthChanged() {
+    try {
+      window.dispatchEvent(new CustomEvent('pdm-auth-changed'))
+    } catch (_) {}
+  }
+
   function getClient() {
     if (!isConfigured()) return null
     if (client) return client
@@ -48,7 +55,9 @@
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        // hash 路由站点：仅在 hash 中带 token 时解析；/login 等普通路由不会清掉会话
         detectSessionInUrl: true,
+        storage: window.localStorage,
       },
     })
     return client
@@ -67,9 +76,8 @@
   }
 
   function getRole() {
-    if (profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'user') {
-      return profile.role
-    }
+    // 支持自定义角色 code；系统角色 + 自定义角色都以 profiles.role 为准
+    if (profile?.role) return profile.role
     const email = session?.user?.email
     const admins = getConfig().adminEmails.map((e) => String(e).toLowerCase())
     if (email && admins.includes(String(email).toLowerCase())) return 'super_admin'
@@ -99,20 +107,29 @@
   async function loadProfile() {
     const sb = getClient()
     if (!sb || !session?.user) return null
-    const { data, error } = await sb
-      .from('profiles')
-      .select('id, email, display_name, is_admin, role, is_disabled, login_count, last_login_at, created_at, updated_at, permissions')
-      .eq('id', session.user.id)
-      .maybeSingle()
-    if (error) {
-      // 兼容尚未执行 rbac.sql / permissions.sql / app-roles.sql 的环境
-      const fallback = await sb
+
+    const full = 'id, email, display_name, is_admin, role, is_disabled, login_count, last_login_at, created_at, updated_at, permissions'
+    let data = null
+    let error = null
+    ;({ data, error } = await sb.from('profiles').select(full).eq('id', session.user.id).maybeSingle())
+
+    if (error && /is_disabled|column/i.test(error.message || '')) {
+      ;({ data, error } = await sb
         .from('profiles')
-        .select('*')
+        .select('id, email, display_name, is_admin, role, login_count, last_login_at, created_at, updated_at, permissions')
         .eq('id', session.user.id)
-        .maybeSingle()
-      if (fallback.error) throw fallback.error
-      profile = fallback.data
+        .maybeSingle())
+    }
+    if (error && /role|permissions/i.test(error.message || '')) {
+      ;({ data, error } = await sb
+        .from('profiles')
+        .select('id, email, display_name, is_admin, login_count, last_login_at, created_at, updated_at')
+        .eq('id', session.user.id)
+        .maybeSingle())
+    }
+    if (error) {
+      console.warn('loadProfile:', error.message)
+      // 会话已存在时不因 profile 读取失败而登出
       return profile
     }
     profile = data
@@ -130,13 +147,14 @@
     const sb = getClient()
     if (!sb || !session?.user) return
     const now = new Date().toISOString()
-    await sb.from('profiles').upsert({
+    const { error } = await sb.from('profiles').upsert({
       id: session.user.id,
       email: session.user.email,
       last_login_at: now,
       updated_at: now,
       login_count: (profile?.login_count || 0) + 1,
     }, { onConflict: 'id' })
+    if (error) console.warn('touchLogin:', error.message)
     await loadProfile()
   }
 
@@ -151,6 +169,7 @@
     await ensureActiveAccount()
     await touchLogin()
     if (window.PDMAnalytics) window.PDMAnalytics.track('login', { method: 'email' })
+    notifyAuthChanged()
     return session
   }
 
@@ -169,6 +188,7 @@
       await loadProfile()
       await touchLogin()
       if (window.PDMAnalytics) window.PDMAnalytics.track('register', { method: 'email' })
+      notifyAuthChanged()
     }
     return data
   }
@@ -179,13 +199,14 @@
     session = null
     profile = null
     if (window.PDMAnalytics) window.PDMAnalytics.track('logout')
+    notifyAuthChanged()
   }
 
   async function resetPasswordForEmail(email) {
     await loadSupabaseLib()
     const sb = getClient()
     if (!sb) throw new Error('网站尚未配置云服务，请联系管理员')
-    const redirectTo = `${location.origin}${location.pathname}#/reset-password`
+    const redirectTo = `${location.origin}${location.pathname}?type=recovery#/reset-password`
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo })
     if (error) throw error
   }
@@ -199,6 +220,37 @@
     return data
   }
 
+  function bindAuthListener(sb) {
+    if (authListenerBound || !sb) return
+    authListenerBound = true
+    sb.auth.onAuthStateChange(async (event, newSession) => {
+      // 忽略瞬态空会话，避免刚登录就被刷成访客（重复出现登录入口）
+      if (!newSession?.user && session?.user && event !== 'SIGNED_OUT') {
+        return
+      }
+      session = newSession
+      if (newSession?.user) {
+        try {
+          await loadProfile()
+          if (profile?.is_disabled) {
+            await signOut()
+            return
+          }
+        } catch (e) {
+          console.warn('onAuthStateChange profile:', e.message || e)
+        }
+      } else {
+        profile = null
+      }
+      if (event === 'PASSWORD_RECOVERY' && !location.hash.includes('reset-password')) {
+        location.hash = '#/reset-password'
+      }
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        notifyAuthChanged()
+      }
+    })
+  }
+
   async function init() {
     if (!isConfigured()) return { configured: false, loggedIn: false }
     try {
@@ -206,22 +258,12 @@
     } catch (err) {
       return { configured: true, loggedIn: false, error: err.message }
     }
+    const sb = getClient()
+    bindAuthListener(sb)
     await refreshSession()
     if (profile?.is_disabled) {
       await signOut()
       return { configured: true, loggedIn: false, error: 'account_disabled' }
-    }
-    const sb = getClient()
-    if (sb) {
-      sb.auth.onAuthStateChange((event, newSession) => {
-        session = newSession
-        if (newSession?.user) loadProfile()
-        else profile = null
-        // 邮件重置链接会写入 session；落到独立改密页，避免和 hash 路由冲撞
-        if (event === 'PASSWORD_RECOVERY' && !location.hash.includes('reset-password')) {
-          location.hash = '#/reset-password'
-        }
-      })
     }
     return { configured: true, loggedIn: isLoggedIn(), email: session?.user?.email, isAdmin: isAdmin(), role: getRole() }
   }

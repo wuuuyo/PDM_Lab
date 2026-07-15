@@ -1,8 +1,8 @@
 window.PM_LAB_LOCALES = window.PM_LAB_LOCALES || {}
 window.PM_LAB_LOCALES['en-US'] = {
-  site: { title: 'PM Lab · Product Manager Growth Lab' },
+  site: { title: 'PM Lab · Product Newbie Lab' },
   nav: {
-    brandSubtitle: 'Product Manager Growth Lab',
+    brandSubtitle: 'Product Newbie Lab',
     searchPlaceholder: 'Search topics...',
     searchEmpty: 'No results found',
     searchSourceMy: ' · Mine',

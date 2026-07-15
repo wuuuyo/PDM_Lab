@@ -50,7 +50,22 @@ function parseRoute() {
 }
 
 function navigate(path) {
-  location.hash = path
+  const normalized = path.startsWith('#')
+    ? path
+    : `#${path.startsWith('/') ? path : `/${path}`}`
+  if (location.hash === normalized || (normalized === '#/' && (!location.hash || location.hash === '#'))) {
+    render()
+    return
+  }
+  location.hash = normalized
+}
+
+/** 首次进入：无 hash 时落到首页，避免空白或误入登录页 */
+function ensureDefaultHomeHash() {
+  const h = location.hash
+  if (!h || h === '#') {
+    history.replaceState(null, '', `${location.pathname}${location.search}#/`)
+  }
 }
 
 function getEmailOrgLabel(email) {
@@ -2319,6 +2334,7 @@ function bindLoginEvents() {
       if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
       showToast(t('auth.toastLoggedIn'), 'success')
       navigate('/')
+      render()
     } catch (err) { showToast(err.message, 'error') }
   })
 
@@ -2337,6 +2353,7 @@ function bindLoginEvents() {
         if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
         showToast(t('auth.toastRegistered'), 'success')
         navigate('/')
+        render()
       } else showToast(t('auth.toastConfirmEmail'), 'info')
     } catch (err) { showToast(err.message, 'error') }
   })
@@ -2362,26 +2379,32 @@ function bindLocaleEvents() {
   })
 }
 
+let topAccountDocBound = false
 function bindTopAccountEvents() {
   const menuBtn = document.getElementById('topbar-account-menu-btn')
   const menu = document.getElementById('topbar-account-menu')
 
   const closeMenu = () => {
-    menu?.setAttribute('hidden', '')
+    document.getElementById('topbar-account-menu')?.setAttribute('hidden', '')
   }
 
   menuBtn?.addEventListener('click', (e) => {
     e.stopPropagation()
-    if (!menu) return
-    const open = menu.hasAttribute('hidden')
-    if (open) menu.removeAttribute('hidden')
-    else menu.setAttribute('hidden', '')
+    const m = document.getElementById('topbar-account-menu')
+    if (!m) return
+    const open = m.hasAttribute('hidden')
+    if (open) m.removeAttribute('hidden')
+    else m.setAttribute('hidden', '')
   })
 
-  document.addEventListener('click', (e) => {
-    if (!menu || menu.hasAttribute('hidden')) return
-    if (!e.target.closest('.topbar-account')) closeMenu()
-  })
+  if (!topAccountDocBound) {
+    topAccountDocBound = true
+    document.addEventListener('click', (e) => {
+      const m = document.getElementById('topbar-account-menu')
+      if (!m || m.hasAttribute('hidden')) return
+      if (!e.target.closest('.topbar-account')) closeMenu()
+    })
+  }
 
   document.getElementById('topbar-logout')?.addEventListener('click', async () => {
     closeMenu()
@@ -2621,6 +2644,10 @@ function render() {
     bindHomeEvents()
     Analytics()?.track('page_view', { page: 'home' })
   } else if (parts[0] === 'login') {
+    if (Auth().isLoggedIn()) {
+      navigate('/')
+      return
+    }
     main.innerHTML = renderLoginPage()
     bindLoginEvents()
   } else if (parts[0] === 'reset-password') {
@@ -2774,12 +2801,22 @@ function render() {
 }
 
 window.addEventListener('hashchange', render)
+window.addEventListener('pdm-auth-changed', () => {
+  // 登录态变化后立刻刷新顶栏/侧栏，避免仍显示「去登录」
+  if (Auth().isLoggedIn() && (location.hash === '#/login' || location.hash === '#login')) {
+    navigate('/')
+    return
+  }
+  render()
+})
 
+ensureDefaultHomeHash()
 render()
 initStorage()
   .then(() => {
     window.PMLabI18n?.init()
     window.PMLabI18n?.onChange(() => render())
+    document.title = t('site.title', null, document.title)
     return Auth().init()
   })
   .then(() => Perm().loadRolePermissions?.())
@@ -2795,6 +2832,7 @@ initStorage()
     window.renderForumPostRoute = (id) => Sections().renderForumPostRoute(id)
     if (Auth().isLoggedIn()) {
       DailyPush()?.start?.(showDailyPushModal)
+      if (location.hash === '#/login' || location.hash === '#login') navigate('/')
     }
     render()
   })
