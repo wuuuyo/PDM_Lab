@@ -135,6 +135,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     personalHubTitle: 'Personal space',
     adminHubTitle: 'Admin',
     adminHubDesc: 'Choose a management module',
+    adminFeedbackCardDesc: 'Review and process user feedback',
   },
   common: {
     home: 'Home',

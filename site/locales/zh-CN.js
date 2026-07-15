@@ -133,6 +133,7 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     personalHubTitle: '个人空间',
     adminHubTitle: '管理后台',
     adminHubDesc: '选择要管理的模块',
+    adminFeedbackCardDesc: '查看与处理用户反馈',
   },
   common: {
     home: '首页',
