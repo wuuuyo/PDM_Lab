@@ -903,7 +903,7 @@ function getAdminHubCards() {
     { href: '#/admin/knowledge', title: t('nav.adminKnowledge'), desc: t('admin.knowledgeDesc') },
     { href: '#/admin/accounts', title: t('nav.adminAccounts'), desc: t('admin.accountsDesc') },
     { href: '#/admin/roles', title: t('nav.adminRoles'), desc: t('admin.rolesDesc') },
-    { href: '#/admin/feedback', title: t('nav.adminFeedback'), desc: t('admin.feedbackDesc', { avg: '—', newCount: '—' }, '查看与处理用户反馈') },
+    { href: '#/admin/feedback', title: t('nav.adminFeedback'), desc: '查看与处理用户反馈' },
   ]
 }
 
