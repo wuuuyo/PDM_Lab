@@ -1515,6 +1515,146 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     font-weight: 700;
   }
 
+  /* 移动端账号：登录态简洁资料页 */
+  .mobile-account-page .auth-page {
+    padding-top: 8px;
+  }
+
+  .mobile-account-page .auth-card {
+    margin: 0;
+    max-width: none;
+    box-shadow: none;
+  }
+
+  .mobile-account-head {
+    margin-bottom: 16px;
+  }
+
+  .mobile-account-head h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 18px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-elevated);
+  }
+
+  .mobile-profile-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .mobile-profile-avatar {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(160deg, #1f4a3d, #3d735c);
+  }
+
+  .mobile-profile-who {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobile-profile-who strong {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .mobile-profile-who span {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    word-break: break-all;
+  }
+
+  .mobile-profile-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .mobile-profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-profile-field > span {
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+
+  .mobile-profile-nickname-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mobile-profile-nickname-row .account-nickname-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobile-profile-account {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--bg-subtle);
+    font-size: 0.9rem;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .mobile-profile-logout {
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .mobile-account-admin-link {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-elevated);
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.9375rem;
+    font-weight: 650;
+  }
+
+  .mobile-account-admin-link span:last-child {
+    color: var(--text-muted);
+  }
+
   .home-stage {
     padding: 20px 4px 36px;
   }

@@ -1149,6 +1149,12 @@ function renderNicknameForm(profile, email) {
     </section>`
 }
 
+function accountInitial(name, email) {
+  const src = (name || email || 'U').trim()
+  const ch = src[0] || 'U'
+  return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch
+}
+
 function bindNicknameForm() {
   document.getElementById('account-nickname-save')?.addEventListener('click', async () => {
     const input = document.getElementById('account-nickname-input')
@@ -1192,42 +1198,59 @@ function renderAccountProfilePage() {
 }
 
 function renderMobileAccountHub() {
+  // 未登录：账号 Tab 直接展示登录/注册
+  if (!Auth().isLoggedIn()) {
+    return renderLoginPage()
+  }
+
   const session = Auth().getSession?.()
   const email = session?.user?.email || ''
   const profile = Auth().getProfile?.()
-  const name = profile?.display_name?.trim() || email || t('nav.guestHint')
-  const adminItems = Auth().isAdmin() ? [
-    { href: '#/admin', title: t('nav.sectionAdmin') },
-    { href: '#/admin/stats', title: t('nav.adminStats') },
-    { href: '#/admin/knowledge', title: t('nav.adminKnowledge') },
-    { href: '#/admin/accounts', title: t('nav.adminAccounts') },
-    { href: '#/admin/roles', title: t('nav.adminRoles') },
-    { href: '#/admin/feedback', title: t('nav.adminFeedback') },
-  ] : []
+  const name = profile?.display_name?.trim() || ''
+  const showName = name || email || t('mobile.accountTitle')
+  const initial = accountInitial(name, email)
 
   return `
     <div class="page mobile-hub-page mobile-account-page">
-      <header class="mobile-hub-head">
+      <header class="mobile-account-head">
         <h1>${escapeHtml(t('mobile.accountTitle'))}</h1>
-        <p>${escapeHtml(Auth().isLoggedIn() ? t('mobile.accountSignedIn') : t('mobile.accountSignedOut'))}</p>
       </header>
-      <section class="mobile-account-card">
-        <div class="mobile-account-card-name">${escapeHtml(name)}</div>
-        ${Auth().isLoggedIn() && email ? `<div class="mobile-account-card-email">${escapeHtml(email)}</div>` : ''}
-        ${Auth().isLoggedIn()
-          ? `<button type="button" class="btn-secondary" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>`
-          : `<a href="#/login" class="btn-primary">${escapeHtml(t('nav.loginRegister'))}</a>`}
+      <section class="mobile-profile-card">
+        <div class="mobile-profile-top">
+          <span class="mobile-profile-avatar" aria-hidden="true">${escapeHtml(initial)}</span>
+          <div class="mobile-profile-who">
+            <strong>${escapeHtml(showName)}</strong>
+            ${email ? `<span>${escapeHtml(email)}</span>` : ''}
+          </div>
+        </div>
+        <div class="mobile-profile-fields">
+          <label class="mobile-profile-field">
+            <span>${escapeHtml(t('account.nicknameLabel'))}</span>
+            <div class="mobile-profile-nickname-row">
+              <input type="text" id="account-nickname-input" class="account-nickname-input" maxlength="32" value="${escapeHtml(name)}" placeholder="${escapeHtml(t('account.nicknamePlaceholder'))}" autocomplete="nickname" />
+              <button type="button" class="btn-primary btn-sm" id="account-nickname-save">${escapeHtml(t('account.nicknameSave'))}</button>
+            </div>
+          </label>
+          <div class="mobile-profile-field">
+            <span>${escapeHtml(t('account.emailLabel'))}</span>
+            <p class="mobile-profile-account">${escapeHtml(email || '—')}</p>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary mobile-profile-logout" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>
       </section>
-      ${Auth().isLoggedIn() ? renderNicknameForm(profile, email) : ''}
-      ${adminItems.length ? `
-        <section class="mobile-account-admin">
-          <h2>${escapeHtml(t('nav.sectionAdmin'))}</h2>
-          ${renderMobileHubList(adminItems)}
-        </section>` : ''}
+      ${Auth().isAdmin() ? `
+        <a href="#/admin" class="mobile-account-admin-link">
+          <span>${escapeHtml(t('nav.sectionAdmin'))}</span>
+          <span aria-hidden="true">→</span>
+        </a>` : ''}
     </div>`
 }
 
 function bindMobileAccountHub() {
+  if (!Auth().isLoggedIn()) {
+    bindLoginEvents()
+    return
+  }
   bindNicknameForm()
   document.getElementById('mobile-account-logout')?.addEventListener('click', async () => {
     await Auth().signOut()
@@ -1772,12 +1795,74 @@ function renderKnowledgeParagraphs(lines) {
   }).join('')
 }
 
-function renderKnowledgeDetailBody(item) {
+/** 业务词条正文：分区标题 + 要点列表 + 键值行 */
+function renderTermDetailBody(item) {
+  const lines = item.content || []
+  const blocks = []
+  let current = { title: '', kind: 'text', rows: [] }
+
+  const flush = () => {
+    if (!current.rows.length && !current.title) return
+    blocks.push(current)
+    current = { title: '', kind: 'text', rows: [] }
+  }
+
+  for (const raw of lines) {
+    const text = String(raw || '').trim()
+    if (!text) continue
+    const isHeading = (/[：:]$/.test(text) && !text.includes(' · ') && text.length <= 28)
+      || (!text.includes(' · ') && !text.includes('：') && !text.includes(':') && text.length <= 20 && !/^定义/.test(text))
+    if (isHeading && !/^定义/.test(text)) {
+      flush()
+      current = { title: text.replace(/[：:]$/, ''), kind: 'section', rows: [] }
+      continue
+    }
+    if (text.includes(' · ')) {
+      current.kind = current.kind === 'section' ? 'kv' : (current.kind === 'text' && !current.rows.length ? 'kv' : current.kind === 'kv' ? 'kv' : 'kv')
+      const parts = text.split(' · ').map((x) => x.trim()).filter(Boolean)
+      current.rows.push({ type: 'kv', parts })
+      continue
+    }
+    if (/^[：:].+/.test(text) === false && /：/.test(text) && text.length < 80 && !/^定义：/.test(text)) {
+      const [k, ...rest] = text.split(/[：:]/)
+      current.rows.push({ type: 'point', key: k.trim(), value: rest.join('：').trim() })
+      continue
+    }
+    current.rows.push({ type: 'para', text })
+  }
+  flush()
+
+  return `
+    <div class="term-detail-body">
+      ${blocks.map((b) => {
+        const head = b.title ? `<h3 class="term-detail-h">${escapeHtml(b.title)}</h3>` : ''
+        const list = b.rows.map((row) => {
+          if (row.type === 'kv') {
+            const label = row.parts[0] || ''
+            const rest = row.parts.slice(1)
+            return `<div class="term-kv-row">
+              <span class="term-kv-label">${escapeHtml(label)}</span>
+              <span class="term-kv-value">${rest.map((p) => escapeHtml(p.replace(/^[^=]+=/, ''))).join(' · ')}</span>
+            </div>`
+          }
+          if (row.type === 'point') {
+            return `<div class="term-point-row"><strong>${escapeHtml(row.key)}</strong><span>${escapeHtml(row.value)}</span></div>`
+          }
+          const t = String(row.text || '').replace(/^定义[：:]\s*/, '')
+          return `<p class="term-para">${escapeHtml(t)}</p>`
+        }).join('')
+        return `<section class="term-detail-block">${head}${list}</section>`
+      }).join('')}
+    </div>`
+}
+
+function renderKnowledgeDetailBody(item, opts = {}) {
   const explain = item.content || []
   const cases = item.cases || []
   const pmApp = item.pmApplication || []
   const mermaidBlocks = item.mermaid || []
   const hasStructured = cases.length > 0 || pmApp.length > 0
+  const useTermLayout = opts.termLayout === true
 
   if (!explain.length && !cases.length && !pmApp.length && !mermaidBlocks.length) {
     return `<div class="article-body"><p class="empty-hint">${escapeHtml(t('common.notFound'))}</p></div>`
@@ -1797,8 +1882,13 @@ function renderKnowledgeDetailBody(item) {
     </div>`
   }
 
-  if (!hasStructured) {
-    return `<div class="article-body">${renderKnowledgeParagraphs(explain)}${mermaidHtml}</div>`
+  const explainHtml = useTermLayout
+    ? renderTermDetailBody(item)
+    : `<div class="article-body">${renderKnowledgeParagraphs(explain)}</div>`
+
+  // 业务词条：解释区走 term 排版，案例由页面单独渲染，避免双层分区
+  if (useTermLayout || !hasStructured) {
+    return `${explainHtml}${mermaidHtml}`
   }
 
   return `
@@ -1809,7 +1899,7 @@ function renderKnowledgeDetailBody(item) {
           <h2>${escapeHtml(t('article.sectionExplainTitle'))}</h2>
         </div>
         <div class="article-section-body">
-          ${renderKnowledgeParagraphs(explain)}
+          ${explainHtml}
           ${mermaidHtml}
         </div>
       </section>
@@ -1975,44 +2065,66 @@ function renderArticle(categoryId, itemId) {
   }
   if (!cat || !item) return `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
   const catLabel = catTitle(cat)
-  const displayTitle = window.PDMKnowledgeViews?.stripLeadingIndex?.(item.title) || item.title
+  const parsed = window.PDMKnowledgeViews?.splitTitleParen?.(item.title) || { short: item.title, expansion: '' }
+  const displayTitle = parsed.short || item.title
+  const fullName = item.fullName || ''
+  const fullNameZh = item.fullNameZh || parsed.expansion || ''
+  const isTermArticle = cat.id === 'business' || cat.id === 'security' || !!(item.fullName || item.fullNameZh)
   const idx = cat.items.findIndex(i => i.id === item.id)
   const prev = idx > 0 ? cat.items[idx - 1] : null
   const next = idx < cat.items.length - 1 ? cat.items[idx + 1] : null
   const favRef = { source: 'public', categoryId: cat.id, itemId: item.id }
   const favorited = isFavorited(favRef)
   const hasStructured = (item.cases?.length || 0) > 0 || (item.pmApplication?.length || 0) > 0
+  const summaryClean = String(item.summary || '').replace(/^定义[：:]\s*/, '').replace(/[（(][^）)]*[）)]/g, '').trim()
   return `
-    <div class="page article-page">
+    <div class="page article-page ${isTermArticle ? 'term-article-page' : ''}">
       <header class="page-header">
         <a href="#/" class="breadcrumb">${escapeHtml(t('common.home'))}</a><span class="breadcrumb-sep">/</span>
         <a href="#/category/${cat.id}" class="breadcrumb">${escapeHtml(catLabel)}</a><span class="breadcrumb-sep">/</span>
         <span class="breadcrumb-current">${escapeHtml(displayTitle)}</span>
       </header>
-      <article class="article-content">
+      <article class="article-content ${isTermArticle ? 'term-article' : ''}">
         <div class="article-meta">
           <span class="article-category">${escapeHtml(catLabel)}</span>
           ${item.isShared ? `<span class="shared-badge">${escapeHtml(t('article.sharedBadge'))}</span>` : ''}
-          <div class="article-tags">${item.tags.map(tg => `<span class="tag">${escapeHtml(tg)}</span>`).join('')}</div>
+          <div class="article-tags">${(item.tags || []).filter((tg) => tg !== displayTitle).map(tg => `<span class="tag">${escapeHtml(tg)}</span>`).join('')}</div>
           <button type="button" class="btn-favorite ${favorited ? 'active' : ''}" id="btn-favorite" data-source="public" data-cat="${cat.id}" data-item="${item.id}">
             ${favorited ? escapeHtml(t('article.favoriteAdded')) : escapeHtml(t('article.favoriteAdd'))}
           </button>
         </div>
+        ${isTermArticle ? `
+        <header class="term-article-hero">
+          <p class="term-article-abbr">${escapeHtml(displayTitle)}</p>
+          ${(fullName || fullNameZh) ? `
+          <p class="term-article-fullname">
+            ${fullName ? `<span>${escapeHtml(fullName)}</span>` : ''}
+            ${fullNameZh ? `<span>${escapeHtml(fullNameZh)}</span>` : ''}
+          </p>` : ''}
+          ${summaryClean ? `<p class="term-article-summary">${escapeHtml(summaryClean)}</p>` : ''}
+        </header>` : `
         <h1>${escapeHtml(displayTitle)}</h1>
-        <p class="article-summary">${escapeHtml(item.summary)}</p>
-        ${hasStructured ? `
+        <p class="article-summary">${escapeHtml(item.summary)}</p>`}
+        ${hasStructured && !isTermArticle ? `
         <div class="article-format-hint">
           <span class="format-chip">${escapeHtml(t('article.formatExplain'))}</span>
           <span class="format-chip format-chip-case">${escapeHtml(t('article.formatCase'))}</span>
           <span class="format-chip format-chip-pm">${escapeHtml(t('article.formatPm'))}</span>
           <span class="format-hint-text">${escapeHtml(t('article.formatHint'))}</span>
         </div>` : ''}
-        ${renderKnowledgeDetailBody(item)}
+        ${renderKnowledgeDetailBody(item, { termLayout: isTermArticle })}
+        ${isTermArticle && hasStructured ? `
+        <section class="term-detail-block term-cases-block">
+          <h3 class="term-detail-h">${escapeHtml(t('article.sectionCaseTitle', null, '案例'))}</h3>
+          <ul class="term-case-list">
+            ${(item.cases || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
+          </ul>
+        </section>` : ''}
         ${renderArticleNotesPanel(favRef)}
       </article>
       <nav class="article-nav">
-        ${prev ? `<a href="#/article/${cat.id}/${encodeURIComponent(prev.id)}" class="article-nav-link prev"><span class="nav-direction">${escapeHtml(t('article.navPrev'))}</span><span class="nav-title">${escapeHtml(prev.title)}</span></a>` : '<div></div>'}
-        ${next ? `<a href="#/article/${cat.id}/${encodeURIComponent(next.id)}" class="article-nav-link next"><span class="nav-direction">${escapeHtml(t('article.navNext'))}</span><span class="nav-title">${escapeHtml(next.title)}</span></a>` : '<div></div>'}
+        ${prev ? `<a href="#/article/${cat.id}/${encodeURIComponent(prev.id)}" class="article-nav-link prev"><span class="nav-direction">${escapeHtml(t('article.navPrev'))}</span><span class="nav-title">${escapeHtml((window.PDMKnowledgeViews?.splitTitleParen?.(prev.title) || {}).short || prev.title)}</span></a>` : '<div></div>'}
+        ${next ? `<a href="#/article/${cat.id}/${encodeURIComponent(next.id)}" class="article-nav-link next"><span class="nav-direction">${escapeHtml(t('article.navNext'))}</span><span class="nav-title">${escapeHtml((window.PDMKnowledgeViews?.splitTitleParen?.(next.title) || {}).short || next.title)}</span></a>` : '<div></div>'}
       </nav>
     </div>`
 }
@@ -3327,7 +3439,7 @@ function bindLoginEvents() {
       await PDMCloud.init()
       if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
       showToast(t('auth.toastLoggedIn'), 'success')
-      navigate('/')
+      navigate(isMobileViewport() ? '/m/account' : '/')
       render()
     } catch (err) { showToast(err.message, 'error') }
   })
@@ -3346,7 +3458,7 @@ function bindLoginEvents() {
         await PDMCloud.init()
         if (Auth().isLoggedIn()) DailyPush()?.start?.(showDailyPushModal)
         showToast(t('auth.toastRegistered'), 'success')
-        navigate('/')
+        navigate(isMobileViewport() ? '/m/account' : '/')
         render()
       } else showToast(t('auth.toastConfirmEmail'), 'info')
     } catch (err) { showToast(err.message, 'error') }

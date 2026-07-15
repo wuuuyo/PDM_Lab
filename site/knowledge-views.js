@@ -596,8 +596,8 @@
     business: [
       {
         id: 'industry-terms-business',
-        title: '业务管理词语',
-        desc: 'ERP / CRM / SCM / OA / IPD 等',
+        title: '业务管理',
+        desc: '点开词条查看全称、定义与落地场景',
         sourceId: 'industry-terms',
         chapterMode: 'flat-items',
         sectionInclude: /第二部分/,
@@ -636,14 +636,36 @@
     return stripLeadingIndex(section) || section
   }
 
+  function splitTitleParen(title) {
+    const raw = stripLeadingIndex(title)
+    const m = String(raw || '').match(/^(.+?)\s*[（(](.+?)[）)]\s*$/)
+    if (!m) return { short: raw, expansion: '' }
+    return { short: m[1].trim(), expansion: m[2].trim() }
+  }
+
+  function cardTitleOf(item) {
+    if (item.fullName || item.fullNameZh) return stripLeadingIndex(item.title)
+    return splitTitleParen(item.title).short
+  }
+
+  function cardTaglineOf(item) {
+    let s = String(item.summary || '')
+      .replace(/^定义[：:]\s*/, '')
+      .replace(/[（(][^）)]*[）)]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (s.length > 36) s = `${s.slice(0, 36)}…`
+    return s
+  }
+
   function listChapters(catId, doc) {
     const items = docItems(catId, doc)
     if (doc.chapterMode === 'flat-items') {
       return items.map((item, idx) => ({
         id: item.id,
-        title: stripLeadingIndex(item.title),
-        tagline: item.summary || '',
-        tags: (item.tags || []).slice(0, 4).join(' / '),
+        title: cardTitleOf(item),
+        tagline: cardTaglineOf(item),
+        tags: '',
         count: 1,
         index: idx + 1,
         href: `#/article/${catId}/${encodeURIComponent(item.id)}`,
@@ -730,18 +752,20 @@
 
     const body = chapters.length
       ? `
-      <div class="kb-chapter-grid">
+      <div class="sec-hub-grid">
         ${chapters
           .map(
             (ch) => `
-          <a href="${ch.href}" class="kb-chapter-card">
-            <span class="kb-chapter-index">${String(ch.index).padStart(2, '0')}</span>
-            <div class="kb-chapter-body">
+          <a href="${ch.href}" class="sec-hub-card">
+            <span class="sec-hub-card-index">${String(ch.index).padStart(2, '0')}</span>
+            <div class="sec-hub-card-body">
               <h2>${escapeHtml(ch.title)}</h2>
-              ${ch.tagline ? `<p class="kb-chapter-tagline">${escapeHtml(ch.tagline)}</p>` : ''}
-              ${ch.tags ? `<p class="kb-chapter-tags">${escapeHtml(ch.tags)}</p>` : ''}
-              ${!ch.isArticle ? `<span class="kb-chapter-count">${ch.count} ${escapeHtml(t('kbMod.topics', null, '个知识点'))}</span>` : ''}
+              ${ch.tagline ? `<p>${escapeHtml(ch.tagline)}</p>` : ''}
+              ${!ch.isArticle && ch.count
+                ? `<span class="sec-hub-card-meta">${ch.count} ${escapeHtml(t('kbMod.topics', null, '个知识点'))}</span>`
+                : ''}
             </div>
+            <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
           </a>`,
           )
           .join('')}
@@ -756,7 +780,7 @@
       crumbs.push({ label: doc.title })
     }
 
-    return pageShell(crumb(crumbs), doc.title, doc.desc, body, 'kb-doc-chapters')
+    return pageShell(crumb(crumbs), doc.title, doc.desc, body, 'kb-doc-chapters sec-hub-page')
   }
 
   function renderChapterTopics(catId, docId, chapterId) {
@@ -900,6 +924,7 @@
     getChapterLabel,
     bindModulePage,
     stripLeadingIndex,
+    splitTitleParen,
     getKbPathStages,
   }
 })()
