@@ -202,6 +202,14 @@ function buildCrumbsFromRoute(parts) {
   if (p0 === 'reviews' || p0 === 'memory') return [home, { label: t('nav.reviews') }]
   if (p0 === 'daily-learn') return [home, { label: t('nav.dailyLearn') }]
   if (p0 === 'feedback') return [home, { label: t('nav.feedback') }]
+  if (p0 === 'm') {
+    const c = [home]
+    if (parts[1] === 'learn') c.push({ label: t('nav.sectionLearning') })
+    else if (parts[1] === 'knowledge') c.push({ label: t('nav.sectionKnowledge') })
+    else if (parts[1] === 'personal') c.push({ label: t('nav.sectionPersonal') })
+    else if (parts[1] === 'account') c.push({ label: t('mobile.accountTitle') })
+    return c
+  }
   if (p0 === 'admin') {
     return []
   }
@@ -594,122 +602,259 @@ function isMobileViewport() {
   return window.matchMedia('(max-width: 900px)').matches
 }
 
-let mobileAdminOpen = false
-let mobilePersonalOpen = true
+const MOBILE_TAB_ICONS = {
+  home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-5.6H10.2V21H5a1 1 0 0 1-1-1v-9.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  learn: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  knowledge: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  personal: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 14.4 7.8 16.5l.8-4.7-3.4-3.3 4.7-.7L12 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  account: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 19c1.2-3.2 3.5-4.8 6.5-4.8s5.3 1.6 6.5 4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+}
+
+function getMobileTab(parts) {
+  const p0 = parts[0] || ''
+  if (!p0) return 'home'
+  if (p0 === 'm') {
+    if (parts[1] === 'learn') return 'learn'
+    if (parts[1] === 'knowledge') return 'knowledge'
+    if (parts[1] === 'personal') return 'personal'
+    if (parts[1] === 'account') return 'account'
+  }
+  if (['industry', 'tools', 'forum'].includes(p0)) return 'learn'
+  if (p0 === 'category' || p0 === 'article') return 'knowledge'
+  if (['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn', 'feedback'].includes(p0)) return 'personal'
+  if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin') return 'account'
+  return 'home'
+}
+
+function getMobileBackHref(parts) {
+  const tab = getMobileTab(parts)
+  if (tab === 'learn') return '#/m/learn'
+  if (tab === 'knowledge') return '#/m/knowledge'
+  if (tab === 'personal') return '#/m/personal'
+  if (tab === 'account') return '#/m/account'
+  return '#/'
+}
+
+function getMobilePageMeta(parts) {
+  if (!isMobileViewport()) return null
+  if (!parts.length) return null
+  if (parts[0] === 'm') return null
+
+  const backHref = getMobileBackHref(parts)
+  const p0 = parts[0]
+  if (p0 === 'industry') return { title: t('nav.industry'), backHref }
+  if (p0 === 'tools') return { title: t('nav.tools'), backHref }
+  if (p0 === 'forum') return { title: t('nav.forum'), backHref }
+  if (p0 === 'category' && parts[1]) {
+    const cat = K.getCategoryByIdMerged?.(parts[1])
+    return { title: catTitle(cat) || parts[1], backHref }
+  }
+  if (p0 === 'article' && parts[2]) {
+    const item = K.getItemByIdMerged?.(parts[1], parts[2])
+    return { title: item?.title || t('nav.sectionKnowledge'), backHref }
+  }
+  if (p0 === 'favorites') return { title: t('nav.favorites'), backHref }
+  if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref }
+  if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref }
+  if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref }
+  if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref }
+  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref }
+  if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
+  if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: '#/m/account' }
+  if (p0 === 'admin') {
+    if (parts[1] === 'knowledge') return { title: t('nav.adminKnowledge'), backHref: '#/m/account' }
+    if (parts[1] === 'accounts' || parts[1] === 'permissions') return { title: t('nav.adminAccounts'), backHref: '#/m/account' }
+    if (parts[1] === 'roles') return { title: t('nav.adminRoles'), backHref: '#/m/account' }
+    if (parts[1] === 'feedback') return { title: t('nav.adminFeedback'), backHref: '#/m/account' }
+    return { title: t('nav.adminStats'), backHref: '#/m/account' }
+  }
+  return { title: t('nav.home'), backHref: '#/' }
+}
+
+function renderMobilePageHead(title, backHref) {
+  return `
+    <header class="mobile-page-head">
+      <a href="${backHref || '#/'}" class="mobile-back-btn" aria-label="${escapeHtml(t('common.back'))}">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>${escapeHtml(t('common.back'))}</span>
+      </a>
+      <h1 class="mobile-page-title">${escapeHtml(title || '')}</h1>
+    </header>`
+}
+
+function applyMobilePageChrome(title, backHref) {
+  if (!isMobileViewport()) return
+  const main = document.getElementById('main')
+  if (!main) return
+  if (main.querySelector('.mobile-page-head')) return
+  main.insertAdjacentHTML('afterbegin', renderMobilePageHead(title, backHref))
+}
+
+let mobileMainObserver = null
+function ensureMobileMainObserver() {
+  const main = document.getElementById('main')
+  if (!main) return
+  if (mobileMainObserver) return
+  mobileMainObserver = new MutationObserver(() => {
+    if (!isMobileViewport()) return
+    const { parts } = parseRoute()
+    const meta = getMobilePageMeta(parts)
+    if (meta && !main.querySelector('.mobile-page-head')) {
+      applyMobilePageChrome(meta.title, meta.backHref)
+    }
+    syncMobileChromeOffsets()
+  })
+  mobileMainObserver.observe(main, { childList: true })
+}
+
+function renderMobileHubList(items) {
+  return `<div class="mobile-hub-list">${items.map((item) => `
+    <a href="${item.href}" class="mobile-hub-item">
+      <span class="mobile-hub-item-title">${escapeHtml(item.title)}</span>
+      ${item.desc ? `<span class="mobile-hub-item-desc">${escapeHtml(item.desc)}</span>` : ''}
+      ${item.meta != null ? `<span class="mobile-hub-item-meta">${escapeHtml(String(item.meta))}</span>` : ''}
+      <span class="mobile-hub-item-arrow" aria-hidden="true">›</span>
+    </a>
+  `).join('')}</div>`
+}
+
+function renderMobileHubPage(title, desc, items) {
+  return `
+    <div class="page mobile-hub-page">
+      <header class="mobile-hub-head">
+        <h1>${escapeHtml(title)}</h1>
+        ${desc ? `<p>${escapeHtml(desc)}</p>` : ''}
+      </header>
+      ${items.length ? renderMobileHubList(items) : `<p class="empty-hint">${escapeHtml(t('mobile.hubEmpty'))}</p>`}
+    </div>`
+}
+
+function getMobileLearnItems() {
+  const can = (id) => Perm().can(id)
+  return [
+    { id: 'industry', href: '#/industry', title: t('nav.industry'), desc: t('mobile.learnIndustryDesc') },
+    { id: 'tools', href: '#/tools', title: t('nav.tools'), desc: t('mobile.learnToolsDesc') },
+    { id: 'forum', href: '#/forum', title: t('nav.forum'), desc: t('mobile.learnForumDesc') },
+  ].filter((x) => can(x.id))
+}
+
+function getMobileKnowledgeItems() {
+  const can = (id) => Perm().can(id)
+  return (K.getMergedCategories?.() || [])
+    .filter((c) => can(c.id))
+    .map((c) => ({
+      href: `#/category/${c.id}`,
+      title: catTitle(c),
+      desc: catDesc(c),
+      meta: `${c.items.length}`,
+    }))
+}
+
+function getMobilePersonalItems() {
+  const can = (id) => Perm().can(id)
+  return [
+    { id: 'favorites', href: '#/favorites', title: t('nav.favorites'), desc: t('mobile.personalFavoritesDesc') },
+    { id: 'notes', href: '#/notes', title: t('nav.articleNotes'), desc: t('mobile.personalNotesDesc') },
+    { id: 'myKnowledge', href: '#/my-knowledge', title: t('nav.myKnowledge'), desc: t('mobile.personalMyKnowledgeDesc') },
+    { id: 'reviews', href: '#/reviews', title: t('nav.reviews'), desc: t('mobile.personalReviewsDesc') },
+    { id: 'dailyLearn', href: '#/daily-learn', title: t('nav.dailyLearn'), desc: t('mobile.personalDailyDesc'), needLogin: true },
+    { id: 'feedback', href: '#/feedback', title: t('nav.feedback'), desc: t('mobile.personalFeedbackDesc') },
+  ].filter((x) => {
+    if (x.needLogin && !Auth().isLoggedIn()) return false
+    return can(x.id)
+  })
+}
+
+function renderMobileLearnHub() {
+  return renderMobileHubPage(t('nav.sectionLearning'), t('mobile.learnHubDesc'), getMobileLearnItems())
+}
+
+function renderMobileKnowledgeHub() {
+  return renderMobileHubPage(t('nav.sectionKnowledge'), t('mobile.knowledgeHubDesc'), getMobileKnowledgeItems())
+}
+
+function renderMobilePersonalHub() {
+  return renderMobileHubPage(t('nav.sectionPersonal'), t('mobile.personalHubDesc'), getMobilePersonalItems())
+}
+
+function renderMobileAccountHub() {
+  const session = Auth().getSession?.()
+  const email = session?.user?.email || ''
+  const profile = Auth().getProfile?.()
+  const name = profile?.display_name || email || t('nav.guestHint')
+  const adminItems = Auth().isAdmin() ? [
+    { href: '#/admin', title: t('nav.adminStats') },
+    { href: '#/admin/knowledge', title: t('nav.adminKnowledge') },
+    { href: '#/admin/accounts', title: t('nav.adminAccounts') },
+    { href: '#/admin/roles', title: t('nav.adminRoles') },
+    { href: '#/admin/feedback', title: t('nav.adminFeedback') },
+  ] : []
+
+  return `
+    <div class="page mobile-hub-page mobile-account-page">
+      <header class="mobile-hub-head">
+        <h1>${escapeHtml(t('mobile.accountTitle'))}</h1>
+        <p>${escapeHtml(Auth().isLoggedIn() ? t('mobile.accountSignedIn') : t('mobile.accountSignedOut'))}</p>
+      </header>
+      <section class="mobile-account-card">
+        <div class="mobile-account-card-name">${escapeHtml(name)}</div>
+        ${Auth().isLoggedIn() && email ? `<div class="mobile-account-card-email">${escapeHtml(email)}</div>` : ''}
+        ${Auth().isLoggedIn()
+          ? `<button type="button" class="btn-secondary" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>`
+          : `<a href="#/login" class="btn-primary">${escapeHtml(t('nav.loginRegister'))}</a>`}
+      </section>
+      ${adminItems.length ? `
+        <section class="mobile-account-admin">
+          <h2>${escapeHtml(t('nav.sectionAdmin'))}</h2>
+          ${renderMobileHubList(adminItems)}
+        </section>` : ''}
+    </div>`
+}
+
+function bindMobileAccountHub() {
+  document.getElementById('mobile-account-logout')?.addEventListener('click', async () => {
+    await Auth().signOut()
+    showToast(t('auth.toastLoggedOut'), 'info')
+    navigate('/m/account')
+  })
+}
 
 function renderMobileChrome(activePath) {
-  const learnEl = document.getElementById('mobile-learn-nav')
   const bottomEl = document.getElementById('mobile-bottom-nav')
-  if (!learnEl || !bottomEl) return
+  if (!bottomEl) return
 
   if (!isMobileViewport()) {
-    learnEl.innerHTML = ''
     bottomEl.innerHTML = ''
     document.documentElement.classList.remove('mobile-chrome')
     return
   }
 
   document.documentElement.classList.add('mobile-chrome')
-  // 手机端永远不展示侧栏
   setSidebarCollapsed(true)
   document.documentElement.classList.remove('sidebar-mobile-open')
   document.getElementById('sidebar-backdrop')?.setAttribute('hidden', '')
+  ensureMobileMainObserver()
 
-  const can = (id, action = 'view') => Perm().can(id, action)
-  const learnItems = [
-    { id: 'industry', href: '#/industry', label: t('nav.industry'), match: '/industry' },
-    { id: 'tools', href: '#/tools', label: t('nav.tools'), match: '/tools' },
-    { id: 'forum', href: '#/forum', label: t('nav.forum'), match: '/forum' },
-  ].filter((x) => can(x.id))
-
-  learnEl.innerHTML = learnItems.map((item) => `
-    <a href="${item.href}" class="mobile-learn-item ${activePath.includes(item.match) ? 'active' : ''}">${escapeHtml(item.label)}</a>
-  `).join('')
-
-  const cats = (K.getMergedCategories?.() || []).filter((c) => can(c.id))
-  const personal = [
-    { id: 'favorites', href: '#/favorites', label: t('nav.favorites'), match: (p) => p === '/favorites' },
-    { id: 'notes', href: '#/notes', label: t('nav.articleNotes'), match: (p) => p === '/notes' },
-    { id: 'myKnowledge', href: '#/my-knowledge', label: t('nav.myKnowledge'), match: (p) => p.includes('/my-knowledge') },
-    { id: 'reviews', href: '#/reviews', label: t('nav.reviews'), match: (p) => p === '/reviews' || p === '/memory' },
-    { id: 'dailyLearn', href: '#/daily-learn', label: t('nav.dailyLearn'), match: (p) => p === '/daily-learn', needLogin: true },
-    { id: 'feedback', href: '#/feedback', label: t('nav.feedback'), match: (p) => p === '/feedback' },
-  ].filter((x) => {
-    if (x.needLogin && !Auth().isLoggedIn()) return false
-    return can(x.id)
-  })
-
-  const adminItems = Auth().isAdmin() ? [
-    { href: '#/admin', label: t('nav.adminStats'), active: activePath === '/admin' || activePath === '/admin/' },
-    { href: '#/admin/knowledge', label: t('nav.adminKnowledge'), active: activePath.includes('/admin/knowledge') },
-    { href: '#/admin/accounts', label: t('nav.adminAccounts'), active: activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') },
-    { href: '#/admin/roles', label: t('nav.adminRoles'), active: activePath.includes('/admin/roles') },
-    { href: '#/admin/feedback', label: t('nav.adminFeedback'), active: activePath.includes('/admin/feedback') },
-  ] : []
-
-  const session = Auth().getSession?.()
-  const email = session?.user?.email || ''
-  const accountHtml = Auth().isLoggedIn()
-    ? `<div class="mobile-account-row">
-        <span class="mobile-account-email" title="${escapeHtml(email)}">${escapeHtml(email)}</span>
-        <button type="button" class="mobile-account-logout" id="mobile-logout">${escapeHtml(t('nav.logout'))}</button>
-      </div>`
-    : `<a href="#/login" class="mobile-account-login">${escapeHtml(t('nav.loginRegister'))}</a>`
+  const { parts } = parseRoute()
+  const tab = getMobileTab(parts)
+  const tabs = [
+    { id: 'home', href: '#/', label: t('nav.home'), icon: MOBILE_TAB_ICONS.home },
+    { id: 'learn', href: '#/m/learn', label: t('nav.sectionLearning'), icon: MOBILE_TAB_ICONS.learn },
+    { id: 'knowledge', href: '#/m/knowledge', label: t('nav.sectionKnowledge'), icon: MOBILE_TAB_ICONS.knowledge },
+    { id: 'personal', href: '#/m/personal', label: t('nav.sectionPersonal'), icon: MOBILE_TAB_ICONS.personal },
+    { id: 'account', href: '#/m/account', label: t('mobile.accountTab'), icon: MOBILE_TAB_ICONS.account },
+  ]
 
   bottomEl.innerHTML = `
-    <div class="mobile-bottom-inner">
-      <div class="mobile-bottom-label">${escapeHtml(t('nav.sectionKnowledge'))}</div>
-      <div class="mobile-know-grid">
-        ${cats.map((cat) => {
-          const active = activePath.includes(cat.id)
-          return `<a href="#/category/${cat.id}" class="mobile-know-item ${active ? 'active' : ''}">
-            <span class="mobile-know-title">${escapeHtml(catTitle(cat))}</span>
-            <span class="mobile-know-count">${cat.items.length}</span>
-          </a>`
-        }).join('')}
-      </div>
-
-      <button type="button" class="mobile-section-toggle ${mobilePersonalOpen ? 'open' : ''}" id="mobile-personal-toggle" aria-expanded="${mobilePersonalOpen}">
-        <span>${escapeHtml(t('nav.sectionPersonal'))}</span>
-        <span class="mobile-section-caret" aria-hidden="true"></span>
-      </button>
-      <div class="mobile-personal-panel" ${mobilePersonalOpen ? '' : 'hidden'}>
-        <div class="mobile-personal-grid">
-          ${personal.map((item) => `
-            <a href="${item.href}" class="mobile-personal-item ${item.match(activePath) ? 'active' : ''}">${escapeHtml(item.label)}</a>
-          `).join('')}
-        </div>
-        ${accountHtml}
-      </div>
-
-      ${adminItems.length ? `
-        <button type="button" class="mobile-section-toggle ${mobileAdminOpen ? 'open' : ''}" id="mobile-admin-toggle" aria-expanded="${mobileAdminOpen}">
-          <span>${escapeHtml(t('nav.sectionAdmin'))}</span>
-          <span class="mobile-section-caret" aria-hidden="true"></span>
-        </button>
-        <div class="mobile-admin-panel" ${mobileAdminOpen ? '' : 'hidden'}>
-          ${adminItems.map((item) => `
-            <a href="${item.href}" class="mobile-admin-item ${item.active ? 'active' : ''}">${escapeHtml(item.label)}</a>
-          `).join('')}
-        </div>` : ''}
+    <div class="mobile-tabbar" role="tablist">
+      ${tabs.map((item) => `
+                <a href="${item.href}" class="mobile-tab ${tab === item.id ? 'active' : ''}" role="tab" aria-selected="${tab === item.id}">
+          <span class="mobile-tab-icon" aria-hidden="true">${item.icon}</span>
+          <span class="mobile-tab-label">${escapeHtml(item.id === 'learn' ? t('mobile.tabLearn') : item.id === 'knowledge' ? t('mobile.tabKnowledge') : item.id === 'personal' ? t('mobile.tabPersonal') : item.label)}</span>
+        </a>
+      `).join('')}
     </div>
   `
-
-  document.getElementById('mobile-personal-toggle')?.addEventListener('click', () => {
-    mobilePersonalOpen = !mobilePersonalOpen
-    renderMobileChrome(activePath)
-    syncMobileChromeOffsets()
-  })
-  document.getElementById('mobile-admin-toggle')?.addEventListener('click', () => {
-    mobileAdminOpen = !mobileAdminOpen
-    renderMobileChrome(activePath)
-    syncMobileChromeOffsets()
-  })
-  document.getElementById('mobile-logout')?.addEventListener('click', async () => {
-    await Auth().signOut()
-    showToast(t('auth.toastLoggedOut'), 'info')
-    navigate('/')
-  })
 }
 
 function renderSidebar(activePath) {
@@ -2776,6 +2921,15 @@ function render() {
     main.innerHTML = renderHome()
     bindHomeEvents()
     Analytics()?.track('page_view', { page: 'home' })
+  } else if (parts[0] === 'm' && parts[1] === 'learn') {
+    main.innerHTML = renderMobileLearnHub()
+  } else if (parts[0] === 'm' && parts[1] === 'knowledge') {
+    main.innerHTML = renderMobileKnowledgeHub()
+  } else if (parts[0] === 'm' && parts[1] === 'personal') {
+    main.innerHTML = renderMobilePersonalHub()
+  } else if (parts[0] === 'm' && parts[1] === 'account') {
+    main.innerHTML = renderMobileAccountHub()
+    bindMobileAccountHub()
   } else if (parts[0] === 'login') {
     if (Auth().isLoggedIn()) {
       navigate('/')
@@ -2931,6 +3085,12 @@ function render() {
   } else {
     main.innerHTML = renderHome()
   }
+
+  if (isMobileViewport()) {
+    const meta = getMobilePageMeta(parts)
+    if (meta) applyMobilePageChrome(meta.title, meta.backHref)
+    requestAnimationFrame(() => syncMobileChromeOffsets())
+  }
 }
 
 window.addEventListener('hashchange', render)
@@ -2970,8 +3130,8 @@ function syncMobileChromeOffsets() {
   }
   const topbar = document.getElementById('topbar')
   const bottom = document.getElementById('mobile-bottom-nav')
-  const topH = topbar ? Math.ceil(topbar.getBoundingClientRect().height) : 108
-  const bottomH = bottom ? Math.ceil(bottom.getBoundingClientRect().height) : 220
+  const topH = topbar ? Math.ceil(topbar.getBoundingClientRect().height) : 56
+  const bottomH = bottom ? Math.ceil(bottom.getBoundingClientRect().height) : 64
   document.documentElement.style.setProperty('--mobile-top-offset', `${topH}px`)
   document.documentElement.style.setProperty('--mobile-bottom-offset', `${bottomH}px`)
 }

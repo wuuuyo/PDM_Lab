@@ -140,7 +140,7 @@
 
   function routeFeature(parts) {
     const p0 = parts[0] || ''
-    if (!p0 || p0 === 'login' || p0 === 'reset-password') return null
+    if (!p0 || p0 === 'login' || p0 === 'reset-password' || p0 === 'm') return null
     if (p0 === 'admin') return { feature: 'admin', action: 'view' }
     if (p0 === 'industry') return { feature: 'industry', action: 'view' }
     if (p0 === 'tools') return { feature: 'tools', action: 'view' }
