@@ -590,8 +590,138 @@ async function renderAdminFeedbackRoute() {
   }
 }
 
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 900px)').matches
+}
+
+let mobileAdminOpen = false
+let mobilePersonalOpen = true
+
+function renderMobileChrome(activePath) {
+  const learnEl = document.getElementById('mobile-learn-nav')
+  const bottomEl = document.getElementById('mobile-bottom-nav')
+  if (!learnEl || !bottomEl) return
+
+  if (!isMobileViewport()) {
+    learnEl.innerHTML = ''
+    bottomEl.innerHTML = ''
+    document.documentElement.classList.remove('mobile-chrome')
+    return
+  }
+
+  document.documentElement.classList.add('mobile-chrome')
+  // 手机端永远不展示侧栏
+  setSidebarCollapsed(true)
+  document.documentElement.classList.remove('sidebar-mobile-open')
+  document.getElementById('sidebar-backdrop')?.setAttribute('hidden', '')
+
+  const can = (id, action = 'view') => Perm().can(id, action)
+  const learnItems = [
+    { id: 'industry', href: '#/industry', label: t('nav.industry'), match: '/industry' },
+    { id: 'tools', href: '#/tools', label: t('nav.tools'), match: '/tools' },
+    { id: 'forum', href: '#/forum', label: t('nav.forum'), match: '/forum' },
+  ].filter((x) => can(x.id))
+
+  learnEl.innerHTML = learnItems.map((item) => `
+    <a href="${item.href}" class="mobile-learn-item ${activePath.includes(item.match) ? 'active' : ''}">${escapeHtml(item.label)}</a>
+  `).join('')
+
+  const cats = (K.getMergedCategories?.() || []).filter((c) => can(c.id))
+  const personal = [
+    { id: 'favorites', href: '#/favorites', label: t('nav.favorites'), match: (p) => p === '/favorites' },
+    { id: 'notes', href: '#/notes', label: t('nav.articleNotes'), match: (p) => p === '/notes' },
+    { id: 'myKnowledge', href: '#/my-knowledge', label: t('nav.myKnowledge'), match: (p) => p.includes('/my-knowledge') },
+    { id: 'reviews', href: '#/reviews', label: t('nav.reviews'), match: (p) => p === '/reviews' || p === '/memory' },
+    { id: 'dailyLearn', href: '#/daily-learn', label: t('nav.dailyLearn'), match: (p) => p === '/daily-learn', needLogin: true },
+    { id: 'feedback', href: '#/feedback', label: t('nav.feedback'), match: (p) => p === '/feedback' },
+  ].filter((x) => {
+    if (x.needLogin && !Auth().isLoggedIn()) return false
+    return can(x.id)
+  })
+
+  const adminItems = Auth().isAdmin() ? [
+    { href: '#/admin', label: t('nav.adminStats'), active: activePath === '/admin' || activePath === '/admin/' },
+    { href: '#/admin/knowledge', label: t('nav.adminKnowledge'), active: activePath.includes('/admin/knowledge') },
+    { href: '#/admin/accounts', label: t('nav.adminAccounts'), active: activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') },
+    { href: '#/admin/roles', label: t('nav.adminRoles'), active: activePath.includes('/admin/roles') },
+    { href: '#/admin/feedback', label: t('nav.adminFeedback'), active: activePath.includes('/admin/feedback') },
+  ] : []
+
+  const session = Auth().getSession?.()
+  const email = session?.user?.email || ''
+  const accountHtml = Auth().isLoggedIn()
+    ? `<div class="mobile-account-row">
+        <span class="mobile-account-email" title="${escapeHtml(email)}">${escapeHtml(email)}</span>
+        <button type="button" class="mobile-account-logout" id="mobile-logout">${escapeHtml(t('nav.logout'))}</button>
+      </div>`
+    : `<a href="#/login" class="mobile-account-login">${escapeHtml(t('nav.loginRegister'))}</a>`
+
+  bottomEl.innerHTML = `
+    <div class="mobile-bottom-inner">
+      <div class="mobile-bottom-label">${escapeHtml(t('nav.sectionKnowledge'))}</div>
+      <div class="mobile-know-grid">
+        ${cats.map((cat) => {
+          const active = activePath.includes(cat.id)
+          return `<a href="#/category/${cat.id}" class="mobile-know-item ${active ? 'active' : ''}">
+            <span class="mobile-know-title">${escapeHtml(catTitle(cat))}</span>
+            <span class="mobile-know-count">${cat.items.length}</span>
+          </a>`
+        }).join('')}
+      </div>
+
+      <button type="button" class="mobile-section-toggle ${mobilePersonalOpen ? 'open' : ''}" id="mobile-personal-toggle" aria-expanded="${mobilePersonalOpen}">
+        <span>${escapeHtml(t('nav.sectionPersonal'))}</span>
+        <span class="mobile-section-caret" aria-hidden="true"></span>
+      </button>
+      <div class="mobile-personal-panel" ${mobilePersonalOpen ? '' : 'hidden'}>
+        <div class="mobile-personal-grid">
+          ${personal.map((item) => `
+            <a href="${item.href}" class="mobile-personal-item ${item.match(activePath) ? 'active' : ''}">${escapeHtml(item.label)}</a>
+          `).join('')}
+        </div>
+        ${accountHtml}
+      </div>
+
+      ${adminItems.length ? `
+        <button type="button" class="mobile-section-toggle ${mobileAdminOpen ? 'open' : ''}" id="mobile-admin-toggle" aria-expanded="${mobileAdminOpen}">
+          <span>${escapeHtml(t('nav.sectionAdmin'))}</span>
+          <span class="mobile-section-caret" aria-hidden="true"></span>
+        </button>
+        <div class="mobile-admin-panel" ${mobileAdminOpen ? '' : 'hidden'}>
+          ${adminItems.map((item) => `
+            <a href="${item.href}" class="mobile-admin-item ${item.active ? 'active' : ''}">${escapeHtml(item.label)}</a>
+          `).join('')}
+        </div>` : ''}
+    </div>
+  `
+
+  document.getElementById('mobile-personal-toggle')?.addEventListener('click', () => {
+    mobilePersonalOpen = !mobilePersonalOpen
+    renderMobileChrome(activePath)
+    syncMobileChromeOffsets()
+  })
+  document.getElementById('mobile-admin-toggle')?.addEventListener('click', () => {
+    mobileAdminOpen = !mobileAdminOpen
+    renderMobileChrome(activePath)
+    syncMobileChromeOffsets()
+  })
+  document.getElementById('mobile-logout')?.addEventListener('click', async () => {
+    await Auth().signOut()
+    showToast(t('auth.toastLoggedOut'), 'info')
+    navigate('/')
+  })
+}
+
 function renderSidebar(activePath) {
   const el = document.getElementById('sidebar')
+  if (!el) return
+
+  // 手机端取消侧边栏，仅渲染桌面导航
+  if (isMobileViewport()) {
+    el.innerHTML = ''
+    return
+  }
+
   const merged = K.getMergedCategories()
   const can = (id, action = 'view') => Perm().can(id, action)
   const collapsed = getSidebarCollapsed()
@@ -2623,12 +2753,15 @@ function render() {
   renderLocaleSwitcher()
   renderTopAccount(path)
   renderSidebar(path)
+  renderMobileChrome(path)
   renderTopbarCrumbs(buildCrumbsFromRoute(parts))
   bindLocaleEvents()
   bindTopAccountEvents()
   bindTopbarSearch()
   bindMobileNavChrome()
+  bindMobileViewportWatcher()
   bindSyncEvents()
+  syncMobileChromeOffsets()
 
   const forbiddenHtml = renderForbidden()
 
@@ -2810,6 +2943,38 @@ window.addEventListener('pdm-auth-changed', () => {
   render()
 })
 
+let mobileMqBound = false
+function bindMobileViewportWatcher() {
+  if (mobileMqBound) return
+  mobileMqBound = true
+  const mq = window.matchMedia('(max-width: 900px)')
+  const onChange = () => {
+    const { parts } = parseRoute()
+    const path = '/' + parts.join('/')
+    renderSidebar(path)
+    renderMobileChrome(path)
+    syncMobileChromeOffsets()
+  }
+  if (mq.addEventListener) mq.addEventListener('change', onChange)
+  else mq.addListener(onChange)
+  window.addEventListener('resize', () => {
+    if (isMobileViewport()) syncMobileChromeOffsets()
+  })
+}
+
+function syncMobileChromeOffsets() {
+  if (!isMobileViewport()) {
+    document.documentElement.style.removeProperty('--mobile-top-offset')
+    document.documentElement.style.removeProperty('--mobile-bottom-offset')
+    return
+  }
+  const topbar = document.getElementById('topbar')
+  const bottom = document.getElementById('mobile-bottom-nav')
+  const topH = topbar ? Math.ceil(topbar.getBoundingClientRect().height) : 108
+  const bottomH = bottom ? Math.ceil(bottom.getBoundingClientRect().height) : 220
+  document.documentElement.style.setProperty('--mobile-top-offset', `${topH}px`)
+  document.documentElement.style.setProperty('--mobile-bottom-offset', `${bottomH}px`)
+}
 ensureDefaultHomeHash()
 render()
 initStorage()

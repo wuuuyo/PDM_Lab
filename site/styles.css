@@ -3935,11 +3935,11 @@ html.sidebar-collapsed .nav-icon {
   }
 
   .sidebar {
-    display: none;
+    display: none !important;
   }
 
   .main {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
 
   .page {
