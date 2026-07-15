@@ -130,6 +130,11 @@ window.PM_LAB_LOCALES['en-US'] = {
     emptyDoc: 'No chapters in this document yet',
     kbHomeTitle: 'Knowledge',
     kbHomeDesc: '4-stage, 8-week path — from foundations to owning delivery',
+    kbHomePickTitle: 'Pick a topic to start',
+    kbHomePickDesc: 'Browse by category, or follow the learning path below',
+    personalHubTitle: 'Personal space',
+    adminHubTitle: 'Admin',
+    adminHubDesc: 'Choose a management module',
   },
   common: {
     home: 'Home',

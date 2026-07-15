@@ -195,6 +195,16 @@ function buildCrumbsFromRoute(parts) {
   if (p0 === 'personal') {
     return [home, { label: t('nav.sectionPersonal') }]
   }
+  if (p0 === 'admin' && !parts[1]) {
+    return [home, { label: t('nav.sectionAdmin') }]
+  }
+  if (p0 === 'admin' && parts[1] === 'stats') {
+    return [
+      home,
+      { href: '#/admin', label: t('nav.sectionAdmin') },
+      { label: t('nav.adminStats') },
+    ]
+  }
   if (p0 === 'doc' && parts[1] && parts[2]) {
     const cat = K.getCategoryByIdMerged(parts[1])
     const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
@@ -825,6 +835,145 @@ function renderMobileHubPage(title, desc, items) {
     </div>`
 }
 
+/** 一级入口页：二级功能卡片（知识库 / 个人空间 / 管理后台） */
+function renderSectionCardHub({ title, desc, eyebrow, cards, extraHtml = '' }) {
+  const grid = cards.length
+    ? `<div class="sec-hub-grid">
+        ${cards
+          .map(
+            (c, i) => `
+          <a href="${c.href}" class="sec-hub-card">
+            <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
+            <div class="sec-hub-card-body">
+              <h2>${escapeHtml(c.title)}</h2>
+              ${c.desc ? `<p>${escapeHtml(c.desc)}</p>` : ''}
+              ${c.meta ? `<span class="sec-hub-card-meta">${escapeHtml(c.meta)}</span>` : ''}
+            </div>
+            <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+          </a>`,
+          )
+          .join('')}
+      </div>`
+    : `<p class="empty-hint">${escapeHtml(t('mobile.hubEmpty'))}</p>`
+
+  return `
+    <div class="page sec-hub-page">
+      <header class="sec-hub-hero">
+        ${eyebrow ? `<p class="sec-hub-eyebrow">${escapeHtml(eyebrow)}</p>` : ''}
+        <h1>${escapeHtml(title)}</h1>
+        ${desc ? `<p class="sec-hub-desc">${escapeHtml(desc)}</p>` : ''}
+      </header>
+      ${grid}
+      ${extraHtml}
+    </div>`
+}
+
+function getKnowledgeHubCards() {
+  const can = (id) => Perm().can(id)
+  const docsMap = getSidebarKbDocs()
+  const cards = []
+  for (const c of K.getMergedCategories?.() || []) {
+    if (!can(c.id)) continue
+    const docs = docsMap[c.id]
+    let href = `#/category/${c.id}`
+    if (docs?.length === 1) href = `#/doc/${c.id}/${docs[0].id}`
+    else if (docs?.length > 1) href = `#/category/${c.id}`
+    cards.push({
+      href,
+      title: catTitle(c),
+      desc: catDesc(c),
+      meta: docs?.length > 1 ? `${docs.length} 个子文档` : `${c.items?.length || 0} 个知识点`,
+    })
+  }
+  return cards
+}
+
+function getPersonalHubCards() {
+  return getMobilePersonalItems().map((x) => ({
+    href: x.href,
+    title: x.title,
+    desc: x.desc,
+  }))
+}
+
+function getAdminHubCards() {
+  if (!Auth().isAdmin()) return []
+  return [
+    { href: '#/admin/stats', title: t('nav.adminStats'), desc: t('admin.statsDesc') },
+    { href: '#/admin/knowledge', title: t('nav.adminKnowledge'), desc: t('admin.knowledgeDesc') },
+    { href: '#/admin/accounts', title: t('nav.adminAccounts'), desc: t('admin.accountsDesc') },
+    { href: '#/admin/roles', title: t('nav.adminRoles'), desc: t('admin.rolesDesc') },
+    { href: '#/admin/feedback', title: t('nav.adminFeedback'), desc: t('admin.feedbackDesc', { avg: '—', newCount: '—' }, '查看与处理用户反馈') },
+  ]
+}
+
+function renderKnowledgeHubPage() {
+  const stages = (K.getCategoryByIdMerged?.('reference')?.items || [])
+    .filter((i) => i.kind === 'path-stage' || i.sourceId === 'learning-path')
+    .filter((i) => /阶段\s*[1-4]/.test(i.title))
+    .sort((a, b) => {
+      const na = Number((a.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
+      const nb = Number((b.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
+      return na - nb
+    })
+
+  const pathStrip = stages.length
+    ? `<section class="sec-hub-path">
+        <div class="sec-hub-path-head">
+          <h2>${escapeHtml(t('kbMod.refPathTitle', null, '4 阶段学习路径'))}</h2>
+          <a href="#/module/reference/path" class="sec-hub-path-link">${escapeHtml(t('kbMod.viewDetail', null, '查看详情'))}</a>
+        </div>
+        <ol class="sec-hub-path-steps">
+          ${stages
+            .map((s, idx) => {
+              const label = String(s.title || '')
+                .replace(/^阶段\s*\d+[：:.]?\s*/, '')
+                .replace(/\(.*?\)/g, '')
+                .trim()
+              return `<li>
+                <a href="#/module/reference/path">
+                  <span class="sec-hub-path-num">${idx + 1}</span>
+                  <span class="sec-hub-path-label">${escapeHtml(label || s.title)}</span>
+                  <span class="sec-hub-path-goal">${escapeHtml(s.summary || '')}</span>
+                </a>
+              </li>`
+            })
+            .join('')}
+        </ol>
+      </section>`
+    : ''
+
+  return renderSectionCardHub({
+    eyebrow: t('nav.sectionKnowledge'),
+    title: t('kbMod.kbHomePickTitle', null, '选一个主题开始'),
+    desc: t('kbMod.kbHomePickDesc', null, '按类目进入文档与章节，也可跟随下方路径系统学习'),
+    cards: getKnowledgeHubCards(),
+    extraHtml: pathStrip,
+  })
+}
+
+function renderPersonalHubPage() {
+  if (!Auth().isLoggedIn()) {
+    return renderLoginRequired(t('auth.requiredPersonal'))
+  }
+  return renderSectionCardHub({
+    eyebrow: t('nav.sectionPersonal'),
+    title: t('kbMod.personalHubTitle', null, '个人空间'),
+    desc: t('mobile.personalHubDesc'),
+    cards: getPersonalHubCards(),
+  })
+}
+
+function renderAdminHubPage() {
+  if (!Auth().isAdmin()) return renderPermissionDenied()
+  return renderSectionCardHub({
+    eyebrow: t('nav.sectionAdmin'),
+    title: t('kbMod.adminHubTitle', null, '管理后台'),
+    desc: t('kbMod.adminHubDesc', null, '选择要管理的模块'),
+    cards: getAdminHubCards(),
+  })
+}
+
 function getMobileLearnItems() {
   const can = (id) => Perm().can(id)
   return [
@@ -889,17 +1038,11 @@ function renderMobileLearnHub() {
 }
 
 function renderMobileKnowledgeHub() {
-  const html = window.PDMKnowledgeViews?.renderKnowledgeHome?.()
-  return html || renderMobileHubPage(t('nav.sectionKnowledge'), t('mobile.knowledgeHubDesc'), getMobileKnowledgeItems())
+  return renderKnowledgeHubPage()
 }
 
 function renderMobilePersonalHub() {
-  if (!Auth().isLoggedIn()) {
-    return typeof renderLoginRequired === 'function'
-      ? renderLoginRequired(t('auth.requiredPersonal'))
-      : `<div class="page"><p>${escapeHtml(t('auth.requiredPersonal'))}</p><a class="btn-primary" href="#/login">${escapeHtml(t('auth.cta'))}</a></div>`
-  }
-  return renderMobileHubPage(t('nav.sectionPersonal'), t('mobile.personalHubDesc'), getMobilePersonalItems())
+  return renderPersonalHubPage()
 }
 
 function renderNicknameForm(profile, email) {
@@ -969,7 +1112,8 @@ function renderMobileAccountHub() {
   const profile = Auth().getProfile?.()
   const name = profile?.display_name?.trim() || email || t('nav.guestHint')
   const adminItems = Auth().isAdmin() ? [
-    { href: '#/admin', title: t('nav.adminStats') },
+    { href: '#/admin', title: t('nav.sectionAdmin') },
+    { href: '#/admin/stats', title: t('nav.adminStats') },
     { href: '#/admin/knowledge', title: t('nav.adminKnowledge') },
     { href: '#/admin/accounts', title: t('nav.adminAccounts') },
     { href: '#/admin/roles', title: t('nav.adminRoles') },
@@ -1217,7 +1361,7 @@ function renderSidebar(activePath) {
 
   const adminLinks = Auth().isAdmin()
     ? [
-        { href: '#/admin', title: t('nav.adminStats'), active: activePath === '/admin' || activePath === '/admin/' },
+        { href: '#/admin/stats', title: t('nav.adminStats'), active: activePath.includes('/admin/stats') },
         { href: '#/admin/knowledge', title: t('nav.adminKnowledge'), active: activePath.includes('/admin/knowledge') },
         { href: '#/admin/accounts', title: t('nav.adminAccounts'), active: activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') },
         { href: '#/admin/roles', title: t('nav.adminRoles'), active: activePath.includes('/admin/roles') },
@@ -3422,15 +3566,10 @@ function render() {
   } else if (parts[0] === 'm' && parts[1] === 'personal') {
     main.innerHTML = renderMobilePersonalHub()
   } else if (parts[0] === 'kb') {
-    const html = window.PDMKnowledgeViews?.renderKnowledgeHome?.()
-    main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    main.innerHTML = renderKnowledgeHubPage()
     Analytics()?.track('page_view', { page: 'kb-home' })
   } else if (parts[0] === 'personal') {
-    if (!Auth().isLoggedIn()) {
-      main.innerHTML = renderLoginRequired(t('auth.requiredPersonal'))
-    } else {
-      main.innerHTML = renderMobileHubPage(t('nav.sectionPersonal'), t('mobile.personalHubDesc'), getMobilePersonalItems())
-    }
+    main.innerHTML = renderPersonalHubPage()
     Analytics()?.track('page_view', { page: 'personal-hub' })
   } else if (parts[0] === 'm' && parts[1] === 'account') {
     main.innerHTML = renderMobileAccountHub()
@@ -3485,7 +3624,7 @@ function render() {
     } else {
       renderAdminKnowledgeRoute()
     }
-  } else if (parts[0] === 'admin') {
+  } else if (parts[0] === 'admin' && parts[1] === 'stats') {
     if (!Auth().isAdmin()) {
       main.innerHTML = forbiddenHtml
     } else {
@@ -3498,6 +3637,9 @@ function render() {
         main.innerHTML = `<div class="page"><p>${escapeHtml(e.message)}</p></div>`
       })
     }
+  } else if (parts[0] === 'admin' && !parts[1]) {
+    main.innerHTML = renderAdminHubPage()
+    Analytics()?.track('page_view', { page: 'admin-hub' })
   } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2]) {
     main.innerHTML = Sections().renderLearningPathDetail(parts[2])
     Analytics()?.track('page_view', { page: 'learning-path', id: parts[2] })

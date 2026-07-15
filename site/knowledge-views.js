@@ -540,48 +540,6 @@
     )
   }
 
-  /** 知识库首页：4 阶段学习路径 */
-  function renderKnowledgeHome() {
-    const stages = itemsOf('reference')
-      .filter((i) => i.kind === 'path-stage' || i.sourceId === 'learning-path')
-      .filter((i) => /^阶段\s*[1-4]/.test(i.title) || /阶段\s*[1-4]/.test(i.title))
-      .sort((a, b) => {
-        const na = Number((a.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
-        const nb = Number((b.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
-        return na - nb
-      })
-
-    const body = `
-      <div class="kb-path kb-home-path">
-        <ol class="kb-path-track">
-          ${stages
-            .map(
-              (s, idx) => `
-            <li class="kb-path-node">
-              <div class="kb-path-dot">${idx + 1}</div>
-              <div class="kb-path-card">
-                <h2>${escapeHtml(stripLeadingIndex(s.title).replace(/^阶段\s*\d+[：:]?\s*/, '') || s.title)}</h2>
-                <p class="kb-path-summary">${escapeHtml(s.summary || '')}</p>
-                ${renderLines(s.content)}
-              </div>
-            </li>`,
-            )
-            .join('')}
-        </ol>
-      </div>`
-
-    return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { label: t('kbMod.kbHomeTitle', null, '知识库') },
-      ]),
-      t('kbMod.kbHomeTitle', null, '知识库'),
-      t('kbMod.kbHomeDesc', null, '4 阶段 8 周学习路径'),
-      body,
-      'kb-home-page',
-    )
-  }
-
   /* ---------- 三级结构：文档 → 章节卡片 → 知识点 ---------- */
 
   function stripLeadingIndex(text) {
@@ -942,7 +900,6 @@
     renderModule,
     renderDoc,
     renderChapter,
-    renderKnowledgeHome,
     getSidebarDocs,
     getChapterLabel,
     bindModulePage,

@@ -128,6 +128,11 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     emptyDoc: '该文档暂无章节内容',
     kbHomeTitle: '知识库',
     kbHomeDesc: '4 阶段 8 周学习路径：从入门到独立 owner',
+    kbHomePickTitle: '选一个主题开始',
+    kbHomePickDesc: '按类目进入文档与章节，也可跟随下方路径系统学习',
+    personalHubTitle: '个人空间',
+    adminHubTitle: '管理后台',
+    adminHubDesc: '选择要管理的模块',
   },
   common: {
     home: '首页',
