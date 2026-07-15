@@ -15,6 +15,11 @@ const catTitle = (cat) => window.PMLabI18n?.getCategoryMeta(cat.id, 'title', cat
 const catDesc = (cat) => window.PMLabI18n?.getCategoryMeta(cat.id, 'description', cat.description) ?? cat.description
 const ui = (group, key, params) => t(`content.${group}.${key}`, params)
 
+/** 旧知识库分类 ID → README 主题（interview/skills/domain） */
+function resolveKbCategoryId(id) {
+  return Perm().resolveFeatureId?.(id) || id
+}
+
 let toastTimer = null
 function showToast(msg, type = 'info') {
   let el = document.getElementById('pdm-toast')
@@ -44,7 +49,13 @@ function escapeHtml(str) {
 function parseRoute() {
   const raw = location.hash.slice(1) || '/'
   const [path, query] = raw.split('?')
-  const parts = path.split('/').filter(Boolean)
+  const parts = path.split('/').filter(Boolean).map((p) => {
+    try {
+      return decodeURIComponent(p)
+    } catch {
+      return p
+    }
+  })
   const params = new URLSearchParams(query || '')
   return { parts, params, raw: path }
 }
@@ -116,6 +127,7 @@ function Perm() {
   return window.PDMPermissions || {
     can: () => true,
     routeFeature: () => null,
+    resolveFeatureId: (id) => id,
     getFeatures: () => [],
     featureLabel: (f) => f.labelZh || f.id,
     actionLabel: (a) => a,
@@ -154,6 +166,7 @@ function buildCrumbsFromRoute(parts) {
   if (!parts.length) return [{ label: t('nav.home') }]
   const p0 = parts[0]
   if (p0 === 'login') return [home, { label: t('auth.pageTitle') }]
+  if (p0 === 'account') return [home, { label: t('account.profileTitle') }]
   if (p0 === 'reset-password') return [home, { label: t('auth.resetTitle') }]
   if (p0 === 'industry') {
     const c = [home, { href: '#/industry', label: t('nav.industry') }]
@@ -174,15 +187,60 @@ function buildCrumbsFromRoute(parts) {
   }
   if (p0 === 'category' && parts[1]) {
     const cat = K.getCategoryByIdMerged(parts[1])
-    return [home, { label: catTitle(cat) || parts[1] }]
+    return [home, { href: '#/kb', label: t('nav.sectionKnowledge') }, { label: catTitle(cat) || parts[1] }]
+  }
+  if (p0 === 'kb') {
+    return [home, { label: t('nav.sectionKnowledge') }]
+  }
+  if (p0 === 'personal') {
+    return [home, { label: t('nav.sectionPersonal') }]
+  }
+  if (p0 === 'doc' && parts[1] && parts[2]) {
+    const cat = K.getCategoryByIdMerged(parts[1])
+    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
+    const doc = docs.find((d) => d.id === parts[2])
+    const crumbs = [home, { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] }]
+    if (docs.length > 1) crumbs.push({ label: doc?.title || parts[2] })
+    return crumbs
+  }
+  if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
+    const cat = K.getCategoryByIdMerged(parts[1])
+    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
+    const doc = docs.find((d) => d.id === parts[2])
+    const chapterLabel =
+      window.PDMKnowledgeViews?.getChapterLabel?.(parts[1], parts[2], parts[3]) ||
+      decodeURIComponent(parts[3])
+    const crumbs = [home, { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] }]
+    if (docs.length > 1) crumbs.push({ href: `#/doc/${parts[1]}/${parts[2]}`, label: doc?.title || parts[2] })
+    crumbs.push({ label: chapterLabel })
+    return crumbs
+  }
+  if (p0 === 'module' && parts[1] && parts[2]) {
+    const cat = K.getCategoryByIdMerged(parts[1])
+    const labels = {
+      demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
+      prd: t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
+      retro: t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
+      collab: t('kbMod.workflowCollabTitle', null, '跨部门协作'),
+      kb: t('kbMod.workflowKbTitle', null, '知识库管理'),
+      glossary: t('kbMod.refGlossaryTitle', null, '关键词速查'),
+      mindmap: t('kbMod.refMindmapTitle', null, '知识图谱'),
+      path: t('kbMod.refPathTitle', null, '学习路径'),
+    }
+    return [
+      home,
+      { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] },
+      { label: labels[parts[2]] || parts[2] },
+    ]
   }
   if (p0 === 'article' && parts[1] && parts[2]) {
     const cat = K.getCategoryByIdMerged(parts[1])
     const item = K.getItemByIdMerged(parts[1], parts[2])
+    const title = window.PDMKnowledgeViews?.stripLeadingIndex?.(item?.title) || item?.title || parts[2]
     return [
       home,
       { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] },
-      { label: item?.title || parts[2] },
+      { label: title },
     ]
   }
   if (p0 === 'favorites') return [home, { label: t('nav.favorites') }]
@@ -298,7 +356,8 @@ function renderTopAccount(activePath) {
         <span class="topbar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
       </button>
       <div class="topbar-account-menu" id="topbar-account-menu" hidden>
-        <div class="topbar-account-menu-email">${escapeHtml(email)}</div>
+        <div class="topbar-account-menu-email">${escapeHtml(displayName || email)}</div>
+        <a href="#/account" class="topbar-account-menu-item">${escapeHtml(t('account.profileLink'))}</a>
         <a href="#/daily-learn" class="topbar-account-menu-item">${escapeHtml(t('nav.dailyLearnSettings'))}</a>
         ${Auth().isAdmin() ? `<a href="#/admin" class="topbar-account-menu-item">${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
         <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
@@ -620,9 +679,9 @@ function getMobileTab(parts) {
     if (parts[1] === 'account') return 'account'
   }
   if (['industry', 'tools', 'forum'].includes(p0)) return 'learn'
-  if (p0 === 'category' || p0 === 'article') return 'knowledge'
-  if (['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn', 'feedback'].includes(p0)) return 'personal'
-  if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin') return 'account'
+  if (p0 === 'category' || p0 === 'article' || p0 === 'module' || p0 === 'doc' || p0 === 'chapter' || p0 === 'kb') return 'knowledge'
+  if (p0 === 'personal' || ['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn', 'feedback'].includes(p0)) return 'personal'
+  if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin' || p0 === 'account') return 'account'
   return 'home'
 }
 
@@ -645,13 +704,49 @@ function getMobilePageMeta(parts) {
   if (p0 === 'industry') return { title: t('nav.industry'), backHref }
   if (p0 === 'tools') return { title: t('nav.tools'), backHref }
   if (p0 === 'forum') return { title: t('nav.forum'), backHref }
+  if (p0 === 'module' && parts[1] && parts[2]) {
+    const labels = {
+      demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
+      prd: t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
+      retro: t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
+      collab: t('kbMod.workflowCollabTitle', null, '跨部门协作'),
+      kb: t('kbMod.workflowKbTitle', null, '知识库管理'),
+      glossary: t('kbMod.refGlossaryTitle', null, '关键词速查'),
+      mindmap: t('kbMod.refMindmapTitle', null, '知识图谱'),
+      path: t('kbMod.refPathTitle', null, '学习路径'),
+    }
+    return { title: labels[parts[2]] || parts[2], backHref: `#/category/${parts[1]}` }
+  }
   if (p0 === 'category' && parts[1]) {
     const cat = K.getCategoryByIdMerged?.(parts[1])
-    return { title: catTitle(cat) || parts[1], backHref }
+    return { title: catTitle(cat) || parts[1], backHref: '#/kb' }
+  }
+  if (p0 === 'kb') {
+    return { title: t('nav.sectionKnowledge'), backHref: '#/' }
+  }
+  if (p0 === 'personal') {
+    return { title: t('nav.sectionPersonal'), backHref }
+  }
+  if (p0 === 'doc' && parts[1] && parts[2]) {
+    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
+    const doc = docs.find((d) => d.id === parts[2])
+    return {
+      title: doc?.title || parts[2],
+      backHref: docs.length > 1 ? `#/category/${parts[1]}` : backHref,
+    }
+  }
+  if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
+    return {
+      title:
+        window.PDMKnowledgeViews?.getChapterLabel?.(parts[1], parts[2], parts[3]) ||
+        decodeURIComponent(parts[3]),
+      backHref: `#/doc/${parts[1]}/${parts[2]}`,
+    }
   }
   if (p0 === 'article' && parts[2]) {
     const item = K.getItemByIdMerged?.(parts[1], parts[2])
-    return { title: item?.title || t('nav.sectionKnowledge'), backHref }
+    const title = window.PDMKnowledgeViews?.stripLeadingIndex?.(item?.title) || item?.title || t('nav.sectionKnowledge')
+    return { title, backHref: `#/category/${parts[1]}` }
   }
   if (p0 === 'favorites') return { title: t('nav.favorites'), backHref }
   if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref }
@@ -660,6 +755,7 @@ function getMobilePageMeta(parts) {
   if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref }
   if (p0 === 'feedback') return { title: t('nav.feedback'), backHref }
   if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
+  if (p0 === 'account') return { title: t('account.profileTitle'), backHref: '#/m/account' }
   if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: '#/m/account' }
   if (p0 === 'admin') {
     if (parts[1] === 'knowledge') return { title: t('nav.adminKnowledge'), backHref: '#/m/account' }
@@ -740,14 +836,37 @@ function getMobileLearnItems() {
 
 function getMobileKnowledgeItems() {
   const can = (id) => Perm().can(id)
-  return (K.getMergedCategories?.() || [])
-    .filter((c) => can(c.id))
-    .map((c) => ({
-      href: `#/category/${c.id}`,
-      title: catTitle(c),
-      desc: catDesc(c),
-      meta: `${c.items.length}`,
-    }))
+  const docsMap = getSidebarKbDocs()
+  const items = []
+  for (const c of K.getMergedCategories?.() || []) {
+    if (!can(c.id)) continue
+    const docs = docsMap[c.id]
+    if (docs?.length > 1) {
+      for (const d of docs) {
+        items.push({
+          href: `#/doc/${c.id}/${d.id}`,
+          title: d.title,
+          desc: d.desc || catTitle(c),
+          meta: catTitle(c),
+        })
+      }
+    } else if (docs?.length === 1) {
+      items.push({
+        href: `#/doc/${c.id}/${docs[0].id}`,
+        title: catTitle(c),
+        desc: docs[0].desc || catDesc(c),
+        meta: `${c.items.length}`,
+      })
+    } else {
+      items.push({
+        href: `#/category/${c.id}`,
+        title: catTitle(c),
+        desc: catDesc(c),
+        meta: `${c.items.length}`,
+      })
+    }
+  }
+  return items
 }
 
 function getMobilePersonalItems() {
@@ -770,18 +889,85 @@ function renderMobileLearnHub() {
 }
 
 function renderMobileKnowledgeHub() {
-  return renderMobileHubPage(t('nav.sectionKnowledge'), t('mobile.knowledgeHubDesc'), getMobileKnowledgeItems())
+  const html = window.PDMKnowledgeViews?.renderKnowledgeHome?.()
+  return html || renderMobileHubPage(t('nav.sectionKnowledge'), t('mobile.knowledgeHubDesc'), getMobileKnowledgeItems())
 }
 
 function renderMobilePersonalHub() {
+  if (!Auth().isLoggedIn()) {
+    return typeof renderLoginRequired === 'function'
+      ? renderLoginRequired(t('auth.requiredPersonal'))
+      : `<div class="page"><p>${escapeHtml(t('auth.requiredPersonal'))}</p><a class="btn-primary" href="#/login">${escapeHtml(t('auth.cta'))}</a></div>`
+  }
   return renderMobileHubPage(t('nav.sectionPersonal'), t('mobile.personalHubDesc'), getMobilePersonalItems())
+}
+
+function renderNicknameForm(profile, email) {
+  const name = profile?.display_name?.trim() || ''
+  return `
+    <section class="account-nickname-card">
+      <div class="account-nickname-head">
+        <h2>${escapeHtml(t('account.nicknameTitle'))}</h2>
+        <p>${escapeHtml(t('account.nicknameDesc'))}</p>
+      </div>
+      <label class="account-nickname-field">
+        <span>${escapeHtml(t('account.nicknameLabel'))}</span>
+        <input type="text" id="account-nickname-input" class="account-nickname-input" maxlength="32" value="${escapeHtml(name)}" placeholder="${escapeHtml(t('account.nicknamePlaceholder'))}" autocomplete="nickname" />
+      </label>
+      ${email ? `<p class="account-nickname-email">${escapeHtml(t('account.emailLabel'))}：${escapeHtml(email)}</p>` : ''}
+      <div class="account-nickname-actions">
+        <button type="button" class="btn-primary" id="account-nickname-save">${escapeHtml(t('account.nicknameSave'))}</button>
+      </div>
+    </section>`
+}
+
+function bindNicknameForm() {
+  document.getElementById('account-nickname-save')?.addEventListener('click', async () => {
+    const input = document.getElementById('account-nickname-input')
+    const name = input?.value?.trim() || ''
+    if (!name) {
+      showToast(t('account.nicknameEmpty'), 'error')
+      input?.focus()
+      return
+    }
+    try {
+      await Auth().updateDisplayName(name)
+      showToast(t('account.nicknameSaved'), 'success')
+      render()
+    } catch (e) {
+      showToast(e.message || t('account.nicknameFailed'), 'error')
+    }
+  })
+  document.getElementById('account-nickname-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      document.getElementById('account-nickname-save')?.click()
+    }
+  })
+}
+
+function renderAccountProfilePage() {
+  if (!Auth().isLoggedIn()) {
+    return renderLoginRequired(t('auth.requiredDefault'))
+  }
+  const session = Auth().getSession?.()
+  const email = session?.user?.email || ''
+  const profile = Auth().getProfile?.()
+  return `
+    <div class="page account-profile-page">
+      <header class="memory-header">
+        <h1>${escapeHtml(t('account.profileTitle'))}</h1>
+        <p>${escapeHtml(t('account.profileDesc'))}</p>
+      </header>
+      ${renderNicknameForm(profile, email)}
+    </div>`
 }
 
 function renderMobileAccountHub() {
   const session = Auth().getSession?.()
   const email = session?.user?.email || ''
   const profile = Auth().getProfile?.()
-  const name = profile?.display_name || email || t('nav.guestHint')
+  const name = profile?.display_name?.trim() || email || t('nav.guestHint')
   const adminItems = Auth().isAdmin() ? [
     { href: '#/admin', title: t('nav.adminStats') },
     { href: '#/admin/knowledge', title: t('nav.adminKnowledge') },
@@ -803,6 +989,7 @@ function renderMobileAccountHub() {
           ? `<button type="button" class="btn-secondary" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>`
           : `<a href="#/login" class="btn-primary">${escapeHtml(t('nav.loginRegister'))}</a>`}
       </section>
+      ${Auth().isLoggedIn() ? renderNicknameForm(profile, email) : ''}
       ${adminItems.length ? `
         <section class="mobile-account-admin">
           <h2>${escapeHtml(t('nav.sectionAdmin'))}</h2>
@@ -812,6 +999,7 @@ function renderMobileAccountHub() {
 }
 
 function bindMobileAccountHub() {
+  bindNicknameForm()
   document.getElementById('mobile-account-logout')?.addEventListener('click', async () => {
     await Auth().signOut()
     showToast(t('auth.toastLoggedOut'), 'info')
@@ -857,6 +1045,90 @@ function renderMobileChrome(activePath) {
   `
 }
 
+function getSidebarKbDocs() {
+  const fromViews = window.PDMKnowledgeViews?.getSidebarDocs?.()
+  if (fromViews && Object.keys(fromViews).length) return fromViews
+  // 兜底：对齐 public/ 目录结构
+  return {
+    methodology: [
+      { id: 'product-methodology', title: '产品方法论' },
+      { id: 'pm-bagu', title: '产品经理八股' },
+    ],
+    architecture: [
+      { id: 'system-architecture', title: '系统架构' },
+      { id: 'industry-terms', title: '行业通用词语' },
+    ],
+    business: [{ id: 'industry-terms-business', title: '业务管理词语' }],
+    security: [{ id: 'industry-terms-security', title: '权限与安全词语' }],
+  }
+}
+
+const NAV_ICONS = {
+  home: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 7.2L8 2.8l5.5 4.4V13a1 1 0 0 1-1 1H9.2V9.6H6.8V14H3.5a1 1 0 0 1-1-1V7.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
+  industry: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M3 8h10M3 11.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  tools: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 11.5V6.6L8 3.7l4 2.9v4.9H4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
+  forum: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><circle cx="10.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><path d="M3 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1M8 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  knowledge: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  personal: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 12.2c.8-2 2.4-3 4.5-3s3.7 1 4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+  admin: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 12.5V8.2M8 12.5V4.5M12.5 12.5V6.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+}
+
+function navIcon(name) {
+  return `<span class="nav-icon" aria-hidden="true">${NAV_ICONS[name] || ''}</span>`
+}
+
+const NAV_EXPAND_KEY = 'pm-lab-nav-expand'
+
+function getNavExpandState() {
+  try {
+    return JSON.parse(localStorage.getItem(NAV_EXPAND_KEY) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+
+function isNavExpanded(id, fallback = true) {
+  const state = getNavExpandState()
+  if (Object.prototype.hasOwnProperty.call(state, id)) return Boolean(state[id])
+  return fallback
+}
+
+function setNavExpanded(id, open) {
+  const state = getNavExpandState()
+  state[id] = Boolean(open)
+  try {
+    localStorage.setItem(NAV_EXPAND_KEY, JSON.stringify(state))
+  } catch (_) {}
+}
+
+function navCaret(open) {
+  return `<button type="button" class="nav-caret" aria-expanded="${open ? 'true' : 'false'}" title="${open ? '收起' : '展开'}">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`
+}
+
+function renderNavL2Link(href, title, active) {
+  return `<a href="${href}" class="nav-item nav-item-l2 ${active ? 'active' : ''}" title="${escapeHtml(title)}">
+    <span class="nav-title">${escapeHtml(title)}</span>
+  </a>`
+}
+
+function bindSidebarNavToggles() {
+  document.querySelectorAll('[data-nav-toggle]').forEach((group) => {
+    const id = group.getAttribute('data-nav-toggle')
+    if (!id) return
+    const caret = group.querySelector(':scope > .nav-item-l1 .nav-caret, :scope > .nav-item-branch .nav-caret, :scope > .nav-row .nav-caret')
+    caret?.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const open = !group.classList.contains('is-open')
+      group.classList.toggle('is-open', open)
+      caret.setAttribute('aria-expanded', open ? 'true' : 'false')
+      setNavExpanded(id, open)
+    })
+  })
+}
+
 function renderSidebar(activePath) {
   const el = document.getElementById('sidebar')
   if (!el) return
@@ -870,6 +1142,88 @@ function renderSidebar(activePath) {
   const merged = K.getMergedCategories()
   const can = (id, action = 'view') => Perm().can(id, action)
   const collapsed = getSidebarCollapsed()
+  const sidebarDocs = getSidebarKbDocs()
+
+  const kbActive =
+    activePath === '/kb' ||
+    activePath.startsWith('/kb/') ||
+    activePath.includes('/category/') ||
+    activePath.includes('/doc/') ||
+    activePath.includes('/chapter/') ||
+    activePath.includes('/article/') ||
+    activePath.includes('/module/') ||
+    activePath.startsWith('/m/knowledge')
+  const personalActive =
+    activePath === '/personal' ||
+    activePath.startsWith('/personal/') ||
+    ['/favorites', '/notes', '/my-knowledge', '/reviews', '/memory', '/daily-learn', '/feedback'].some(
+      (p) => activePath === p || activePath.startsWith(`${p}/`),
+    ) ||
+    activePath.startsWith('/m/personal')
+  const adminActive = activePath.startsWith('/admin')
+
+  const kbOpen = isNavExpanded('kb', kbActive || true)
+  const personalOpen = isNavExpanded('personal', personalActive || true)
+  const adminOpen = isNavExpanded('admin', adminActive || true)
+
+  const knowledgeTree = merged.map((cat) => {
+    if (!can(cat.id)) return ''
+    const docs = sidebarDocs[cat.id]
+    const catActive =
+      activePath.includes(`/category/${cat.id}`) ||
+      activePath.includes(`/doc/${cat.id}/`) ||
+      activePath.includes(`/chapter/${cat.id}/`) ||
+      activePath.includes(`/article/${cat.id}/`) ||
+      activePath.includes(`/module/${cat.id}/`)
+
+    if (docs?.length > 1) {
+      const branchId = `cat-${cat.id}`
+      const branchOpen = isNavExpanded(branchId, catActive)
+      return `<div class="nav-branch ${branchOpen ? 'is-open' : ''} ${catActive ? 'is-active' : ''}" data-nav-toggle="${branchId}">
+        <div class="nav-item nav-item-l2 nav-item-branch ${catActive ? 'active' : ''}" title="${escapeHtml(catTitle(cat))}">
+          <span class="nav-title">${escapeHtml(catTitle(cat))}</span>
+          ${navCaret(branchOpen)}
+        </div>
+        <div class="nav-sub">
+          ${docs
+            .map((d) => {
+              const href = `#/doc/${cat.id}/${d.id}`
+              const subActive =
+                activePath === `/doc/${cat.id}/${d.id}` ||
+                activePath.startsWith(`/doc/${cat.id}/${d.id}/`) ||
+                activePath.includes(`/chapter/${cat.id}/${d.id}/`)
+              return renderNavL2Link(href, d.title, subActive)
+            })
+            .join('')}
+        </div>
+      </div>`
+    }
+
+    if (docs?.length === 1) {
+      return renderNavL2Link(`#/doc/${cat.id}/${docs[0].id}`, catTitle(cat), catActive)
+    }
+
+    return renderNavL2Link(`#/category/${cat.id}`, catTitle(cat), catActive)
+  }).join('')
+
+  const personalLinks = [
+    can('favorites') && { href: '#/favorites', title: t('nav.favorites'), active: activePath === '/favorites' },
+    can('notes') && { href: '#/notes', title: t('nav.articleNotes'), active: activePath === '/notes' },
+    can('myKnowledge') && { href: '#/my-knowledge', title: t('nav.myKnowledge'), active: activePath.includes('/my-knowledge') },
+    can('reviews') && { href: '#/reviews', title: t('nav.reviews'), active: activePath === '/reviews' || activePath === '/memory' },
+    Auth().isLoggedIn() && can('dailyLearn') && { href: '#/daily-learn', title: t('nav.dailyLearn'), active: activePath === '/daily-learn' },
+    can('feedback') && { href: '#/feedback', title: t('nav.feedback'), active: activePath === '/feedback' },
+  ].filter(Boolean)
+
+  const adminLinks = Auth().isAdmin()
+    ? [
+        { href: '#/admin', title: t('nav.adminStats'), active: activePath === '/admin' || activePath === '/admin/' },
+        { href: '#/admin/knowledge', title: t('nav.adminKnowledge'), active: activePath.includes('/admin/knowledge') },
+        { href: '#/admin/accounts', title: t('nav.adminAccounts'), active: activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') },
+        { href: '#/admin/roles', title: t('nav.adminRoles'), active: activePath.includes('/admin/roles') },
+        { href: '#/admin/feedback', title: t('nav.adminFeedback'), active: activePath.includes('/admin/feedback') },
+      ]
+    : []
 
   el.innerHTML = `
     <div class="sidebar-header">
@@ -885,91 +1239,62 @@ function renderSidebar(activePath) {
       <p class="logo-sub">${escapeHtml(t('nav.brandSubtitle'))}</p>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-section nav-section-home">
-        <a href="#/" class="nav-item nav-item-home ${activePath === '/' ? 'active' : ''}" title="${escapeHtml(t('nav.home'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 7.2L8 2.8l5.5 4.4V13a1 1 0 0 1-1 1H9.2V9.6H6.8V14H3.5a1 1 0 0 1-1-1V7.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+      <div class="nav-section nav-section-primary">
+        <a href="#/" class="nav-item nav-item-l1 ${activePath === '/' ? 'active' : ''}" title="${escapeHtml(t('nav.home'))}">
+          ${navIcon('home')}
           <span class="nav-title">${escapeHtml(t('nav.home'))}</span>
         </a>
-      </div>
-      <div class="nav-section">
-        <span class="nav-label">${escapeHtml(t('nav.sectionLearning'))}</span>
-        ${can('industry') ? `<a href="#/industry" class="nav-item ${activePath.includes('/industry') ? 'active' : ''}" title="${escapeHtml(t('nav.industry'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M3 8h10M3 11.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        ${can('industry') ? `<a href="#/industry" class="nav-item nav-item-l1 ${activePath.includes('/industry') ? 'active' : ''}" title="${escapeHtml(t('nav.industry'))}">
+          ${navIcon('industry')}
           <span class="nav-title">${escapeHtml(t('nav.industry'))}</span>
         </a>` : ''}
-        ${can('tools') ? `<a href="#/tools" class="nav-item ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 11.5V6.6L8 3.7l4 2.9v4.9H4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+        ${can('tools') ? `<a href="#/tools" class="nav-item nav-item-l1 ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
+          ${navIcon('tools')}
           <span class="nav-title">${escapeHtml(t('nav.tools'))}</span>
         </a>` : ''}
-        ${can('forum') ? `<a href="#/forum" class="nav-item ${activePath.includes('/forum') ? 'active' : ''}" title="${escapeHtml(t('nav.forum'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><circle cx="10.5" cy="6.5" r="1.7" stroke="currentColor" stroke-width="1.3"/><path d="M3 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1M8 11.5c.5-1.4 1.5-2.1 2.5-2.1s2 .7 2.5 2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        ${can('forum') ? `<a href="#/forum" class="nav-item nav-item-l1 ${activePath.includes('/forum') ? 'active' : ''}" title="${escapeHtml(t('nav.forum'))}">
+          ${navIcon('forum')}
           <span class="nav-title">${escapeHtml(t('nav.forum'))}</span>
         </a>` : ''}
+
+        <div class="nav-l1-group ${kbOpen ? 'is-open' : ''} ${kbActive ? 'is-active' : ''}" data-nav-toggle="kb">
+          <div class="nav-item nav-item-l1 nav-row ${kbActive ? 'active' : ''}">
+            <a href="#/kb" class="nav-row-link" title="${escapeHtml(t('nav.sectionKnowledge'))}">
+              ${navIcon('knowledge')}
+              <span class="nav-title">${escapeHtml(t('nav.sectionKnowledge'))}</span>
+            </a>
+            ${navCaret(kbOpen)}
+          </div>
+          <div class="nav-tree">${knowledgeTree}</div>
+        </div>
+
+        <div class="nav-l1-group ${personalOpen ? 'is-open' : ''} ${personalActive ? 'is-active' : ''}" data-nav-toggle="personal">
+          <div class="nav-item nav-item-l1 nav-row ${personalActive ? 'active' : ''}">
+            <a href="#/personal" class="nav-row-link" title="${escapeHtml(t('nav.sectionPersonal'))}">
+              ${navIcon('personal')}
+              <span class="nav-title">${escapeHtml(t('nav.sectionPersonal'))}</span>
+            </a>
+            ${navCaret(personalOpen)}
+          </div>
+          <div class="nav-tree">
+            ${personalLinks.map((l) => renderNavL2Link(l.href, l.title, l.active)).join('')}
+          </div>
+        </div>
+
+        ${adminLinks.length ? `
+        <div class="nav-l1-group ${adminOpen ? 'is-open' : ''} ${adminActive ? 'is-active' : ''}" data-nav-toggle="admin">
+          <div class="nav-item nav-item-l1 nav-row ${adminActive ? 'active' : ''}">
+            <a href="#/admin" class="nav-row-link" title="${escapeHtml(t('nav.sectionAdmin'))}">
+              ${navIcon('admin')}
+              <span class="nav-title">${escapeHtml(t('nav.sectionAdmin'))}</span>
+            </a>
+            ${navCaret(adminOpen)}
+          </div>
+          <div class="nav-tree">
+            ${adminLinks.map((l) => renderNavL2Link(l.href, l.title, l.active)).join('')}
+          </div>
+        </div>` : ''}
       </div>
-      <div class="nav-section">
-        <span class="nav-label">${escapeHtml(t('nav.sectionKnowledge'))}</span>
-        ${merged.map(cat => {
-          if (!can(cat.id)) return ''
-          const active = activePath.includes(cat.id) ? 'active' : ''
-          return `<a href="#/category/${cat.id}" class="nav-item ${active}" title="${escapeHtml(catTitle(cat))}">
-      <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-      <span class="nav-title">${escapeHtml(catTitle(cat))}</span>
-      <span class="nav-count">${cat.items.length}</span>
-    </a>`
-        }).join('')}
-      </div>
-      <div class="nav-section">
-        <span class="nav-label">${escapeHtml(t('nav.sectionPersonal'))}</span>
-        ${can('favorites') ? `<a href="#/favorites" class="nav-item ${activePath === '/favorites' ? 'active' : ''}" title="${escapeHtml(t('nav.favorites'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2.8l1.4 2.9 3.2.5-2.3 2.2.5 3.2L8 10.1l-2.8 1.5.5-3.2L3.4 6.2l3.2-.5L8 2.8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.favorites'))}</span>
-        </a>` : ''}
-        ${can('notes') ? `<a href="#/notes" class="nav-item ${activePath === '/notes' ? 'active' : ''}" title="${escapeHtml(t('nav.articleNotes'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 3.5h6.5L12.5 5.5V12.5H4V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 7h4M6 9.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.articleNotes'))}</span>
-        </a>` : ''}
-        ${can('myKnowledge') ? `<a href="#/my-knowledge" class="nav-item ${activePath.includes('/my-knowledge') ? 'active' : ''}" title="${escapeHtml(t('nav.myKnowledge'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="4" width="10" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 7h4M6 9.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.myKnowledge'))}</span>
-        </a>` : ''}
-        ${can('reviews') ? `<a href="#/reviews" class="nav-item ${activePath === '/reviews' || activePath === '/memory' ? 'active' : ''}" title="${escapeHtml(t('nav.reviews'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 11.5V4.5h8v5.2H7.2L4 11.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.reviews'))}</span>
-        </a>` : ''}
-        ${Auth().isLoggedIn() && can('dailyLearn') ? `
-        <a href="#/daily-learn" class="nav-item ${activePath === '/daily-learn' ? 'active' : ''}" title="${escapeHtml(t('nav.dailyLearn'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.2" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.2l2 1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.dailyLearn'))}</span>
-        </a>` : ''}
-        ${can('feedback') ? `<a href="#/feedback" class="nav-item ${activePath === '/feedback' ? 'active' : ''}" title="${escapeHtml(t('nav.feedback'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5h9v7.2H7.2L4 12.5V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 6.2h4M6 8.6h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.feedback'))}</span>
-        </a>` : ''}
-      </div>
-      ${Auth().isAdmin() ? `
-      <div class="nav-section nav-section-admin">
-        <span class="nav-label">${escapeHtml(t('nav.sectionAdmin'))}</span>
-        <a href="#/admin" class="nav-item ${activePath === '/admin' || activePath === '/admin/' ? 'active' : ''}" title="${escapeHtml(t('nav.adminStats'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 12.5V8.2M8 12.5V4.5M12.5 12.5V6.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminStats'))}</span>
-        </a>
-        <a href="#/admin/knowledge" class="nav-item ${activePath.includes('/admin/knowledge') ? 'active' : ''}" title="${escapeHtml(t('nav.adminKnowledge'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="3" width="9" height="10" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6.5h4M6 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminKnowledge'))}</span>
-        </a>
-        <a href="#/admin/accounts" class="nav-item ${activePath.includes('/admin/accounts') || activePath.includes('/admin/permissions') ? 'active' : ''}" title="${escapeHtml(t('nav.adminAccounts'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 12.2c.8-2 2.4-3 4.5-3s3.7 1 4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminAccounts'))}</span>
-        </a>
-        <a href="#/admin/roles" class="nav-item ${activePath.includes('/admin/roles') ? 'active' : ''}" title="${escapeHtml(t('nav.adminRoles'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="7" width="6" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M6.3 7V5.6a1.7 1.7 0 0 1 3.4 0V7" stroke="currentColor" stroke-width="1.3"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminRoles'))}</span>
-        </a>
-        <a href="#/admin/feedback" class="nav-item ${activePath.includes('/admin/feedback') ? 'active' : ''}" title="${escapeHtml(t('nav.adminFeedback'))}">
-          <span class="nav-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 3.5h9v7.2H7.2L4 12.5V3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
-          <span class="nav-title">${escapeHtml(t('nav.adminFeedback'))}</span>
-        </a>
-      </div>` : ''}
     </nav>
   `
 
@@ -977,6 +1302,7 @@ function renderSidebar(activePath) {
   document.getElementById('sidebar-collapse-btn')?.addEventListener('click', () => {
     setSidebarCollapsed(!getSidebarCollapsed())
   })
+  bindSidebarNavToggles()
 }
 
 function renderHomeTile(tile) {
@@ -1000,7 +1326,7 @@ function renderHome() {
     },
     {
       icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3.5" width="12" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7.5h6M7 10.5h6M7 13.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-      href: '#/category/methodology',
+      href: '#/kb',
       title: t('home.featKnowledgeTitle'),
       desc: t('home.featKnowledgeDesc'),
     },
@@ -1031,15 +1357,16 @@ function renderHome() {
         </h1>
         <p class="home-stage-line">${escapeHtml(t('home.heroTitle'))}</p>
 
-        <div class="home-composer" role="group" aria-label="${escapeHtml(t('home.composerLabel'))}">
+        <div class="home-composer" id="home-composer" role="group" aria-label="${escapeHtml(t('home.composerLabel'))}">
           <span class="home-composer-prefix" aria-hidden="true">/</span>
           <input type="text" id="home-composer-input" class="home-composer-input" placeholder="${escapeHtml(t('home.composerPlaceholder'))}" autocomplete="off" />
           <button type="button" class="btn-primary home-composer-btn" id="home-composer-go" aria-label="${escapeHtml(t('nav.searchPlaceholder'))}" title="${escapeHtml(t('nav.searchPlaceholder'))}">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.6"/>
-              <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.25" stroke="currentColor" stroke-width="2"/>
+              <path d="M15.2 15.2L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
+          <div class="home-composer-results" id="home-composer-results" hidden></div>
         </div>
 
         <div class="home-stage-meta">
@@ -1064,7 +1391,7 @@ function renderHome() {
             </a>
           </li>
           <li>
-            <a href="#/category/methodology" class="home-flow-item">
+            <a href="#/kb" class="home-flow-item">
               <span class="home-flow-num">02</span>
               <span class="home-flow-title">${escapeHtml(t('home.step2Title'))}</span>
               <span class="home-flow-desc">${escapeHtml(t('home.step2Desc'))}</span>
@@ -1089,40 +1416,92 @@ function renderHome() {
     </div>`
 }
 
+let homeComposerDocBound = false
 function bindHomeEvents() {
   const input = document.getElementById('home-composer-input')
   const go = document.getElementById('home-composer-go')
-  if (!input || !go) return
+  const results = document.getElementById('home-composer-results')
+  if (!input || !go || !results) return
+
+  const hideResults = () => results.setAttribute('hidden', '')
+  const showResults = (html) => {
+    results.innerHTML = html
+    results.removeAttribute('hidden')
+  }
+
+  const paintResults = (q) => {
+    const found = K.searchKnowledgeMerged(q).slice(0, 8)
+    if (!found.length) {
+      showResults(`<div class="home-composer-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`)
+      return
+    }
+    showResults(found.map(({ category, item, source }) => {
+      const catLabel = source === 'my'
+        ? category.title
+        : t(`categories.${category.id}.title`, null, category.title)
+      return `<button type="button" class="home-composer-item" data-src="${source || 'public'}" data-cat="${category.id}" data-item="${item.id}">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(catLabel)}</span>
+      </button>`
+    }).join(''))
+    results.querySelectorAll('.home-composer-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.src === 'my') navigate(`/my-knowledge/view/${btn.dataset.item}`)
+        else navigate(`/article/${btn.dataset.cat}/${btn.dataset.item}`)
+      })
+    })
+  }
 
   const run = () => {
     const q = input.value.trim()
-    if (q) {
-      const found = K.searchKnowledgeMerged(q)
-      if (found[0]) {
-        const { category, item, source } = found[0]
-        if (source === 'my') navigate(`/my-knowledge/view/${item.id}`)
-        else navigate(`/article/${category.id}/${item.id}`)
-        return
-      }
-      showToast(t('nav.searchEmpty'), 'info')
+    if (!q) {
+      hideResults()
+      showToast(t('home.searchNeedQuery'), 'info')
+      input.focus()
       return
     }
-    navigate('/category/methodology')
+    paintResults(q)
+    if (!K.searchKnowledgeMerged(q).length) showToast(t('nav.searchEmpty'), 'info')
   }
 
-  go.addEventListener('click', (e) => {
+  go.onclick = (e) => {
     e.preventDefault()
     run()
-  })
-  input.addEventListener('keydown', (e) => {
+  }
+  input.oninput = () => {
+    const q = input.value.trim()
+    if (!q) {
+      hideResults()
+      return
+    }
+    paintResults(q)
+  }
+  input.onkeydown = (e) => {
+    if (e.key === 'Escape') {
+      hideResults()
+      return
+    }
     if (e.key === 'Enter') {
       e.preventDefault()
-      run()
+      const first = results.querySelector('.home-composer-item')
+      if (first && !results.hasAttribute('hidden')) first.click()
+      else run()
     }
-  })
+  }
+
+  if (!homeComposerDocBound) {
+    homeComposerDocBound = true
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest?.('.home-composer')) {
+        document.getElementById('home-composer-results')?.setAttribute('hidden', '')
+      }
+    })
+  }
 }
 
 function renderCategory(categoryId) {
+  const smart = window.PDMKnowledgeViews?.renderCategorySmart?.(categoryId)
+  if (smart) return smart
   const cat = K.getCategoryByIdMerged(categoryId)
   if (!cat) return `<div class="page"><p>${escapeHtml(t('common.categoryNotFound'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
   const title = catTitle(cat)
@@ -1139,11 +1518,11 @@ function renderCategory(categoryId) {
       </div>
       <div class="article-list">
         ${cat.items.map((item, i) => `
-          <a href="#/article/${cat.id}/${item.id}" class="article-card ${item.isShared ? 'shared-item' : ''}">
+          <a href="#/article/${cat.id}/${encodeURIComponent(item.id)}" class="article-card ${item.isShared ? 'shared-item' : ''}">
             <span class="article-index">${String(i + 1).padStart(2, '0')}</span>
             <div class="article-card-body">
               <h3>${item.title}${item.isShared ? ` <span class="shared-badge">${escapeHtml(t('article.sharedShort'))}</span>` : ''}</h3><p>${item.summary}</p>
-              <div class="article-tags">${item.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+              <div class="article-tags">${item.tags.map(tg => `<span class="tag">${tg}</span>`).join('')}</div>
             </div>
           </a>
         `).join('')}
@@ -1172,14 +1551,29 @@ function renderKnowledgeDetailBody(item) {
   const explain = item.content || []
   const cases = item.cases || []
   const pmApp = item.pmApplication || []
+  const mermaidBlocks = item.mermaid || []
   const hasStructured = cases.length > 0 || pmApp.length > 0
 
-  if (!explain.length && !cases.length && !pmApp.length) {
+  if (!explain.length && !cases.length && !pmApp.length && !mermaidBlocks.length) {
     return `<div class="article-body"><p class="empty-hint">${escapeHtml(t('common.notFound'))}</p></div>`
   }
 
+  const mermaidHtml = mermaidBlocks.length
+    ? `<div class="kb-mindmap-stack">${mermaidBlocks.map((code, idx) => `
+        <div class="kb-mermaid" data-mermaid-idx="${idx}">${escapeHtml(code)}</div>`).join('')}</div>`
+    : ''
+
+  // 长模板 / 带大量换行的正文用预格式块
+  const looksTemplate = item.kind === 'prd-template' || explain.some((c) => String(c).includes('\n## ') || String(c).startsWith('# '))
+  if (looksTemplate && !hasStructured) {
+    return `<div class="article-body">
+      <pre class="kb-prd-pre">${escapeHtml(explain.join('\n\n'))}</pre>
+      ${mermaidHtml}
+    </div>`
+  }
+
   if (!hasStructured) {
-    return `<div class="article-body">${renderKnowledgeParagraphs(explain)}</div>`
+    return `<div class="article-body">${renderKnowledgeParagraphs(explain)}${mermaidHtml}</div>`
   }
 
   return `
@@ -1191,6 +1585,7 @@ function renderKnowledgeDetailBody(item) {
         </div>
         <div class="article-section-body">
           ${renderKnowledgeParagraphs(explain)}
+          ${mermaidHtml}
         </div>
       </section>
 
@@ -1222,7 +1617,7 @@ function renderKnowledgeDetailBody(item) {
     </div>`
 }
 
-let articleNotesEditState = { id: null }
+let articleNotesEditState = { id: null, composing: false }
 
 function renderNoteCard(note, editing = false) {
   if (editing) {
@@ -1288,7 +1683,7 @@ function bindArticleNotesEvents() {
       return
     }
     await addArticleNote(ref, content)
-    articleNotesEditState.id = null
+    articleNotesEditState = { id: null, composing: false }
     input.value = ''
     showToast(t('article.notesSaved'), 'success')
     render()
@@ -1303,14 +1698,14 @@ function bindArticleNotesEvents() {
 
   section.querySelectorAll('.btn-note-edit').forEach((btn) => {
     btn.addEventListener('click', () => {
-      articleNotesEditState.id = btn.dataset.noteId
+      articleNotesEditState = { id: btn.dataset.noteId, composing: false }
       render()
     })
   })
 
   section.querySelectorAll('.btn-note-cancel').forEach((btn) => {
     btn.addEventListener('click', () => {
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       render()
     })
   })
@@ -1323,7 +1718,7 @@ function bindArticleNotesEvents() {
         return
       }
       await updateArticleNote(btn.dataset.noteId, content)
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       showToast(t('article.notesSaved'), 'success')
       render()
     })
@@ -1333,7 +1728,7 @@ function bindArticleNotesEvents() {
     btn.addEventListener('click', async () => {
       if (!confirm(t('notes.deleteConfirm'))) return
       await deleteArticleNote(btn.dataset.noteId)
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       showToast(t('common.deleted'), 'info')
       render()
     })
@@ -1341,11 +1736,22 @@ function bindArticleNotesEvents() {
 }
 
 function renderArticle(categoryId, itemId) {
-  const cat = K.getCategoryByIdMerged(categoryId)
-  const item = K.getItemByIdMerged(categoryId, itemId)
+  let cat = K.getCategoryByIdMerged(categoryId)
+  let item = cat?.items.find((i) => i.id === itemId)
+  if (!item) {
+    for (const c of K.getMergedCategories?.() || []) {
+      const hit = c.items.find((i) => i.id === itemId)
+      if (hit) {
+        cat = c
+        item = hit
+        break
+      }
+    }
+  }
   if (!cat || !item) return `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
   const catLabel = catTitle(cat)
-  const idx = cat.items.findIndex(i => i.id === itemId)
+  const displayTitle = window.PDMKnowledgeViews?.stripLeadingIndex?.(item.title) || item.title
+  const idx = cat.items.findIndex(i => i.id === item.id)
   const prev = idx > 0 ? cat.items[idx - 1] : null
   const next = idx < cat.items.length - 1 ? cat.items[idx + 1] : null
   const favRef = { source: 'public', categoryId: cat.id, itemId: item.id }
@@ -1356,7 +1762,7 @@ function renderArticle(categoryId, itemId) {
       <header class="page-header">
         <a href="#/" class="breadcrumb">${escapeHtml(t('common.home'))}</a><span class="breadcrumb-sep">/</span>
         <a href="#/category/${cat.id}" class="breadcrumb">${escapeHtml(catLabel)}</a><span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${escapeHtml(item.title)}</span>
+        <span class="breadcrumb-current">${escapeHtml(displayTitle)}</span>
       </header>
       <article class="article-content">
         <div class="article-meta">
@@ -1367,7 +1773,7 @@ function renderArticle(categoryId, itemId) {
             ${favorited ? escapeHtml(t('article.favoriteAdded')) : escapeHtml(t('article.favoriteAdd'))}
           </button>
         </div>
-        <h1>${escapeHtml(item.title)}</h1>
+        <h1>${escapeHtml(displayTitle)}</h1>
         <p class="article-summary">${escapeHtml(item.summary)}</p>
         ${hasStructured ? `
         <div class="article-format-hint">
@@ -1380,8 +1786,8 @@ function renderArticle(categoryId, itemId) {
         ${renderArticleNotesPanel(favRef)}
       </article>
       <nav class="article-nav">
-        ${prev ? `<a href="#/article/${cat.id}/${prev.id}" class="article-nav-link prev"><span class="nav-direction">${escapeHtml(t('article.navPrev'))}</span><span class="nav-title">${escapeHtml(prev.title)}</span></a>` : '<div></div>'}
-        ${next ? `<a href="#/article/${cat.id}/${next.id}" class="article-nav-link next"><span class="nav-direction">${escapeHtml(t('article.navNext'))}</span><span class="nav-title">${escapeHtml(next.title)}</span></a>` : '<div></div>'}
+        ${prev ? `<a href="#/article/${cat.id}/${encodeURIComponent(prev.id)}" class="article-nav-link prev"><span class="nav-direction">${escapeHtml(t('article.navPrev'))}</span><span class="nav-title">${escapeHtml(prev.title)}</span></a>` : '<div></div>'}
+        ${next ? `<a href="#/article/${cat.id}/${encodeURIComponent(next.id)}" class="article-nav-link next"><span class="nav-direction">${escapeHtml(t('article.navNext'))}</span><span class="nav-title">${escapeHtml(next.title)}</span></a>` : '<div></div>'}
       </nav>
     </div>`
 }
@@ -1606,19 +2012,70 @@ function renderKnowledgeForm(editItemId) {
     </div>`
 }
 
+function noteHubLinkOptionsHtml(selectedKey = '') {
+  const opts = [`<option value="">${escapeHtml(t('notes.linkNone'))}</option>`]
+  for (const cat of K.getMergedCategories?.() || []) {
+    for (const item of cat.items) {
+      const key = `public:${cat.id}:${item.id}`
+      opts.push(`<option value="${key}" ${selectedKey === key ? 'selected' : ''}>${escapeHtml(`${catTitle(cat)} · ${item.title}`)}</option>`)
+    }
+  }
+  for (const item of K.getMyKnowledgeItems?.() || []) {
+    const key = `my:${item.id}`
+    opts.push(`<option value="${key}" ${selectedKey === key ? 'selected' : ''}>${escapeHtml(`${t('nav.myKnowledge')} · ${item.title}`)}</option>`)
+  }
+  return opts.join('')
+}
+
+function parseNoteLinkKey(key) {
+  if (!key) return { source: 'free' }
+  if (key.startsWith('my:')) return { source: 'my', itemId: key.slice(3) }
+  const m = key.match(/^public:([^:]+):(.+)$/)
+  if (m) return { source: 'public', categoryId: m[1], itemId: m[2] }
+  return { source: 'free' }
+}
+
 function renderArticleNotesHub() {
   const notes = loadArticleNotes()
   const editingId = articleNotesEditState.id
+  const composing = articleNotesEditState.composing
+  const canEdit = Perm().can('notes', 'edit')
+
+  const composeHtml = composing ? `
+    <section class="note-hub-compose" id="note-hub-compose">
+      <div class="note-hub-compose-head">
+        <h2>${escapeHtml(t('notes.addTitle'))}</h2>
+        <p>${escapeHtml(t('notes.addDesc'))}</p>
+      </div>
+      <label class="note-hub-field">
+        <span>${escapeHtml(t('notes.fieldTitle'))}</span>
+        <input type="text" id="hub-note-title" class="note-hub-input" maxlength="80" placeholder="${escapeHtml(t('notes.titlePlaceholder'))}" />
+      </label>
+      <label class="note-hub-field">
+        <span>${escapeHtml(t('notes.fieldLink'))}</span>
+        <select id="hub-note-link" class="note-hub-input">${noteHubLinkOptionsHtml()}</select>
+      </label>
+      <label class="note-hub-field">
+        <span>${escapeHtml(t('notes.fieldContent'))}</span>
+        <textarea id="hub-note-content" class="note-edit-input" rows="5" placeholder="${escapeHtml(t('article.notesPlaceholder'))}"></textarea>
+      </label>
+      <div class="note-card-actions">
+        <button type="button" class="btn-primary" id="btn-hub-note-create">${escapeHtml(t('notes.addSave'))}</button>
+        <button type="button" class="btn-ghost" id="btn-hub-note-compose-cancel">${escapeHtml(t('common.cancel'))}</button>
+      </div>
+    </section>` : ''
 
   const listHtml = notes.length ? notes.map((note) => {
     const resolved = K.resolveArticleNote(note)
     const catLabel = resolved.source === 'my'
       ? (resolved.item.groupName || t('nav.myKnowledge'))
-      : (resolved.category ? catTitle(resolved.category) : '')
+      : resolved.source === 'free'
+        ? t('notes.freeLabel')
+        : (resolved.category ? catTitle(resolved.category) : '')
     const editing = editingId === note.id
     const linkHtml = resolved.href
       ? `<a href="${resolved.href}" class="note-article-link">${escapeHtml(resolved.item.title)}</a>`
-      : `<span class="note-article-link note-article-missing">${escapeHtml(t('notes.articleMissing'))}</span>`
+      : `<span class="note-article-link ${resolved.missing ? 'note-article-missing' : ''}">${escapeHtml(resolved.item.title || t('notes.freeLabel'))}</span>`
 
     return `
       <div class="note-hub-card" data-note-id="${note.id}">
@@ -1637,8 +2094,8 @@ function renderArticleNotesHub() {
           <p class="note-content">${escapeHtml(note.content).replace(/\n/g, '<br>')}</p>
           <div class="note-card-actions">
             ${resolved.href ? `<a href="${resolved.href}" class="btn-ghost">${escapeHtml(t('notes.viewArticle'))}</a>` : ''}
-            <button type="button" class="btn-hub-note-edit" data-note-id="${note.id}">${escapeHtml(t('common.edit'))}</button>
-            <button type="button" class="btn-hub-note-delete danger" data-note-id="${note.id}">${escapeHtml(t('common.delete'))}</button>
+            ${canEdit ? `<button type="button" class="btn-hub-note-edit" data-note-id="${note.id}">${escapeHtml(t('common.edit'))}</button>` : ''}
+            ${canEdit ? `<button type="button" class="btn-hub-note-delete danger" data-note-id="${note.id}">${escapeHtml(t('common.delete'))}</button>` : ''}
           </div>
         `}
       </div>`
@@ -1646,25 +2103,62 @@ function renderArticleNotesHub() {
 
   return `
     <div class="page notes-page">
-      <header class="memory-header">
-        <h1>${escapeHtml(t('notes.title'))}</h1>
-        <p>${escapeHtml(t('notes.desc', { n: notes.length }))}</p>
+      <header class="memory-header notes-header">
+        <div class="notes-header-copy">
+          <h1>${escapeHtml(t('notes.title'))}</h1>
+          <p>${escapeHtml(t('notes.desc', { n: notes.length }))}</p>
+        </div>
+        ${canEdit ? `
+        <button type="button" class="btn-primary" id="btn-hub-note-add" ${composing ? 'hidden' : ''}>
+          ${escapeHtml(t('notes.add'))}
+        </button>` : ''}
       </header>
+      ${composeHtml}
       <div class="notes-list">${listHtml}</div>
     </div>`
 }
 
 function bindArticleNotesHubEvents() {
+  document.getElementById('btn-hub-note-add')?.addEventListener('click', () => {
+    articleNotesEditState = { id: null, composing: true }
+    render()
+    document.getElementById('hub-note-content')?.focus()
+  })
+
+  document.getElementById('btn-hub-note-compose-cancel')?.addEventListener('click', () => {
+    articleNotesEditState = { id: null, composing: false }
+    render()
+  })
+
+  document.getElementById('btn-hub-note-create')?.addEventListener('click', async () => {
+    const content = document.getElementById('hub-note-content')?.value.trim()
+    const title = document.getElementById('hub-note-title')?.value.trim()
+    const linkKey = document.getElementById('hub-note-link')?.value || ''
+    if (!content) {
+      showToast(t('article.notesEmptyInput'), 'error')
+      return
+    }
+    const ref = { ...parseNoteLinkKey(linkKey), title }
+    try {
+      await addArticleNote(ref, content)
+      articleNotesEditState = { id: null, composing: false }
+      showToast(t('article.notesSaved'), 'success')
+      render()
+    } catch (e) {
+      showToast(e.message || t('common.notFound'), 'error')
+    }
+  })
+
   document.querySelectorAll('.btn-hub-note-edit').forEach((btn) => {
     btn.addEventListener('click', () => {
-      articleNotesEditState.id = btn.dataset.noteId
+      articleNotesEditState = { id: btn.dataset.noteId, composing: false }
       render()
     })
   })
 
   document.querySelectorAll('.btn-hub-note-cancel').forEach((btn) => {
     btn.addEventListener('click', () => {
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       render()
     })
   })
@@ -1677,7 +2171,7 @@ function bindArticleNotesHubEvents() {
         return
       }
       await updateArticleNote(btn.dataset.noteId, content)
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       showToast(t('article.notesSaved'), 'success')
       render()
     })
@@ -1687,7 +2181,7 @@ function bindArticleNotesHubEvents() {
     btn.addEventListener('click', async () => {
       if (!confirm(t('notes.deleteConfirm'))) return
       await deleteArticleNote(btn.dataset.noteId)
-      articleNotesEditState.id = null
+      articleNotesEditState = { id: null, composing: false }
       showToast(t('common.deleted'), 'info')
       render()
     })
@@ -2927,9 +3421,24 @@ function render() {
     main.innerHTML = renderMobileKnowledgeHub()
   } else if (parts[0] === 'm' && parts[1] === 'personal') {
     main.innerHTML = renderMobilePersonalHub()
+  } else if (parts[0] === 'kb') {
+    const html = window.PDMKnowledgeViews?.renderKnowledgeHome?.()
+    main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    Analytics()?.track('page_view', { page: 'kb-home' })
+  } else if (parts[0] === 'personal') {
+    if (!Auth().isLoggedIn()) {
+      main.innerHTML = renderLoginRequired(t('auth.requiredPersonal'))
+    } else {
+      main.innerHTML = renderMobileHubPage(t('nav.sectionPersonal'), t('mobile.personalHubDesc'), getMobilePersonalItems())
+    }
+    Analytics()?.track('page_view', { page: 'personal-hub' })
   } else if (parts[0] === 'm' && parts[1] === 'account') {
     main.innerHTML = renderMobileAccountHub()
     bindMobileAccountHub()
+  } else if (parts[0] === 'account') {
+    main.innerHTML = renderAccountProfilePage()
+    if (Auth().isLoggedIn()) bindNicknameForm()
+    Analytics()?.track('page_view', { page: 'account' })
   } else if (parts[0] === 'login') {
     if (Auth().isLoggedIn()) {
       navigate('/')
@@ -3019,13 +3528,63 @@ function render() {
     Sections().renderForumPostRoute(parts[2])
   } else if (parts[0] === 'forum') {
     Sections().renderForumListRoute()
+  } else if (parts[0] === 'doc' && parts[1] && parts[2]) {
+    const legacyDoc = {
+      'tech-terms': 'industry-terms',
+      'business-terms': 'industry-terms-business',
+      'access-security': 'industry-terms-security',
+    }
+    const docId = legacyDoc[parts[2]] || parts[2]
+    if (docId !== parts[2]) {
+      navigate(`/doc/${parts[1]}/${docId}`)
+      return
+    }
+    const html = window.PDMKnowledgeViews?.renderDoc?.(parts[1], docId)
+    main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    window.PDMKnowledgeViews?.bindModulePage?.()
+    Analytics()?.track('page_view', { page: 'kb-doc', id: `${parts[1]}/${docId}` })
+  } else if (parts[0] === 'chapter' && parts[1] && parts[2] && parts[3]) {
+    const legacyDoc = {
+      'tech-terms': 'industry-terms',
+      'business-terms': 'industry-terms-business',
+      'access-security': 'industry-terms-security',
+    }
+    const docId = legacyDoc[parts[2]] || parts[2]
+    if (docId !== parts[2]) {
+      navigate(`/chapter/${parts[1]}/${docId}/${parts[3]}`)
+      return
+    }
+    const html = window.PDMKnowledgeViews?.renderChapter?.(parts[1], docId, decodeURIComponent(parts[3]))
+    main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    Analytics()?.track('page_view', { page: 'kb-chapter', id: `${parts[1]}/${docId}/${parts[3]}` })
+  } else if (parts[0] === 'module' && parts[1] && parts[2]) {
+    const html = window.PDMKnowledgeViews?.renderModule?.(parts[1], parts[2])
+    if (!html) {
+      main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p><a href="#/category/${parts[1]}">${escapeHtml(t('common.backHome'))}</a></div>`
+    } else {
+      main.innerHTML = html
+      window.PDMKnowledgeViews?.bindModulePage?.()
+      Analytics()?.track('page_view', { page: 'kb-module', id: `${parts[1]}/${parts[2]}` })
+    }
   } else if (parts[0] === 'category' && parts[1]) {
-    main.innerHTML = renderCategory(parts[1])
-    Analytics()?.track('page_view', { page: 'category', id: parts[1] })
+    const catId = resolveKbCategoryId(parts[1])
+    if (catId !== parts[1]) {
+      navigate(`/category/${catId}`)
+      return
+    }
+    main.innerHTML = renderCategory(catId)
+    window.PDMKnowledgeViews?.bindModulePage?.()
+    Analytics()?.track('page_view', { page: 'category', id: catId })
   } else if (parts[0] === 'article' && parts[1] && parts[2]) {
-    main.innerHTML = renderArticle(parts[1], parts[2])
+    const catId = resolveKbCategoryId(parts[1])
+    if (catId !== parts[1]) {
+      navigate(`/article/${catId}/${parts[2]}`)
+      return
+    }
+    main.innerHTML = renderArticle(catId, parts[2])
     bindFavoriteButton()
     bindArticleNotesEvents()
+    window.PDMKnowledgeViews?.bindModulePage?.()
     Analytics()?.track('page_view', { page: 'article', id: parts[2] })
   } else if (parts[0] === 'favorites') {
     main.innerHTML = renderFavoritesPage()

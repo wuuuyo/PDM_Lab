@@ -220,6 +220,27 @@
     return data
   }
 
+  async function updateDisplayName(displayName) {
+    await loadSupabaseLib()
+    const sb = getClient()
+    if (!sb) throw new Error('网站尚未配置云服务，请联系管理员')
+    if (!session?.user) throw new Error(window.PMLabI18n?.t?.('auth.requiredDefault') || '请先登录')
+    const name = String(displayName || '').trim().replace(/\s+/g, ' ').slice(0, 32)
+    if (!name) throw new Error(window.PMLabI18n?.t?.('account.nicknameEmpty') || '请输入昵称')
+    const now = new Date().toISOString()
+    const { error } = await sb
+      .from('profiles')
+      .update({ display_name: name, updated_at: now })
+      .eq('id', session.user.id)
+    if (error) throw error
+    try {
+      await sb.auth.updateUser({ data: { display_name: name } })
+    } catch (_) { /* user metadata 可选 */ }
+    await loadProfile()
+    notifyAuthChanged()
+    return profile
+  }
+
   function bindAuthListener(sb) {
     if (authListenerBound || !sb) return
     authListenerBound = true
@@ -282,6 +303,7 @@
     signUpWithEmail,
     resetPasswordForEmail,
     updatePassword,
+    updateDisplayName,
     signOut,
     refreshSession,
     init,

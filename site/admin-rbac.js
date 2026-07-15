@@ -68,6 +68,7 @@
   function renderAdminHeader(title, desc) {
     return `
       <header class="admin-shell-head">
+        <div class="admin-shell-eyebrow">${escapeHtml(t('nav.sectionAdmin'))}</div>
         <h1 class="admin-shell-title">${escapeHtml(title)}</h1>
         ${desc ? `<p class="admin-shell-desc">${escapeHtml(desc)}</p>` : ''}
       </header>`

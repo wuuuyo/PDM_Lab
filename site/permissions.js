@@ -20,10 +20,12 @@
       labelZh: '知识库',
       labelEn: 'Knowledge',
       children: [
-        { id: 'methodology', labelZh: '产品方法论', labelEn: 'Methodology', actions: ['view'] },
-        { id: 'interview', labelZh: '产品八股', labelEn: 'Interview', actions: ['view'] },
-        { id: 'skills', labelZh: '核心技能', labelEn: 'Skills', actions: ['view'] },
-        { id: 'domain', labelZh: '行业认知库', labelEn: 'Domain', actions: ['view'] },
+        { id: 'methodology', labelZh: 'PM方法论', labelEn: 'PM Methodology', actions: ['view'] },
+        { id: 'architecture', labelZh: '技术架构', labelEn: 'Architecture', actions: ['view'] },
+        { id: 'business', labelZh: '业务管理', labelEn: 'Business', actions: ['view'] },
+        { id: 'security', labelZh: '权限安全', labelEn: 'Security', actions: ['view'] },
+        { id: 'workflow', labelZh: '工作流程', labelEn: 'Workflow', actions: ['view'] },
+        { id: 'reference', labelZh: '快速参考', labelEn: 'Quick Ref', actions: ['view'] },
       ],
     },
     {
@@ -50,10 +52,23 @@
 
   const SYSTEM_ROLE_IDS = ['user', 'admin', 'super_admin']
 
+  /** 旧知识库 feature / 路由 ID → 新主题 */
+  const LEGACY_FEATURE = {
+    interview: 'methodology',
+    skills: 'workflow',
+    domain: 'architecture',
+  }
+
+  const KB_FEATURE_IDS = ['methodology', 'architecture', 'business', 'security', 'workflow', 'reference']
+
   /** @type {Record<string, object|null>} */
   let rolePermCache = {}
   /** @type {Array<{code:string,name:string,is_system:boolean,permissions:object}>} */
   let rolesListCache = []
+
+  function resolveFeatureId(featureId) {
+    return LEGACY_FEATURE[featureId] || featureId
+  }
 
   function getFeatureTree() {
     return FEATURE_TREE
@@ -92,7 +107,16 @@
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base
     if (Object.keys(raw).length === 0) return base
     for (const f of FEATURES) {
-      const node = raw[f.id]
+      let node = raw[f.id]
+      if (node == null) {
+        // 旧矩阵：interview/skills/domain → 新主题
+        for (const [oldId, newId] of Object.entries(LEGACY_FEATURE)) {
+          if (newId === f.id && raw[oldId] != null) {
+            node = raw[oldId]
+            break
+          }
+        }
+      }
       if (node == null) continue
       if (typeof node === 'boolean') {
         for (const a of f.actions) base[f.id][a] = node
@@ -123,10 +147,11 @@
 
   function can(featureId, action = 'view') {
     if (featureId === 'admin') return Boolean(window.PDMAuth?.isAdmin?.())
+    featureId = resolveFeatureId(featureId)
     const role = getRole()
     if (role === 'super_admin') return true
     if (!window.PDMAuth?.isLoggedIn?.()) {
-      const guestOk = ['industry', 'tools', 'methodology', 'interview', 'skills', 'domain', 'forum'].includes(featureId)
+      const guestOk = ['industry', 'tools', 'forum', ...KB_FEATURE_IDS].includes(featureId)
       return action === 'view' && guestOk
     }
     if (window.PDMAuth?.getProfile?.()?.is_disabled) return false
@@ -147,13 +172,15 @@
     if (p0 === 'forum') {
       return { feature: 'forum', action: parts[1] === 'new' ? 'edit' : 'view' }
     }
-    if (p0 === 'category' || p0 === 'article') {
-      const cat = parts[1]
-      if (['methodology', 'interview', 'skills', 'domain'].includes(cat)) {
+    if (p0 === 'category' || p0 === 'article' || p0 === 'module' || p0 === 'doc' || p0 === 'chapter' || p0 === 'kb') {
+      if (p0 === 'kb') return { feature: 'methodology', action: 'view' }
+      const cat = resolveFeatureId(parts[1])
+      if (KB_FEATURE_IDS.includes(cat)) {
         return { feature: cat, action: 'view' }
       }
       return { feature: 'methodology', action: 'view' }
     }
+    if (p0 === 'personal') return { feature: 'favorites', action: 'view' }
     if (p0 === 'favorites') return { feature: 'favorites', action: 'view' }
     if (p0 === 'notes') return { feature: 'notes', action: 'view' }
     if (p0 === 'my-knowledge') {
@@ -293,6 +320,9 @@
     actionLabel,
     can,
     routeFeature,
+    resolveFeatureId,
+    LEGACY_FEATURE,
+    KB_FEATURE_IDS,
     defaultPermMap,
     normalizePerms,
     getUserPermissions,

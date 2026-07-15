@@ -174,7 +174,9 @@ function mergeFavorites(existing, incoming) {
 }
 
 function articleNoteRefKey(ref) {
-  return ref.source === 'my' ? `my:${ref.itemId}` : `public:${ref.categoryId}:${ref.itemId}`
+  if (ref.source === 'free') return `free:${ref.id || ref.itemId || 'loose'}`
+  if (ref.source === 'my') return `my:${ref.itemId}`
+  return `public:${ref.categoryId}:${ref.itemId}`
 }
 
 function favoriteKey(f) {
@@ -354,9 +356,10 @@ async function addArticleNote(ref, content) {
   const now = new Date().toISOString()
   const note = {
     id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    source: ref.source,
-    categoryId: ref.categoryId,
-    itemId: ref.itemId,
+    source: ref.source || 'free',
+    categoryId: ref.categoryId || null,
+    itemId: ref.itemId || null,
+    title: (ref.title || '').trim() || null,
     content: content.trim(),
     createdAt: now,
     updatedAt: now,

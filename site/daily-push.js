@@ -17,8 +17,29 @@
     pushHistory: [],
   }
 
+  const LEGACY_CAT = {
+    interview: 'methodology',
+    skills: 'workflow',
+    domain: 'architecture',
+  }
+
+  function remapCategoryIds(ids) {
+    if (!ids?.length) return []
+    const next = []
+    const seen = new Set()
+    for (const id of ids) {
+      const resolved = LEGACY_CAT[id] || id
+      if (seen.has(resolved)) continue
+      seen.add(resolved)
+      next.push(resolved)
+    }
+    return next
+  }
+
   function getSettings() {
-    return { ...DEFAULT_SETTINGS, ...(window.PDMStorage?.getPushSettings?.() || {}) }
+    const raw = { ...DEFAULT_SETTINGS, ...(window.PDMStorage?.getPushSettings?.() || {}) }
+    raw.categories = remapCategoryIds(raw.categories)
+    return raw
   }
 
   async function saveSettings(partial) {

@@ -43,7 +43,7 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: #111827;
+  background: var(--accent);
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
@@ -53,6 +53,7 @@
 .topbar-brand-text {
   font-size: 0.95rem;
   font-weight: 650;
+  color: var(--text);
 }
 
 .mobile-bottom-nav {
@@ -1205,29 +1206,68 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     --mobile-bottom-offset: 64px;
   }
 
-  .topbar {
+  html.mobile-chrome,
+  html.mobile-chrome body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* 覆盖 desktop sidebar-collapsed 的 left，保证顶栏从 0 拉满全宽 */
+  .topbar,
+  html.mobile-chrome .topbar,
+  html.mobile-chrome.sidebar-collapsed .topbar,
+  html.sidebar-collapsed .topbar {
+    top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row !important;
+    align-items: center;
     gap: 0;
-    padding: 8px 12px !important;
-    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)) !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
   }
 
+  html.mobile-chrome .topbar-primary,
   .topbar-primary {
-    height: 44px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
     gap: 10px;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 44px;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
+  html.mobile-chrome .topbar-brand,
   .topbar-brand {
-    display: inline-flex;
+    display: inline-flex !important;
+    flex: 0 0 auto;
+    max-width: 28%;
+    min-width: 0;
+    overflow: hidden;
   }
 
+  html.mobile-chrome .topbar-brand-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html.mobile-chrome .topbar-left,
+  html.mobile-chrome .topbar-menu-btn,
+  html.mobile-chrome .topbar-crumbs,
+  html.mobile-chrome .topbar-right,
   .topbar-left,
   .topbar-menu-btn,
   .topbar-crumbs,
@@ -1235,15 +1275,39 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     display: none !important;
   }
 
+  html.mobile-chrome .topbar-center,
   .topbar-center {
-    flex: 1;
+    flex: 1 1 auto !important;
     max-width: none !important;
-    width: 100%;
-    min-width: 0;
+    width: auto !important;
+    min-width: 0 !important;
+    overflow: hidden;
   }
 
+  html.mobile-chrome .topbar-search,
   .topbar-search {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  html.mobile-chrome .topbar-search input,
+  .topbar-search input {
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html.mobile-chrome .topbar-search-results,
+  .topbar-search-results {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
   }
 
   .sidebar,
@@ -1308,7 +1372,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
   }
 
   .mobile-tab.active {
-    color: #111827;
+    color: var(--accent);
   }
 
   .mobile-tab-label {
@@ -1333,7 +1397,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     flex-shrink: 0;
     padding: 6px 8px 6px 2px;
     border-radius: 10px;
-    color: var(--text);
+    color: var(--accent);
     text-decoration: none;
     font-size: 0.875rem;
     font-weight: 600;
@@ -1349,6 +1413,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--text);
   }
 
   .mobile-hub-page {

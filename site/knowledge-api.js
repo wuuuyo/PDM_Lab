@@ -140,7 +140,21 @@ function getItemByIdMerged(categoryId, itemId) {
 
   const cat = getCategoryByIdMerged(categoryId)
 
-  return cat?.items.find((i) => i.id === itemId)
+  const inCat = cat?.items.find((i) => i.id === itemId)
+
+  if (inCat) return inCat
+
+  // 分类重组后：按条目 id 全局回退查找
+
+  for (const c of getMergedCategories()) {
+
+    const hit = c.items.find((i) => i.id === itemId)
+
+    if (hit) return hit
+
+  }
+
+  return null
 
 }
 
@@ -200,80 +214,112 @@ function getMyKnowledgeById(itemId) {
 
 
 
-function searchMyKnowledge(query, groupId = 'all') {
-
-  const q = query.toLowerCase().trim()
-
-  let items = getMyKnowledgeItems(groupId === 'all' ? null : groupId)
-
-  if (!q) return items
-
-  return items.filter((item) =>
-
-    item.title.toLowerCase().includes(q) ||
-
-    item.summary.toLowerCase().includes(q) ||
-
-    item.groupName.toLowerCase().includes(q) ||
-
-    item.tags.some((t) => t.toLowerCase().includes(q)) ||
-
-    item.content.some((c) => c.toLowerCase().includes(q))
-
-  )
-
+/** 规范化检索词：小写、压缩空白、去常见标点 */
+function normalizeSearchText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\u4e00-\u9fffa-z0-9\s]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
+/** 子序列模糊：needle 字符按序出现在 haystack 中 */
+function isSubsequenceMatch(haystack, needle) {
+  if (!needle) return true
+  if (!haystack) return false
+  let i = 0
+  for (let j = 0; j < haystack.length && i < needle.length; j++) {
+    if (haystack[j] === needle[i]) i++
+  }
+  return i === needle.length
+}
 
+/**
+ * 模糊得分：越大越相关。0 = 不匹配。
+ * 支持整句包含、分词（空格）全命中、子序列弱匹配。
+ */
+function fuzzyMatchScore(text, query) {
+  const hay = normalizeSearchText(text)
+  const q = normalizeSearchText(query)
+  if (!q || !hay) return 0
+  if (hay === q) return 1000
+  if (hay.includes(q)) return 800 - Math.min(200, hay.indexOf(q))
+
+  const tokens = q.split(' ').filter(Boolean)
+  if (tokens.length > 1) {
+    if (tokens.every((tok) => hay.includes(tok) || isSubsequenceMatch(hay, tok))) {
+      let score = 500
+      for (const tok of tokens) {
+        if (hay.includes(tok)) score += 40
+        else score += 10
+      }
+      return score
+    }
+    return 0
+  }
+
+  if (isSubsequenceMatch(hay, q) && q.length >= 2) {
+    return 120 + Math.min(80, q.length * 4)
+  }
+  return 0
+}
+
+function scoreKnowledgeItem(item, query, extraFields = []) {
+  const packs = [
+    [item.title, 3],
+    [item.summary, 2],
+    [(item.tags || []).join(' '), 2],
+    [(item.content || []).join('\n'), 1],
+    [(item.cases || []).join('\n'), 1],
+    [(item.pmApplication || []).join('\n'), 1],
+    ...extraFields.map((f) => [f, 1]),
+  ]
+  let best = 0
+  for (const [text, weight] of packs) {
+    const s = fuzzyMatchScore(text, query) * weight
+    if (s > best) best = s
+  }
+  return best
+}
+
+function searchMyKnowledge(query, groupId = 'all') {
+  const q = String(query || '').trim()
+  let items = getMyKnowledgeItems(groupId === 'all' ? null : groupId)
+  if (!q) return items
+  return items
+    .map((item) => ({
+      item,
+      score: scoreKnowledgeItem(item, q, [item.groupName]),
+    }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.item)
+}
 
 function searchKnowledgeMerged(query) {
-
-  const q = query.toLowerCase().trim()
-
+  const q = String(query || '').trim()
   if (!q) return []
 
   const results = []
 
   for (const category of getMergedCategories()) {
-
     for (const item of category.items) {
-
-      const match =
-
-        item.title.toLowerCase().includes(q) ||
-
-        item.summary.toLowerCase().includes(q) ||
-
-        item.tags.some((t) => t.toLowerCase().includes(q)) ||
-
-        item.content.some((c) => c.toLowerCase().includes(q)) ||
-
-        (item.cases || []).some((c) => c.toLowerCase().includes(q)) ||
-
-        (item.pmApplication || []).some((c) => c.toLowerCase().includes(q))
-
-      if (match) results.push({ category, item, source: 'public' })
-
+      const score = scoreKnowledgeItem(item, q, [category.title])
+      if (score > 0) results.push({ category, item, source: 'public', score })
     }
-
   }
 
   for (const item of searchMyKnowledge(q)) {
-
     results.push({
-
       category: { id: 'my', title: item.groupName, icon: '◎' },
-
       item,
-
       source: 'my',
-
+      score: scoreKnowledgeItem(item, q, [item.groupName]),
     })
-
   }
 
+  results.sort((a, b) => (b.score || 0) - (a.score || 0))
   return results
-
 }
 
 
@@ -336,6 +382,26 @@ function resolveFavorite(fav) {
 
 function resolveArticleNote(note) {
 
+  if (note.source === 'free' || (!note.itemId && !note.categoryId)) {
+
+    const title = note.title || String(note.content || '').split('\n')[0].slice(0, 40) || '未命名笔记'
+
+    return {
+
+      source: 'free',
+
+      category: null,
+
+      item: { id: note.id, title, summary: '' },
+
+      href: null,
+
+      missing: false,
+
+    }
+
+  }
+
   if (note.source === 'my') {
 
     const item = getMyKnowledgeById(note.itemId)
@@ -372,7 +438,7 @@ function resolveArticleNote(note) {
 
       category: null,
 
-      item: { id: note.itemId, title: note.itemId, summary: '' },
+      item: { id: note.itemId, title: note.title || note.itemId || '笔记', summary: '' },
 
       href: null,
 

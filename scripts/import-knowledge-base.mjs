@@ -1,6 +1,9 @@
 /**
- * 从 src/data/knowledge-imports/*.md 解析知识点 → knowledge-from-md.json
+ * 从 knowledge/product-knowledge-public 解析知识点 → knowledge-from-md.json
  * 再由 sync-knowledge.mjs 合并进 site/data.js
+ *
+ * 分类对齐 README 主题（不含每日学习）：
+ * methodology | architecture | business | security | workflow | reference
  *
  * 用法：node scripts/import-knowledge-base.mjs
  */
@@ -10,31 +13,13 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
-const importDir = path.join(root, 'src/data/knowledge-imports')
+const sourceRoot = path.join(root, 'knowledge/product-knowledge-public')
 const outPath = path.join(root, 'src/data/knowledge-from-md.json')
 
 const SOURCES = [
   {
-    id: 'pm-bagu',
-    file: 'pm-bagu.md',
-    label: '产品经理八股',
-    headingLevel: '###',
-    defaultCategory: 'interview',
-    sectionCategory: {
-      '1': 'methodology',
-      '2': 'methodology',
-      '3': 'methodology',
-      '4': 'skills',
-      '5': 'skills',
-      '6': 'skills',
-      '7': 'skills',
-      '8': 'skills',
-      '9': 'interview',
-    },
-  },
-  {
     id: 'product-methodology',
-    file: 'product-methodology.md',
+    file: '01-PM方法论/产品策划方法论.md',
     label: '产品策划方法论',
     headingLevel: '##',
     defaultCategory: 'methodology',
@@ -42,55 +27,100 @@ const SOURCES = [
       '1': 'methodology',
       '2': 'methodology',
       '3': 'methodology',
-      '4': 'skills',
-      '5': 'skills',
-      '6': 'skills',
+      '4': 'methodology',
+      '5': 'methodology',
+      '6': 'methodology',
+      '7': 'methodology',
+      '8': 'methodology',
+      '9': 'methodology',
     },
-    skipTitles: ['6 大体系导览', '📑 6 大体系导览', '目录'],
+    skipTitles: ['6 大体系导览', '📑 6 大体系导览', '目录', '关联文件'],
   },
   {
-    id: 'industry-terms',
-    file: 'industry-terms.md',
-    label: '行业通用词语',
+    id: 'pm-bagu',
+    file: '01-PM方法论/产品经理八股.md',
+    label: '产品经理八股',
     headingLevel: '###',
-    defaultCategory: 'domain',
+    defaultCategory: 'methodology',
     sectionCategory: {
-      '第一部分': 'domain',
-      '第二部分': 'domain',
-      '第三部分': 'domain',
-      '第四部分': 'domain',
-      '1': 'domain',
-      '2': 'domain',
-      '3': 'domain',
-      '4': 'domain',
+      '1': 'methodology',
+      '2': 'methodology',
+      '3': 'methodology',
+      '4': 'methodology',
+      '5': 'methodology',
+      '6': 'methodology',
+      '7': 'methodology',
+      '8': 'methodology',
+      '9': 'methodology',
     },
   },
   {
     id: 'system-architecture',
-    file: 'system-architecture.md',
+    file: '02-技术架构/系统架构.md',
     label: '系统架构',
     headingLevel: '###',
-    defaultCategory: 'domain',
+    defaultCategory: 'architecture',
     sectionCategory: {
-      '1': 'domain',
-      '2': 'domain',
-      '3': 'domain',
-      '4': 'domain',
-      '5': 'skills',
+      '1': 'architecture',
+      '2': 'architecture',
+      '3': 'architecture',
+      '4': 'architecture',
+      '5': 'architecture',
+    },
+  },
+  {
+    id: 'industry-terms',
+    file: '02-技术架构/行业通用词语.md',
+    label: '行业通用词语',
+    headingLevel: '###',
+    defaultCategory: 'architecture',
+    sectionCategory: {
+      '第一部分': 'architecture',
+      '第二部分': 'business',
+      '第三部分': 'architecture',
+      '第四部分': 'security',
+      '1': 'architecture',
+      '2': 'business',
+      '3': 'architecture',
+      '4': 'security',
     },
   },
   {
     id: 'workflow',
-    file: 'workflow.md',
+    file: '03-工作流程/工作流程.md',
     label: '工作流程',
     headingLevel: '###',
-    defaultCategory: 'skills',
+    defaultCategory: 'workflow',
     sectionCategory: {
-      '需求处理': 'skills',
-      '普渡': 'skills',
-      '文档': 'skills',
-      '上线': 'skills',
+      '需求处理': 'workflow',
+      '文档': 'workflow',
+      '上线': 'workflow',
+      '复盘': 'workflow',
     },
+  },
+  {
+    id: 'keyword-index',
+    file: '05-快速参考/关键词速查表.md',
+    label: '关键词速查表',
+    headingLevel: '##',
+    defaultCategory: 'reference',
+    sectionCategory: {},
+  },
+  {
+    id: 'mindmap',
+    file: '05-快速参考/思维导图.md',
+    label: '思维导图',
+    headingLevel: '##',
+    defaultCategory: 'reference',
+    sectionCategory: {},
+  },
+  {
+    id: 'learning-path',
+    file: '05-快速参考/学习路径.md',
+    label: '学习路径',
+    headingLevel: '##',
+    defaultCategory: 'reference',
+    sectionCategory: {},
   },
 ]
 
@@ -119,7 +149,8 @@ function cleanLine(line) {
 }
 
 function isMetaLine(line) {
-  return /^(补全自|来源|关联|参考)[：:]/.test(line)
+  // 仅过滤文档元信息，保留「来源：用户反馈」等正文列表项
+  return /^(补全自|关联Skill|参考文档|来源文档)[：:]/.test(line)
 }
 
 function isTableSep(line) {
@@ -152,14 +183,12 @@ function formatTableBlock(tableLines) {
 
   for (const cells of dataRows) {
     if (heads && heads.length === cells.length) {
-      // 矩阵表（首列表头空）如 价值-成本（须先于 length<=1 说明表）
       if (!heads[0] && heads.length >= 3) {
         const rowLabel = cells[0]
         const parts = cells.slice(1).map((v, i) => `${heads[i + 1]}=${v}`)
         out.push(`${rowLabel} → ${parts.join('，')}`)
         continue
       }
-      // # / 字母 开头的说明表 →「名称：含义」（排除空表头，避免误伤矩阵）
       if (
         heads.length >= 3 &&
         heads[0] &&
@@ -170,12 +199,15 @@ function formatTableBlock(tableLines) {
         out.push(rest ? `${name}：${rest}` : name)
         continue
       }
-      // 常见两列表：字段 | 含义
       if (heads.length === 2) {
         out.push(`${cells[0]}：${cells[1]}`)
         continue
       }
-      // 多列表：拼成「表头=值」
+      // 术语表：术语 | 解释 | 详细位置
+      if (heads.length === 3 && /术语|词语/.test(heads[0])) {
+        out.push(`${cells[0]}：${cells[1]}${cells[2] ? `（${cells[2]}）` : ''}`)
+        continue
+      }
       const parts = cells
         .map((v, i) => {
           const h = heads[i] || `列${i + 1}`
@@ -199,6 +231,8 @@ function extractStructured(lines) {
   const content = []
   const cases = []
   const pmApplication = []
+  const mermaidBlocks = []
+  const terms = []
   let i = 0
   let bucket = 'content' // content | cases | pm
   let caseBuf = null
@@ -230,16 +264,23 @@ function extractStructured(lines) {
     const raw = lines[i]
     const trimmed = raw.trim()
 
-    // fenced code：保留内容，丢掉围栏
     if (trimmed.startsWith('```')) {
+      const lang = trimmed.slice(3).trim().toLowerCase()
       i++
       const code = []
       while (i < lines.length && !lines[i].trim().startsWith('```')) {
-        if (lines[i].trim()) code.push(lines[i].replace(/\s+$/, ''))
+        code.push(lines[i].replace(/\s+$/, ''))
         i++
       }
       i++ // closing fence
-      if (code.length) push(code.join('\n'))
+      const body = code.join('\n').trim()
+      if (!body) continue
+      if (lang.startsWith('mermaid')) {
+        mermaidBlocks.push(body)
+        push('【知识图谱】')
+      } else {
+        push(body)
+      }
       continue
     }
 
@@ -248,12 +289,46 @@ function extractStructured(lines) {
       continue
     }
 
-    // Markdown 表格
     if (trimmed.startsWith('|')) {
       const block = []
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         block.push(lines[i])
         i++
+      }
+      const rows = block
+        .filter((l) => l.trim().startsWith('|') && !isTableSep(l))
+        .map(tableCells)
+        .filter((cells) => cells.some((c) => c && !/^[-:]+$/.test(c)))
+      if (rows.length > 1) {
+        const heads = rows[0]
+        const isTermTable =
+          heads.length >= 2 &&
+          (/术语|词语/.test(heads[0]) || /解释|全称/.test(heads[1] || '') || /解释/.test(heads[2] || ''))
+        if (isTermTable) {
+          for (const cells of rows.slice(1)) {
+            if (!cells[0]) continue
+            // 3 列: 术语|解释|位置；4 列: 词语|全称|解释|案例
+            const term = cells[0]
+            const full = heads.length >= 4 ? cells[1] || '' : ''
+            const explain = heads.length >= 4 ? cells[2] || '' : cells[1] || ''
+            const exampleOrLoc = heads.length >= 4 ? cells[3] || '' : cells[2] || ''
+            terms.push({
+              term,
+              meaning: full || explain,
+              explain,
+              loc: heads.length >= 4 ? '' : exampleOrLoc,
+              case: heads.length >= 4 ? exampleOrLoc : '',
+            })
+            const line = full
+              ? `${term}：${full}${explain ? ` — ${explain}` : ''}`
+              : `${term}：${explain}${exampleOrLoc ? `（${exampleOrLoc}）` : ''}`
+            push(line)
+            if (exampleOrLoc && heads.length >= 4) {
+              // 案例进 cases 槽，文章页可展示三段式
+            }
+          }
+          continue
+        }
       }
       const formatted = formatTableBlock(block)
       for (const row of formatted) push(row)
@@ -266,7 +341,6 @@ function extractStructured(lines) {
       continue
     }
 
-    // 小节标题 → 分区标签
     if (/^#{2,4}\s+/.test(trimmed)) {
       flushCase()
       bucket = 'content'
@@ -298,16 +372,17 @@ function extractStructured(lines) {
       continue
     }
 
-    // 粗体小标题行（如「好北极星的 3 个特征:」）保留
     push(line)
     i++
   }
   flushCase()
 
   return {
-    content: content.slice(0, 40),
-    cases: cases.slice(0, 6),
-    pmApplication: pmApplication.slice(0, 6),
+    content: content.slice(0, 100),
+    cases: cases.slice(0, 8),
+    pmApplication: pmApplication.slice(0, 8),
+    mermaid: mermaidBlocks,
+    terms,
   }
 }
 
@@ -330,7 +405,7 @@ function displayTitle(title) {
   return String(title)
     .replace(/⭐.*$/, '')
     .replace(/补全项.*$/, '')
-    .replace(/^\d+(\.\d+)+\s+/, '') // 去掉 1.1 / 3.2 编号，与内置词条排版统一
+    .replace(/^\d+(\.\d+)+\s+/, '')
     .trim()
 }
 
@@ -341,7 +416,12 @@ function itemRichness(item) {
 
 function resolveCategory(sectionTitle, source) {
   if (!sectionTitle) return source.defaultCategory
-  const numMatch = sectionTitle.match(/^(\d+|[一二三四]+部分)/)
+  const partMatch = sectionTitle.match(/第([一二三四])部分/)
+  if (partMatch) {
+    const key = `第${partMatch[1]}部分`
+    if (source.sectionCategory[key]) return source.sectionCategory[key]
+  }
+  const numMatch = sectionTitle.match(/^(\d+)/)
   if (numMatch && source.sectionCategory[numMatch[1]]) {
     return source.sectionCategory[numMatch[1]]
   }
@@ -351,23 +431,20 @@ function resolveCategory(sectionTitle, source) {
   return source.defaultCategory
 }
 
-function splitByHeading(md, level) {
-  const prefix = level === '##' ? '## ' : '### '
-  const re = level === '##' ? /\n(?=## )/ : /\n(?=### )/
-  const parts = md.split(re)
-  return parts
-    .map((part) => {
-      const lines = part.trim().split('\n')
-      const first = lines[0] || ''
-      if (!first.startsWith(prefix)) return null
-      // avoid #### and higher when matching ###
-      if (level === '###' && first.startsWith('####')) return null
-      if (level === '##' && first.startsWith('###')) return null
-      const title = first.slice(prefix.length).trim()
-      const body = lines.slice(1).join('\n').trim()
-      return { title, body }
-    })
-    .filter(Boolean)
+function inferKind(source, title, structured) {
+  if (source.id === 'keyword-index') return 'glossary-letter'
+  if (source.id === 'mindmap' || structured.mermaid?.length) return 'mermaid'
+  if (source.id === 'learning-path') return 'path-stage'
+  if (source.id === 'workflow') {
+    if (/PRD|模板/.test(title)) return 'prd-template'
+    if (/^\d+\.\s/.test(title) || /需求接收|需求分析|方案设计|评审|开发跟踪|上线|复盘总结/.test(title)) {
+      return 'workflow-step'
+    }
+    if (/复盘|8\s*步|产物|关联需求|默认节奏/.test(title)) return 'retro-item'
+    if (/协作/.test(title)) return 'collab-item'
+    return 'workflow-item'
+  }
+  return 'article'
 }
 
 function parseSource(md, source) {
@@ -375,7 +452,6 @@ function parseSource(md, source) {
   let currentSection = ''
   let currentCategory = source.defaultCategory
 
-  // Track ## sections even when items are ###
   const lines = md.split('\n')
   let buffer = []
   let currentH3 = null
@@ -384,8 +460,6 @@ function parseSource(md, source) {
     if (!title) return
     if (source.skipTitles?.some((s) => title.includes(s.replace(/📑\s*/, '')))) return
     if (title.includes('待补充') || title.includes('导览') || title.includes('相关词条')) return
-    // skip pure section headers like "1. 战略与定位" when importing ## from methodology
-    // keep "1.1 北极星指标" etc.
     if (source.headingLevel === '##' && /^\d+\.\s/.test(title) && !/^\d+\.\d+/.test(title)) {
       currentSection = title
       currentCategory = resolveCategory(title, source)
@@ -396,30 +470,40 @@ function parseSource(md, source) {
     const richness =
       structured.content.join('').length +
       structured.cases.join('').length +
-      structured.pmApplication.join('').length
-    // 去掉 meta 和表格后仍几乎空白的，不导入（避免出现「点进去是空的」）
-    if (richness < 16) return
+      structured.pmApplication.join('').length +
+      (structured.mermaid || []).join('').length +
+      (structured.terms || []).length * 20
+    if (richness < 12) return
 
     const id = `kb-${source.id}-${slugify(title)}`
     const niceTitle = displayTitle(title)
+    const kind = inferKind(source, title, structured)
+    const cases = [...(structured.cases || [])]
+    for (const tm of structured.terms || []) {
+      if (tm.case) cases.push(`${tm.term}：${tm.case}`)
+    }
     items.push({
       id,
       sourceId: source.id,
       sourceLabel: source.label,
       section: currentSection,
       categoryId: currentCategory,
+      kind,
       title: niceTitle,
       summary: firstSummary(structured.content, niceTitle),
       tags: [...new Set([source.label, ...(title.match(/[A-Z]{2,}/g) || []).slice(0, 2)])],
       content: structured.content,
-      cases: structured.cases,
+      cases,
       pmApplication: structured.pmApplication,
+      ...(structured.mermaid?.length ? { mermaid: structured.mermaid } : {}),
+      ...(structured.terms?.length ? { terms: structured.terms } : {}),
     })
   }
 
   if (source.headingLevel === '##') {
     let h2Title = null
     let h2Body = []
+    let inFence = false
     const flushH2 = () => {
       if (!h2Title) return
       flushItem(h2Title, h2Body.join('\n'))
@@ -427,6 +511,16 @@ function parseSource(md, source) {
       h2Body = []
     }
     for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('```')) {
+        inFence = !inFence
+        if (h2Title) h2Body.push(line)
+        continue
+      }
+      if (inFence) {
+        if (h2Title) h2Body.push(line)
+        continue
+      }
       const h1 = line.match(/^#\s+(\d+)[\.\s]/)
       if (h1) {
         flushH2()
@@ -437,6 +531,7 @@ function parseSource(md, source) {
       if (/^##\s+/.test(line) && !/^###\s+/.test(line)) {
         flushH2()
         h2Title = line.replace(/^##\s+/, '').trim()
+        currentCategory = resolveCategory(h2Title, source)
         continue
       }
       if (h2Title) h2Body.push(line)
@@ -445,16 +540,47 @@ function parseSource(md, source) {
     return items
   }
 
-  // ### items with ## section context
+  // 无 ### 时整段 ##（如表格章节）自成一条
+  let sectionBody = []
+  let sectionHadH3 = false
+  let inFence = false
+
+  const flushSectionFallback = () => {
+    if (sectionHadH3 || !currentSection || !sectionBody.length) {
+      sectionBody = []
+      sectionHadH3 = false
+      return
+    }
+    flushItem(currentSection, sectionBody.join('\n'))
+    sectionBody = []
+    sectionHadH3 = false
+  }
+
   for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed.startsWith('```')) {
+      inFence = !inFence
+      if (currentH3) buffer.push(line)
+      else if (currentSection) sectionBody.push(line)
+      continue
+    }
+    if (inFence) {
+      if (currentH3) buffer.push(line)
+      else if (currentSection) sectionBody.push(line)
+      continue
+    }
+
     if (/^##\s+/.test(line) && !/^###\s+/.test(line)) {
       if (currentH3) {
         flushItem(currentH3, buffer.join('\n'))
         currentH3 = null
         buffer = []
       }
+      flushSectionFallback()
       currentSection = line.replace(/^##\s+/, '').trim()
       currentCategory = resolveCategory(currentSection, source)
+      sectionBody = []
+      sectionHadH3 = false
       continue
     }
     if (/^###\s+/.test(line) && !/^####\s+/.test(line)) {
@@ -462,35 +588,79 @@ function parseSource(md, source) {
         flushItem(currentH3, buffer.join('\n'))
         buffer = []
       }
+      sectionHadH3 = true
       currentH3 = line.replace(/^###\s+/, '').trim()
       continue
     }
     if (currentH3) buffer.push(line)
+    else if (currentSection) sectionBody.push(line)
   }
   if (currentH3) flushItem(currentH3, buffer.join('\n'))
+  flushSectionFallback()
 
   return items
+}
+
+/** 表格整章（如权限安全）拆成独立词条，避免分类页只有一块空壳 */
+function expandTermBlobItems(items) {
+  const out = []
+  for (const item of items) {
+    const isBlob =
+      item.terms?.length &&
+      (/第三部分|第四部分/.test(item.section || '') || /第三部分|第四部分/.test(item.title || ''))
+    if (!isBlob) {
+      out.push(item)
+      continue
+    }
+    for (const tm of item.terms) {
+      const explain = tm.explain || tm.meaning || ''
+      const content = []
+      if (tm.meaning && tm.explain && tm.meaning !== tm.explain) {
+        content.push(`${tm.term}（${tm.meaning}）`)
+        content.push(tm.explain)
+      } else if (explain) {
+        content.push(explain)
+      }
+      if (tm.loc) content.push(`参见：${tm.loc}`)
+      out.push({
+        id: `kb-${item.sourceId}-${slugify(tm.term)}`,
+        sourceId: item.sourceId,
+        sourceLabel: item.sourceLabel,
+        section: item.section || item.title,
+        categoryId: item.categoryId,
+        kind: 'term',
+        title: tm.term,
+        summary: String(explain || tm.meaning || tm.term).slice(0, 120),
+        tags: [...new Set([item.sourceLabel, tm.term].filter(Boolean))],
+        content,
+        cases: tm.case ? [tm.case] : [],
+        pmApplication: [],
+        terms: [tm],
+      })
+    }
+  }
+  return out
 }
 
 function main() {
   const all = []
   const seenIds = new Set()
-  const byTitle = new Map() // titleKey → index in all
+  const byTitle = new Map()
 
-  // 优先导入产品策划方法论（更完整），再导入八股短条目，避免短条目占位
   const ordered = [
     ...SOURCES.filter((s) => s.id === 'product-methodology'),
     ...SOURCES.filter((s) => s.id !== 'product-methodology'),
   ]
 
   for (const source of ordered) {
-    const filePath = path.join(importDir, source.file)
+    const filePath = path.join(sourceRoot, source.file)
     if (!fs.existsSync(filePath)) {
       console.warn('Skip missing:', source.file)
       continue
     }
     const md = fs.readFileSync(filePath, 'utf8')
-    const items = parseSource(md, source)
+    let items = parseSource(md, source)
+    if (source.id === 'industry-terms') items = expandTermBlobItems(items)
     let added = 0
     let skippedDup = 0
     for (const item of items) {
@@ -517,8 +687,15 @@ function main() {
     console.log(`${source.label}: +${added} items` + (skippedDup ? ` (skip ${skippedDup} shorter dups)` : ''))
   }
 
+  const byCat = {}
+  for (const item of all) {
+    byCat[item.categoryId] = (byCat[item.categoryId] || 0) + 1
+  }
+  console.log('By category:', byCat)
+
   fs.writeFileSync(outPath, JSON.stringify(all, null, 2), 'utf8')
   console.log(`\nWrote ${all.length} items → src/data/knowledge-from-md.json`)
 }
 
 main()
+

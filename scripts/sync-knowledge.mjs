@@ -72,6 +72,12 @@ if (fs.existsSync(fromMdPath)) {
       content: item.content || [],
       ...(item.cases?.length ? { cases: item.cases } : {}),
       ...(item.pmApplication?.length ? { pmApplication: item.pmApplication } : {}),
+      ...(item.section ? { section: item.section } : {}),
+      ...(item.sourceId ? { sourceId: item.sourceId } : {}),
+      ...(item.sourceLabel ? { sourceLabel: item.sourceLabel } : {}),
+      ...(item.kind ? { kind: item.kind } : {}),
+      ...(item.mermaid?.length ? { mermaid: item.mermaid } : {}),
+      ...(item.terms?.length ? { terms: item.terms } : {}),
     })
     existingIds.add(item.id)
     mdImportCount++

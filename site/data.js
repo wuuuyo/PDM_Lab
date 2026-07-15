@@ -4,260 +4,10 @@
 const categories = [
   {
     "id": "methodology",
-    "title": "产品方法论",
-    "description": "从 0 到 1 做产品的核心思维框架与实战方法",
+    "title": "PM方法论",
+    "description": "产品策划方法论与核心八股速查",
     "icon": "◈",
     "items": [
-      {
-        "id": "user-research",
-        "title": "用户研究",
-        "summary": "理解用户是谁、要什么、为什么需要",
-        "tags": [
-          "调研",
-          "洞察"
-        ],
-        "content": [
-          "用户研究是产品决策的根基，目标不是收集数据，而是形成可指导行动的用户洞察。",
-          "常用方法：用户访谈（深度了解动机）、问卷调查（验证假设规模）、可用性测试（观察真实行为）、数据分析（发现行为模式）。",
-          "访谈技巧：多问「为什么」和「上次你遇到这个问题时做了什么」，少问「你会不会用这个功能」。",
-          "区分 stated preference（用户说的）与 revealed preference（用户做的），以行为数据为准。",
-          "输出物：用户画像（Persona）、用户旅程地图（User Journey Map）、痛点清单。"
-        ],
-        "cases": [
-          "外卖 App 发现「下单后找不到骑手」投诉集中，PM 对 12 名用户做访谈，发现真实痛点是「进度不透明」而非配送慢——随后优先做实时轨迹与预计送达，NPS 提升 18 点。",
-          "B 端 SaaS 上线前用卡片分类（Card Sorting）让 8 名客户整理菜单，发现客户把「报表」和「导出」分在一组，而产品原设计拆在两个模块——据此合并入口，首月激活率提升 23%。"
-        ],
-        "pmApplication": [
-          "面试答题：用「背景 → 方法 → 洞察 → 行动」四步讲一次调研经历，强调洞察如何改变了方案。",
-          "工作中：每个版本至少安排 3-5 次用户接触（访谈/可用性测试/客服录音），避免只凭脑补写 PRD。",
-          "输出物对齐：调研结束必须产出可执行的结论（改什么、不改什么），而非只交访谈记录。"
-        ]
-      },
-      {
-        "id": "requirement-analysis",
-        "title": "需求分析",
-        "summary": "从问题到方案，区分真伪需求",
-        "tags": [
-          "需求",
-          "优先级"
-        ],
-        "content": [
-          "需求 ≠ 功能。需求是用户要解决的问题，功能是解决方案的一种表达。",
-          "KANO 模型：基本型需求（必须有）、期望型需求（越多越好）、兴奋型需求（超预期惊喜）。",
-          "需求优先级常用 RICE 评分：Reach × Impact × Confidence ÷ Effort。",
-          "真伪需求判断：是否来自真实用户场景？是否有数据或访谈支撑？解决后能否带来可衡量价值？",
-          "需求文档应包含：背景、目标用户、问题描述、解决方案、成功指标、边界与风险。"
-        ],
-        "cases": [
-          "客服反复提「要导出 Excel」，深挖后发现真实需求是「月底对账」——解法改为自动生成对账报表 + 一键推送财务，比单纯导出减少 70% 人工核对时间。",
-          "用 RICE 评估「深色模式」：Reach 高但 Impact 低、Effort 中，排在「支付失败重试」之后——用数据向设计团队说明优先级理由。"
-        ],
-        "pmApplication": [
-          "面试常问「用户要 X 功能你做不做」：先拆 Need vs Want，再给验证计划。",
-          "需求评审时主动标注 KANO 类型：基本型必须保障，兴奋型控制投入。",
-          "PRD 开头写清：目标用户、问题、成功指标，再写功能列表。"
-        ]
-      },
-      {
-        "id": "mvp",
-        "title": "MVP 与迭代",
-        "summary": "用最小成本验证核心假设",
-        "tags": [
-          "MVP",
-          "敏捷"
-        ],
-        "content": [
-          "MVP（Minimum Viable Product）不是简陋版产品，而是能验证核心假设的最小实验。",
-          "先验证「用户是否愿意为此付费/花时间」，再验证「功能是否好用」。",
-          "Build-Measure-Learn 循环：构建 → 度量 → 学习，快速迭代。",
-          "常见 MVP 形式：落地页测试、Wizard of Oz（人工模拟）、Concierge MVP（人工服务）。",
-          "每个版本只解决一个核心问题，避免功能堆砌导致无法判断成败。"
-        ],
-        "cases": [
-          "Dropbox 早期用 3 分钟演示视频作 MVP，验证「用户是否愿意为云同步付费」，而非先开发完整客户端。",
-          "配送机器人项目先用 Wizard of Oz：后台人工派单模拟「一键下单」，验证激活率从 20% 提升到 55% 后再投入自动化调度开发。"
-        ],
-        "pmApplication": [
-          "回答「怎么做 MVP」：说清验证的核心假设 + 最小实验形式 + 通过/失败标准。",
-          "排期时抵制「第一版就做大而全」，每个版本只验证 1 个关键假设。",
-          "MVP 上线后必做复盘：假设是否成立、下一步迭代什么。"
-        ]
-      },
-      {
-        "id": "design-thinking",
-        "title": "设计思维",
-        "summary": "以用户为中心的问题解决流程",
-        "tags": [
-          "设计",
-          "创新"
-        ],
-        "content": [
-          "设计思维五阶段：共情（Empathize）→ 定义（Define）→ 构思（Ideate）→ 原型（Prototype）→ 测试（Test）。",
-          "共情阶段深入用户场景，定义阶段将问题收敛为清晰的 Point of View。",
-          "构思阶段鼓励发散，常用头脑风暴、SCAMPER、六顶思考帽。",
-          "原型不求完美，纸质原型、线框图、可点击 Demo 均可，关键是快速获取反馈。",
-          "测试阶段观察用户行为而非只听意见，迭代直到问题被有效解决。"
-        ],
-        "cases": [
-          "银行 App 转账流程冗长，团队用设计思维重做：共情阶段发现老年用户怕点错，定义问题为「确认感不足」，原型测试三轮后把确认页改为大按钮 + 朗读金额，误操作投诉降 40%。",
-          "校内二手交易平台从「功能列表」转向设计思维：先画用户旅程发现「信任成本」是最大断点，MVP 聚焦担保交易而非社交功能。"
-        ],
-        "pmApplication": [
-          "面试可讲：用五阶段框架描述一个从问题发现到方案落地的完整故事。",
-          "需求启动会先用 30 分钟对齐 POV（Point of View），再讨论功能。",
-          "原型阶段邀请 5 名真实用户测试，用观察记录替代「我觉得」。"
-        ]
-      },
-      {
-        "id": "data-driven",
-        "title": "数据驱动决策",
-        "summary": "用指标衡量产品健康度",
-        "tags": [
-          "数据",
-          "指标"
-        ],
-        "content": [
-          "北极星指标（North Star Metric）：最能反映产品核心价值的单一指标，如 DAU、GMV、留存率。",
-          "AARRR 海盗模型：Acquisition（获客）→ Activation（激活）→ Retention（留存）→ Revenue（收入）→ Referral（推荐）。",
-          "漏斗分析：定位用户流失环节，针对性优化。",
-          " cohort 分析：按注册时间分组，观察不同批次用户留存差异。",
-          "数据是决策依据而非目的，需结合定性研究理解数字背后的原因。"
-        ],
-        "cases": [
-          "AARRR 案例：配送机器人上线初期优化「一键下单」流程，激活率从 20% 提升到 55%，证明应继续投入 onboarding 而非盲目拉新。",
-          "某内容 App 北极星指标定为「周有效阅读时长」而非 DAU，引导团队做深度内容而非标题党，次月留存提升 12%。"
-        ],
-        "pmApplication": [
-          "面试估算题、增长题都可套 AARRR 逐步拆解。",
-          "每个需求写清对应指标：上线后看哪个数、提升多少算成功。",
-          "数据异常时先问「为什么」，配合用户访谈，避免只看数字不看原因。"
-        ]
-      },
-      {
-        "id": "agile",
-        "title": "敏捷产品管理",
-        "summary": "小步快跑，持续交付价值",
-        "tags": [
-          "敏捷",
-          "Scrum"
-        ],
-        "content": [
-          "Scrum 核心角色：Product Owner（定优先级）、Scrum Master（保障流程）、开发团队。",
-          "Sprint 周期通常 1-2 周，每个 Sprint 交付可演示的增量。",
-          "产品 Backlog 按价值排序，PO 负责维护和澄清需求。",
-          "每日站会：昨天做了什么、今天做什么、有什么阻碍。",
-          "回顾会（Retrospective）：团队反思流程改进，而非追责。"
-        ],
-        "cases": [
-          "2 周 Sprint 内团队承诺完成「支付重试」主题，每日站会暴露接口依赖阻塞，PO 当天调整范围砍掉次要埋点，保证主路径准时上线。",
-          "Sprint 回顾会发现「需求变更未同步测试」，下 Sprint 引入 PRD 变更记录模板，返工率下降 30%。"
-        ],
-        "pmApplication": [
-          "面试问敏捷经验：讲清角色（PO/SM）、Sprint 节奏、你如何维护 Backlog。",
-          "站会只同步阻塞与风险，细节会后异步对齐。",
-          "回顾会聚焦流程改进，输出 1-2 条下 Sprint 可执行的改进行动。"
-        ]
-      },
-      {
-        "id": "product-positioning",
-        "title": "产品定位",
-        "summary": "明确为谁、解决什么、凭什么赢",
-        "tags": [
-          "定位",
-          "战略"
-        ],
-        "content": [
-          "产品定位三问：目标用户是谁？核心痛点是什么？相比替代方案的独特价值是什么？",
-          "定位不是口号，而是决策过滤器——每个功能都要回答「是否符合定位」。",
-          "常见工具：价值主张画布（Value Proposition Canvas）、定位陈述模板：「为 [用户]，在 [场景] 下，提供 [价值]，不同于 [竞品] 的是 [差异]」。",
-          "定位需随市场验证迭代，但不宜频繁摇摆，否则团队执行失焦。",
-          "差异化可来自：功能、体验、价格、渠道、品牌、生态，选 1-2 个打透即可。"
-        ],
-        "cases": [
-          "飞书文档定位「团队协作首选」而非「又一个在线 Word」，功能取舍上强化@人、评论、多维表，弱化单页排版。",
-          "某 AI 写作工具在红海中选择「产品经理写 PRD」垂类定位，避开通用写作，付费转化率为泛工具 3 倍。"
-        ],
-        "pmApplication": [
-          "面试「介绍一个产品」可先说定位三角：为谁、解决什么、差异化。",
-          "新功能评审问一句：「是否符合当前定位？」过滤蹭热点需求。",
-          "写 BRD/立项材料时用定位陈述模板一页纸对齐老板。"
-        ]
-      },
-      {
-        "id": "user-journey",
-        "title": "用户旅程图",
-        "summary": "可视化用户从认知到忠诚的全流程",
-        "tags": [
-          "体验",
-          "旅程"
-        ],
-        "content": [
-          "用户旅程图（User Journey Map）横轴为阶段（认知→考虑→购买→使用→推荐），纵轴为行为、触点、情绪、痛点、机会。",
-          "目的：发现体验断点，找到最值得优化的环节，而非罗列所有触点。",
-          "情绪曲线很重要：低谷处往往是创新机会，高峰处可强化品牌记忆。",
-          "需区分不同 Persona 的旅程，同一产品不同用户路径可能完全不同。",
-          "输出后应转化为具体需求：每个「机会点」对应可落地的改进项。"
-        ],
-        "cases": [
-          "电商 App 旅程图显示「支付成功页」情绪最低谷——用户不知道订单状态。优化为进度时间轴 + 物流推送，复购率提升 8%。",
-          "B 端 onboarding 旅程暴露「管理员配置」环节流失最高，改为向导式配置 + 预置模板，7 日留存提升 15%。"
-        ],
-        "pmApplication": [
-          "大改版前画旅程图对齐团队，比堆功能列表更有效。",
-          "每个情绪低谷对应一个可落地的改进需求写进 Backlog。",
-          "面试讲用户体验优化时，用旅程图说明「在哪一环、做了什么」。"
-        ]
-      },
-      {
-        "id": "hypothesis-validation",
-        "title": "假设验证",
-        "summary": "用实验代替争论，快速证伪",
-        "tags": [
-          "验证",
-          "实验"
-        ],
-        "content": [
-          "产品本质是假设集合：用户有这问题、愿意付费、我们能做出来、比竞品好……",
-          "每个假设应可证伪，并定义「什么结果算验证通过/失败」。",
-          "验证手段按成本从低到高：访谈 → 问卷 → 落地页 → 原型测试 → MVP → A/B 测试。",
-          "优先验证风险最高的假设（通常是最不确定、失败代价最大的）。",
-          "失败不可怕，可怕的是不知道为何失败——每次实验都要有学习产出。"
-        ],
-        "cases": [
-          "假设「用户愿意为极速达付溢价」：先用问卷 + 落地页两档价格测试，再开发，避免直接做完整履约能力。",
-          "社群功能假设活跃能提升留存：先做小范围人工运营群（Concierge），验证后再产品化自动建群。"
-        ],
-        "pmApplication": [
-          "面试「如何验证想法」：列假设 → 选最便宜验证手段 → 定义成功标准。",
-          "PRD 顶部写「本版本要验证的假设」和「若失败则…」。",
-          "优先验证风险最高、代价最大的假设，而非最容易做的功能。"
-        ]
-      },
-      {
-        "id": "ice-priority",
-        "title": "需求优先级排序",
-        "summary": "RICE、ICE 与价值/成本矩阵",
-        "tags": [
-          "优先级",
-          "决策"
-        ],
-        "content": [
-          "RICE = Reach（影响用户数）× Impact（影响程度）× Confidence（把握度）÷ Effort（工作量）。",
-          "ICE = Impact × Confidence × Ease，适合快速粗排，不必精确到小数。",
-          "价值/成本矩阵：高价值低成本先做，高价值高成本规划，低价值直接砍。",
-          "优先级不是一次性的，随业务阶段变化——增长期重获客，成熟期重留存和变现。",
-          "排序时需纳入战略对齐：有时「不紧急但重要」的战略项需预留资源。"
-        ],
-        "cases": [
-          "资源紧张时：登录安全加固（高价值低成本）进本 Sprint，「换肤」进 backlog，「重构底层架构」单独立项评估。",
-          "用 ICE 快速粗排 20 条需求，再用 RICE 精排前 5 条进版本，兼顾效率与准确。"
-        ],
-        "pmApplication": [
-          "面试版本规划题：先对齐目标，再摆矩阵/RICE 说明取舍。",
-          "与业务方沟通优先级时可视化矩阵，减少「都要」僵局。",
-          "每季度复盘优先级模型是否仍匹配业务阶段（增长期 vs 成熟期）。"
-        ]
-      },
       {
         "id": "kb-product-methodology-1-1-北极星指标补全项-1",
         "title": "北极星指标（North Star Metric）",
@@ -281,17 +31,22 @@ const categories = [
         "pmApplication": [
           "每个季度评审前,先问\"我做的这个需求,是拉高北极星、还是只让某个 KPI 好看?\"。只拉高 DAU 不拉高工单解决数的功能,要砍掉或重做。",
           "指标体系是\"对北极星的可分解\"——北极星是\"一句话目标\",指标体系是\"具体怎么衡量\",行动指标是\"我下周能改什么\"。"
-        ]
+        ],
+        "section": "1. 战略与定位（决定\"做对的事\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-1-2-商业模式画布补全项-2",
         "title": "商业模式画布（BMC, Business Model Canvas）",
-        "summary": "把商业模式拆成 9 个格子,PM 拿到新方向时先画一遍,看\"商业逻辑能不能跑通\"。",
+        "summary": "来源:daily-log 6/22",
         "tags": [
           "产品策划方法论",
           "BMC"
         ],
         "content": [
+          "来源:daily-log 6/22",
           "把商业模式拆成 9 个格子,PM 拿到新方向时先画一遍,看\"商业逻辑能不能跑通\"。",
           "客户细分（CS）：我服务谁？",
           "价值主张（VP）：我为他们解决什么问题？",
@@ -308,17 +63,22 @@ const categories = [
         ],
         "pmApplication": [
           "9 格填完如果发现\"价值主张\"清晰但\"收入流\"弱,要么补变现路径,要么承认\"作为留存工具推进、不能单独立项\"。"
-        ]
+        ],
+        "section": "1. 战略与定位（决定\"做对的事\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-1-3-价值主张画布补全项-3",
         "title": "价值主张画布（VPC, Value Proposition Canvas）",
-        "summary": "把\"产品价值\"和\"用户需求\"对齐的双面图——左侧产品,右侧用户,两侧\"对上\"=真解决问题,\"对不上\"=做了没人要。",
+        "summary": "来源:daily-log 6/30",
         "tags": [
           "产品策划方法论",
           "VPC"
         ],
         "content": [
+          "来源:daily-log 6/30",
           "把\"产品价值\"和\"用户需求\"对齐的双面图——左侧产品,右侧用户,两侧\"对上\"=真解决问题,\"对不上\"=做了没人要。",
           "┌──────────────────────────────┐  ┌──────────────────────────────┐\n│      产品侧 (Product)         │  │      用户侧 (Customer)        │\n├──────────────────────────────┤  ├──────────────────────────────┤\n│ 产品/服务 (Products & Services)│  │ 任务 (Jobs to be Done)        │\n│                                │  │                                │\n│ 痛点解药 (Pain Relievers)     │←→│ 痛点 (Pains)                  │\n│                                │  │                                │\n│ 收益创造 (Gain Creators)      │←→│ 收益 (Gains)                  │\n└──────────────────────────────┘  └──────────────────────────────┘"
         ],
@@ -330,17 +90,22 @@ const categories = [
           "左侧有产品特性但找不到对应用户痛点 → 砍",
           "右侧有用户痛点但左侧找不到产品解药 → 补",
           "两侧对得上 → 这版就做这个"
-        ]
+        ],
+        "section": "1. 战略与定位（决定\"做对的事\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-1-4-okr",
         "title": "OKR（Objectives & Key Results）",
-        "summary": "目标管理工具。\"目标 O\"是定性的、鼓舞人心的方向;\"关键结果 KR\"是 3-5 个可量化的指标,衡量 O 是否达成。",
+        "summary": "来源:产品经理八股.md 1. 核心模型",
         "tags": [
           "产品策划方法论",
           "OKR"
         ],
         "content": [
+          "来源:产品经理八股.md 1. 核心模型",
           "目标管理工具。\"目标 O\"是定性的、鼓舞人心的方向;\"关键结果 KR\"是 3-5 个可量化的指标,衡量 O 是否达成。",
           "OKR vs KPI:",
           "性质 · OKR=灵活、挑战性 · KPI=刚性、考核用",
@@ -350,16 +115,21 @@ const categories = [
         ],
         "pmApplication": [
           "OKR 帮你\"知道自己做的事为什么重要\"——把每周做的需求挂到季度 KR 上,周报/复盘里能清晰展示\"我做的 AI 悬浮球对话效果,贡献了 KR1 30% 的提升\"。"
-        ]
+        ],
+        "section": "1. 战略与定位（决定\"做对的事\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-2-1-用户画像",
         "title": "用户画像（User Persona）",
-        "summary": "通过调研把目标用户抽象成典型的\"虚拟人物\",包含基本属性、行为特征、目标动机、痛点障碍。",
+        "summary": "来源:产品经理八股.md 3. 用户研究",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
+          "来源:产品经理八股.md 3. 用户研究",
           "通过调研把目标用户抽象成典型的\"虚拟人物\",包含基本属性、行为特征、目标动机、痛点障碍。",
           "4 大要素:",
           "1. 基本属性:年龄/职业/地区/收入/教育",
@@ -372,16 +142,21 @@ const categories = [
         ],
         "pmApplication": [
           "做功能时\"对齐小王用起来顺不顺\"——他看不懂/嫌麻烦的功能,90% 是失败功能。"
-        ]
+        ],
+        "section": "2. 用户研究（决定\"对的人\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-2-2-同理心地图",
         "title": "同理心地图（Empathy Map）",
-        "summary": "把用户\"看不见的内心\"画出来——6 个维度:说/想/做/感受/痛点/目标。",
+        "summary": "来源:daily-log 6/30",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
+          "来源:daily-log 6/30",
           "把用户\"看不见的内心\"画出来——6 个维度:说/想/做/感受/痛点/目标。",
           "说（Says）：\"这培训视频太长了根本看不完\"",
           "想（Thinks）：\"我能不能只看考点不学其他的\"",
@@ -393,16 +168,21 @@ const categories = [
         "pmApplication": [
           "基于这张图设计\"5 分钟考点速览\"功能,比\"AI 悬浮球加表情包\"这种自嗨功能靠谱 10 倍。",
           "3 个核心问题:用户嘴上在抱怨什么？心里真正担心什么？为了目标愿意做出什么妥协？"
-        ]
+        ],
+        "section": "2. 用户研究（决定\"对的人\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-2-3-用户旅程地图",
         "title": "用户旅程地图（User Journey Map）",
-        "summary": "把用户从\"第一次听说产品\"到\"成为忠实用户\"的整段路拆成阶段,标出目标/行为/触点/情绪曲线/痛点。",
+        "summary": "来源:产品经理八股.md 4. 产品设计 / daily-log 6/26",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
+          "来源:产品经理八股.md 4. 产品设计 / daily-log 6/26",
           "把用户从\"第一次听说产品\"到\"成为忠实用户\"的整段路拆成阶段,标出目标/行为/触点/情绪曲线/痛点。",
           "5 段式标准结构:",
           "认知 → 考虑 → 首次使用 → 习惯 → 复购/推荐\n  ↑     ↑        ↑          ↑        ↑\n 触点  触点     触点       触点      触点\n 情绪  情绪     情绪       情绪      情绪\n 痛点  痛点     痛点       痛点      痛点"
@@ -412,16 +192,21 @@ const categories = [
         ],
         "pmApplication": [
           "情绪低谷段就是优化重点——\"学习\"段情绪 -2,优先加\"5 分钟考点速览\"和\"模拟考试\"功能。"
-        ]
+        ],
+        "section": "2. 用户研究（决定\"对的人\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-2-4-可用性测试",
         "title": "可用性测试（Usability Testing）",
-        "summary": "找 5-8 个真实用户、给 3-5 个具体任务、观察他们怎么操作、卡在哪、问什么。5 个用户就能发现 85% 的可用性问题(Nielsen Norman Group 经验法则)。",
+        "summary": "来源:daily-log 6/29",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
+          "来源:daily-log 6/29",
           "找 5-8 个真实用户、给 3-5 个具体任务、观察他们怎么操作、卡在哪、问什么。5 个用户就能发现 85% 的可用性问题(Nielsen Norman Group 经验法则)。",
           "3 种形式:",
           "Moderated(测试员边观察边追问):最有价值,适合上线前",
@@ -437,7 +222,11 @@ const categories = [
         ],
         "pmApplication": [
           "可用性测试找的是\"用户心智和你的设计不一致\"的地方,不是测\"功能对不对\"——后者是 QA 的事。"
-        ]
+        ],
+        "section": "2. 用户研究（决定\"对的人\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-2-5-用户访谈",
@@ -461,16 +250,21 @@ const categories = [
         ],
         "pmApplication": [
           "访谈前先列 10 个问题,但只背 3 个——剩下 7 个根据用户的回答即兴追问,才有价值。"
-        ]
+        ],
+        "section": "2. 用户研究（决定\"对的人\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-3-1-需求评估-4-维度",
         "title": "需求评估 4 维度",
-        "summary": "PM 拿到一个需求不能拍脑袋说\"做\"或\"不做\",要按 4 维度量化。",
+        "summary": "来源:产品经理八股.md 2. 需求分析",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
+          "来源:产品经理八股.md 2. 需求分析",
           "PM 拿到一个需求不能拍脑袋说\"做\"或\"不做\",要按 4 维度量化。",
           "商业价值：为业务带来什么？收入/成本/效率各占多少？",
           "用户价值：解决用户什么痛点？多少人/多高频/多痛？",
@@ -479,17 +273,22 @@ const categories = [
         ],
         "cases": [
           "代理商平台 3 个需求评估\nAI 悬浮球支持语音输入 · 商业=中 · 用户=高 · 技术=中 · ROI=不错 · 决策=✅ 本 Sprint\n工单页加深色模式 · 商业=低 · 用户=中 · 技术=低 · ROI=一般 · 决策=⏸ Backlog\n重做整个权限体系 · 商业=看场景 · 用户=低 · 技术=极高 · ROI=差 · 决策=🔪 拆 3 个小需求"
-        ]
+        ],
+        "section": "3. 需求管理（决定\"做哪些\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-3-2-rice-评分法",
         "title": "RICE 评分法（精细化需求排序）",
-        "summary": "用一个标准公式给每个需求打分排序。",
+        "summary": "来源:daily-log 6/23",
         "tags": [
           "产品策划方法论",
           "RICE"
         ],
         "content": [
+          "来源:daily-log 6/23",
           "用一个标准公式给每个需求打分排序。",
           "公式:RICE Score = (R × I × C) / E",
           "Reach 触达多少用户：数字（如 500）",
@@ -502,17 +301,22 @@ const categories = [
         ],
         "pmApplication": [
           "把讨论从\"谁拍脑袋\"变成\"谁有数据\"——分数高的先做。"
-        ]
+        ],
+        "section": "3. 需求管理（决定\"做哪些\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-3-3-moscow-优先级法",
         "title": "MoSCoW 优先级法（轻量级版本分桶）",
-        "summary": "用 4 个字母把需求按\"必须做\"程度分桶。",
+        "summary": "来源:daily-log 6/29",
         "tags": [
           "产品策划方法论",
           "SC"
         ],
         "content": [
+          "来源:daily-log 6/29",
           "用 4 个字母把需求按\"必须做\"程度分桶。",
           "必须有,没它这版本就不该上：必做",
           "应该有,没它有遗憾但能上：优先做",
@@ -524,33 +328,39 @@ const categories = [
         ],
         "pmApplication": [
           "RICE + MoSCoW 配合用——先用 RICE 从 10 个候选里排\"分数前 5\",再用 MoSCoW 把前 5 个分\"M/S/C/W\"决定\"这版本做哪几个\"。"
-        ]
+        ],
+        "section": "3. 需求管理（决定\"做哪些\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-3-4-优先级矩阵",
         "title": "优先级矩阵（价值-成本矩阵）",
-        "summary": "按「价值高低 × 成本高低」把需求分到四个格子,决定先做、后做、还是砍掉。",
+        "summary": "来源:产品经理八股.md 2. 需求分析",
         "tags": [
           "产品策划方法论"
         ],
         "content": [
-          "按「价值高低 × 成本高低」把需求分到四个格子,决定先做、后做、还是砍掉。",
+          "来源:产品经理八股.md 2. 需求分析",
           "成本高 → 价值高=战略性投入，价值低=放 backlog",
           "成本低 → 价值高=快速做，价值低=砍掉"
         ],
-        "pmApplication": [
-          "价值高成本低的先做;价值低成本高的默认砍掉;价值高成本高的要立项评审,别当日常小需求塞进迭代。"
-        ]
+        "section": "3. 需求管理（决定\"做哪些\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-product-methodology-3-5-砍需求",
         "title": "砍需求（PM 的\"必杀技\"）",
-        "summary": "1. 价值不明确 — \"做了也没人用\"",
+        "summary": "来源:产品经理八股.md 2. 需求分析（隐含）",
         "tags": [
           "产品策划方法论",
           "PM"
         ],
         "content": [
+          "来源:产品经理八股.md 2. 需求分析（隐含）",
           "5 个砍需求的理由:",
           "1. 价值不明确 — \"做了也没人用\"",
           "2. ROI 太低 — 投入远超回报",
@@ -564,25 +374,444 @@ const categories = [
         ],
         "pmApplication": [
           "砍需求的能力 = 把资源留给更重要的事的能力——PM 不砍需求,团队会被拖死。"
-        ]
+        ],
+        "section": "3. 需求管理（决定\"做哪些\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
-        "id": "kb-pm-bagu-aarrr",
-        "title": "AARRR（海盗模型）",
-        "summary": "Acquisition（获客）→ Activation（激活）→ Retention（留存）→ Revenue（变现）→ Referral（推荐），衡量产品增长的核心漏斗",
+        "id": "kb-product-methodology-4-1-用户故事",
+        "title": "用户故事（User Story）",
+        "summary": "来源:产品经理八股.md 3. 用户研究",
         "tags": [
-          "产品经理八股",
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:产品经理八股.md 3. 用户研究",
+          "格式:As a [用户角色], I want [做某事], so that [实现某个目标]",
+          "配套验收标准（Given/When/Then）:",
+          "来源:daily-log 6/28",
+          "Given · 作用=前置条件 · 示例=我之前和 AI 聊过 3 轮",
+          "When · 作用=用户动作 · 示例=我再次点击悬浮球",
+          "Then · 作用=系统响应 · 示例=页面自动展开最近 1 轮对话摘要",
+          "3 条 Given/When/Then = 3 个测试用例——主路径 1 + 边界状态 1 + 异常分支 1。"
+        ],
+        "pmApplication": [
+          "每个用户故事至少配 3 条验收标准——只写\"做什么\"不写\"做到什么程度\"的 PRD,研发交付出来大概率\"够用但不是你想要的\"。"
+        ],
+        "section": "4. 设计与交付（决定\"做对\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-4-2-信息架构",
+        "title": "信息架构（Information Architecture, IA）",
+        "summary": "来源:产品经理八股.md 4. 产品设计 / daily-log 6/28",
+        "tags": [
+          "产品策划方法论",
+          "IA"
+        ],
+        "content": [
+          "来源:产品经理八股.md 4. 产品设计 / daily-log 6/28",
+          "把\"一堆功能/内容\"组织成\"用户能找到、能理解、能使用\"的结构。",
+          "核心 4 件事:",
+          "1. 组织系统 — 功能怎么分组",
+          "2. 导航系统 — 用户怎么跳转",
+          "3. 标签系统 — 菜单/按钮叫什么",
+          "4. 搜索系统 — 找不到怎么办",
+          "画 IA 的 3 步法:",
+          "1. 拿张纸把所有功能/内容画成方块",
+          "2. 按\"用户找东西的心智路径\"重排(不是按你的开发目录)",
+          "3. 找 3 个真实用户跑\"找任务测试\",看他们点哪、卡哪"
+        ],
+        "cases": [
+          "代理商平台 IA 改造效果\n分组 → 改造前=按业务模块，改造后=按\"用户角色 + 高频任务\"\n培训入口点击率 → 改造前=12%，改造后=38%"
+        ],
+        "pmApplication": [
+          "IA 决定\"产品好不好用\"的 80%,再炫的视觉救不回来混乱的结构。"
+        ],
+        "section": "4. 设计与交付（决定\"做对\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-4-3-prd-标准-7-章节",
+        "title": "PRD 标准 7 章节",
+        "summary": "来源:产品经理八股.md 4. 产品设计 + 工作流程.md",
+        "tags": [
+          "产品策划方法论",
+          "PRD"
+        ],
+        "content": [
+          "来源:产品经理八股.md 4. 产品设计 + 工作流程.md",
+          "1. 背景与目的\n   - 业务背景\n   - 需求目的\n   - 目标用户\n\n2. 用户故事\n   - As a / I want / so that\n\n3. 功能需求\n   - 功能点 1/2/3\n   - 业务流程\n   - 验收标准(Given/When/Then)\n\n4. 非功能需求\n   - 性能要求\n   - 安全要求\n   - 兼容性\n\n5. 风险与依赖\n   - 风险点\n   - 依赖方\n\n6. 排期计划\n   - 计划开始\n   - 计划结束\n   - 负责人\n\n7. 验收标准\n   - UAT 用例\n   - 上线标准"
+        ],
+        "section": "4. 设计与交付（决定\"做对\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-4-4-prd-评审-checklist补全项-4",
+        "title": "PRD 评审 Checklist（7 维自检）",
+        "summary": "来源:daily-log 6/25",
+        "tags": [
+          "产品策划方法论",
+          "PRD"
+        ],
+        "content": [
+          "来源:daily-log 6/25",
+          "PRD 写完 → 评审会前 15 分钟,自检 7 维:",
+          "背景/目的：一句话能说清\"为什么做\"吗？",
+          "用户故事：主要场景都有故事覆盖吗？",
+          "功能边界：写明\"做什么\"和\"不做什么\"了吗？",
+          "业务流程：流程图画了吗？",
+          "异常分支：异常状态列了吗？（如\"用户没登录\"\"接口超时\"）",
+          "验收标准：每个功能点都 Given/When/Then 了吗？",
+          "依赖/排期/风险：列了吗？负责人明确吗？",
+          "反着用——评审会上研发提\"这块没写\",PM 翻 checklist 知道\"对,这块是第 5 维我马上补\",而不是\"哦我忘了\"。"
+        ],
+        "cases": [
+          "弹窗 PRD 漏掉\"用户没登录态\"分支(4 类异常 → 实际 5 类),就是没跑 checklist 里的\"异常分支\"——上线后才发现要打回重做。"
+        ],
+        "section": "4. 设计与交付（决定\"做对\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-4-5-上线-checklist",
+        "title": "上线 Checklist",
+        "summary": "代码完成：[ ] 主流程已实现 / [ ] 异常分支已处理 / [ ] 单测覆盖率 ≥ 80%",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "代码完成：[ ] 主流程已实现 / [ ] 异常分支已处理 / [ ] 单测覆盖率 ≥ 80%",
+          "测试通过：[ ] 冒烟测试通过(5 步 checklist) / [ ] 功能测试通过 / [ ] 性能测试通过 / [ ] 兼容性测试通过",
+          "UAT 通过：[ ] 业务方验收用例 100% 通过 / [ ] 业务方签字确认",
+          "上线物料：[ ] 上线公告已发 / [ ] 客服知识库已更新 / [ ] 客户通知模板已准备",
+          "监控告警：[ ] 核心指标已埋点 / [ ] 告警阈值已设置 / [ ] oncall 排班已确认",
+          "灰度计划：[ ] 灰度比例已确认(5%/20%/50%/100%) / [ ] 回滚预案已写",
+          "时间窗：[ ] 按 4 集群分时上线规则 / [ ] 避开业务高峰"
+        ],
+        "section": "4. 设计与交付（决定\"做对\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-1-aarrr",
+        "title": "AARRR（海盗模型）",
+        "summary": "来源:产品经理八股.md 1. 核心模型",
+        "tags": [
+          "产品策划方法论",
           "AARRR"
         ],
         "content": [
-          "Acquisition（获客）→ Activation（激活）→ Retention（留存）→ Revenue（变现）→ Referral（推荐），衡量产品增长的核心漏斗"
-        ],
-        "cases": [
-          "配送机器人上线初期，通过优化\"一键下单\"流程，激活率从 20% 提升到 55%"
+          "来源:产品经理八股.md 1. 核心模型",
+          "5 阶段深度拆解:",
+          "Acquisition 获客 · 核心指标=CAC、渠道来源 · 优化动作=渠道质量分析、SEO/SEM",
+          "Activation 激活 · 核心指标=首日完成核心动作率 · 优化动作=首次体验优化、新手引导",
+          "Retention 留存 · 核心指标=次日/7 日/30 日留存 · 优化动作=召回机制、价值交付",
+          "Revenue 变现 · 核心指标=ARPU、付费转化 · 优化动作=定价策略、套餐设计",
+          "Referral 推荐 · 核心指标=邀请转化率、K 因子 · 优化动作=分享激励、口碑传播"
         ],
         "pmApplication": [
-          "每一步都要有明确指标 + 优化动作，不能只盯\"获客\"不看\"留存\""
-        ]
+          "每一步都有独立指标,不能只盯\"获客\"不看\"留存\"。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-2-上瘾模型",
+        "title": "上瘾模型（Hook Model）",
+        "summary": "来源:daily-log 6/27",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:daily-log 6/27",
+          "4 步循环:触发 → 行动 → 多变的奖励 → 投入",
+          "外部推送/内部情绪：推送通知/无聊",
+          "阻力极小的操作：打开 App",
+          "不知道下次会刷到什么：下一条视频的未知性",
+          "用户产生数据/内容：点赞、关注、收藏"
+        ],
+        "pmApplication": [
+          "做产品时反问自己\"用户为什么每天回来\"——靠\"必须用业务\"驱动 vs 靠\"想用就用\"驱动,设计策略完全不同。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-3-cohort-队列分析",
+        "title": "Cohort 队列分析（同期群分析）",
+        "summary": "来源:daily-log 6/27",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:daily-log 6/27",
+          "把用户按\"首次使用时间\"分组,看每组在后续时间的行为(7 日/30 日留存、复购率),而不是\"所有用户平均\"。",
+          "\"平均数陷阱\"案例:企学宝上线后,整体 7 日留存 30%。但 Cohort 一拆——6/17 首登的代理 7 日留存 45%,6/22 首登的代理 7 日留存只有 18%。"
+        ],
+        "pmApplication": [
+          "所有\"留存问题\"先跑 Cohort 再说结论——平均数会掩盖真相。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-4-nps-净推荐值",
+        "title": "NPS 净推荐值",
+        "summary": "来源:daily-log 6/27",
+        "tags": [
+          "产品策划方法论",
+          "NPS"
+        ],
+        "content": [
+          "来源:daily-log 6/27",
+          "公式:NPS = 推荐者%(9-10分) - 贬损者%(0-6分)(范围 -100 到 +100)",
+          "判断标准:",
+          "> 50 优秀",
+          "> 30 良好",
+          "< 0 危险"
+        ],
+        "pmApplication": [
+          "NPS 的真正价值不是数字本身,是\"贬损者的具体吐槽\"——深度追问后分类汇总,高频痛点就是下一期 P0。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-5-a-b-测试-5-步",
+        "title": "A/B 测试 5 步",
+        "summary": "来源:产品经理八股.md 5. 数据分析 / daily-log 6/20",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:产品经理八股.md 5. 数据分析 / daily-log 6/20",
+          "1：定义假设 — \"X 改版后转化率会提升 10%\"",
+          "2：设计实验 — 分流比例、观察时长、核心指标",
+          "3：分配流量 — 新老用户各 50%、灰度放出",
+          "4：分析结果 — 数据有显著差异才作数(p<0.05)",
+          "5：决策上线 — 胜出版全量、败出版回滚"
+        ],
+        "pmApplication": [
+          "指标必须\"先于上线\"定义好——不然跑完数据你也不知道\"涨了\"是因为按钮位置还是别的因素。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-5-6-增长飞轮",
+        "title": "增长飞轮（Growth Flywheel）",
+        "summary": "来源:补全(daily-log 6/26 内串联)",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:补全(daily-log 6/26 内串联)",
+          "找到\"用户增长 → 产品更好 → 用户更愿意来\"的正反馈循环,而不是线性漏斗。"
+        ],
+        "cases": [
+          "代理商平台\"代理活跃度\"飞轮\n代理活跃使用\n    ↓\n积累数据 + 改进产品\n    ↓\n产品更好用\n    ↓\n新代理主动注册\n    ↓\n代理活跃使用(循环)"
+        ],
+        "pmApplication": [
+          "找到你的飞轮,把每个动作挂上去——每个新需求反问\"它推动飞轮的哪一环\"。"
+        ],
+        "section": "5. 数据与增长（决定\"做得好\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-1-raci-矩阵",
+        "title": "RACI 矩阵",
+        "summary": "来源:daily-log 6/26",
+        "tags": [
+          "产品策划方法论",
+          "RACI"
+        ],
+        "content": [
+          "来源:daily-log 6/26",
+          "4 种角色:",
+          "R Responsible · 含义=执行人,真干活 · 数量=可多个",
+          "A Accountable · 含义=责任人,兜底拍板 · 数量=只能 1 个",
+          "C Consulted · 含义=咨询人,给意见 · 数量=可多个",
+          "I Informed · 含义=知会人,结果通知 · 数量=可多个"
+        ],
+        "cases": [
+          "V17 OTA 升级的 RACI(涉及 6 个部门)\n研发：R(出固件包)\n运维：R(监控升级状态)\n产品：A(出问题产品兜底)\n客服：C(看上线公告提供反馈)\n销售：I(升级期间不发新单)\n供应链：I(主板版本变更知会)\n3 步落地:\n1. 列出事项\n2. 标 R/A/C/I\n3. 找\"A 超过 1 个\"或\"全是 R 没 A\"的格子重调"
+        ],
+        "pmApplication": [
+          "RACI 跑完,谁也不甩锅——研发知道自己得干、产品知道自己兜底、客服知道自己该给客户怎么答。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-2-鱼骨图",
+        "title": "鱼骨图（Ishikawa Diagram）",
+        "summary": "来源:daily-log 6/26",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:daily-log 6/26",
+          "6M 分类:Man(人) / Machine(机器) / Method(方法) / Material(物料) / Measurement(测量) / Environment(环境)"
+        ],
+        "cases": [
+          "V17 升级\"国内集群升级成功率只有 96.5%\"\nMan：运维值班操作漏步骤\nMachine：OTA 服务器在德国机房,国内访问慢\nMethod：升级窗口 22:00 但部分代理时区偏早\nMaterial：新固件包 1.2GB,部分弱网下载失败\nMeasurement：监控告警阈值太高,问题没暴露\nEnvironment：部分代理餐厅 WiFi 不稳定"
+        ],
+        "pmApplication": [
+          "鱼骨图的核心不是\"画得多漂亮\"而是\"团队一起画\"——研发看技术、客服看用户、运维看流程,3 视角拼出全貌。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-3-5why-分析法",
+        "title": "5Why 分析法",
+        "summary": "来源:daily-log 6/23",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:daily-log 6/23",
+          "遇到问题不要停在\"表面原因\",连续追问 5 次\"为什么\"找到\"根本原因\"。"
+        ],
+        "cases": [
+          "配送机器人\"突然停在餐厅中央不动\"\nWhy 1：激光雷达报警\nWhy 2：检测到正前方 30cm 有障碍\nWhy 3：顾客把椅子推到机器人正前方\nWhy 4：机器人避障策略是\"绕行\",但卡在桌椅间窄通道没法绕\nWhy 5：建图时这块区域宽度只够机器人单行通过,没在地图上标记\"单行通道\"约束\n根因：地图数据缺失\"单行通道\"标记\n解决方案：建图阶段让服务员标注单行通道(不是优化避障算法)"
+        ],
+        "pmApplication": [
+          "不 5Why 的话,可能去优化避障算法,治标不治本。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-4-pdca-戴明环",
+        "title": "PDCA 戴明环",
+        "summary": "来源:daily-log 6/23",
+        "tags": [
+          "产品策划方法论",
+          "PDCA"
+        ],
+        "content": [
+          "来源:daily-log 6/23",
+          "4 步循环:Plan(计划) → Do(执行) → Check(检查) → Act(处理)",
+          "核心思想:螺旋上升——每跑一轮 PDCA 改进一个具体问题,再跑下一轮再改进一个。"
+        ],
+        "cases": [
+          "代理商平台\"工单平均处理时长\"优化\nP50 4h → 2.5h：改版工单页 + AI 推荐 / 3h(达预期 80%) / AI 推荐用得少,改规则引擎\n2.5h → 2.3h：规则引擎 + 反馈学习 / 2.3h ✅ / 进入下一轮优化"
+        ],
+        "pmApplication": [
+          "复盘是\"事后总结经验\",PDCA 是\"边做边改的循环\"——强调\"持续\"。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-5-设计冲刺",
+        "title": "设计冲刺（Design Sprint）",
+        "summary": "来源:daily-log 6/30",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:daily-log 6/30",
+          "Google Ventures 的 5 天产品决策法:",
+          "理解：和专家聊、定问题",
+          "发散：画草图不评论",
+          "决策：投票选方案",
+          "原型：做最简可用原型",
+          "测试：5 个真用户跑一遍",
+          "核心思想:5 天节奏逼出所有假设——不是真要做 5 天。"
+        ],
+        "cases": [
+          "V17 升级前跑过一轮设计冲刺——周一对齐\"升级失败要自动回滚还是人工介入\"、周二画 3 套方案、周三投票(自动回滚胜出)、周四做纸面原型、周五找 5 个代理测试。结果:3/5 代理问\"如果回滚失败会怎样\"——PRD 之前没写这个问题,最后补进 PRD。"
+        ],
+        "pmApplication": [
+          "重要功能上线前、需求大但方向不明时跑一轮设计冲刺,哪怕压缩成 5 小时也能帮 PM ① 在动手前暴露分歧 ② 用真用户验证而不是\"领导拍板\" ③ 节省\"做完才发现方向错\"的几周返工。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-6-影响地图",
+        "title": "影响地图（Impact Mapping）",
+        "summary": "用\"目标 → 参与者 → 影响 → 交付物\"4 层结构,把\"为什么做\"和\"做什么\"对齐。",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "用\"目标 → 参与者 → 影响 → 交付物\"4 层结构,把\"为什么做\"和\"做什么\"对齐。",
+          "4 层结构:",
+          "目标 (Goal)\n  ↓ 服务谁\n参与者 (Actor)\n  ↓ 怎么影响他们\n影响 (Impact)\n  ↓ 怎么实现\n交付物 (Deliverable)"
+        ],
+        "cases": [
+          "代理商平台\"降低工单解决时长\"\n目标：区域代理工单 P50 解决时长 4h → 2.5h\n参与者：区域代理、客服\n影响：代理能更快速找到答案、客服能复用历史方案\n交付物：AI 悬浮球 + 工单页改版 + 历史方案库"
+        ],
+        "pmApplication": [
+          "让团队对齐\"为什么做\"——避免\"做完发现不是用户要的\"。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
+      },
+      {
+        "id": "kb-product-methodology-6-7-复盘-8-步法",
+        "title": "复盘 8 步法",
+        "summary": "来源:工作流程.md 复盘 SOP",
+        "tags": [
+          "产品策划方法论"
+        ],
+        "content": [
+          "来源:工作流程.md 复盘 SOP",
+          "8 步:",
+          "1. 确认范围(time-context 拿日期)",
+          "2. 拉日历(本周所有会议)",
+          "3. 拉妙记(4 份/周典型)",
+          "4. 拉群消息(关键对接群)",
+          "5. 读工作日志(还原日常工作)",
+          "6. 结构化分析(11 字段)",
+          "7. 写复盘表(NO.XXX)",
+          "8. 关联需求(link 字段挂本周需求)"
+        ],
+        "pmApplication": [
+          "8 步缺一步,复盘就会变成\"印象流\",失去\"可索引、可追溯、可复盘经验\"的价值。"
+        ],
+        "section": "6. 协作与决策（决定\"和谁一起做\"）",
+        "sourceId": "product-methodology",
+        "sourceLabel": "产品策划方法论",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-kano-模型",
@@ -597,7 +826,11 @@ const categories = [
         ],
         "pmApplication": [
           "做需求评估时，先分清属于哪一型——基本型必做，期望型性价比最高，兴奋型是差异化"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-mvp",
@@ -612,7 +845,11 @@ const categories = [
         ],
         "pmApplication": [
           "先做\"刚好能验证市场\"的版本，不要一开始就做\"大而全\""
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-pmf",
@@ -627,7 +864,11 @@ const categories = [
         ],
         "pmApplication": [
           "MVP → PMF 是创业产品必经之路，PMF 没找到之前不要盲目扩张"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-ucd",
@@ -643,7 +884,11 @@ const categories = [
         "pmApplication": [
           "先访谈真实用户（不是脑补\"用户需要什么\"），用原型验证再迭代",
           "对比：\"老板说要加什么功能\"或\"竞品有什么我们也要有\"是反 UCD"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-jtbd",
@@ -658,7 +903,11 @@ const categories = [
         ],
         "pmApplication": [
           "用户买的不是\"产品\"，是\"完成任务的能力\"——理解任务比理解功能更重要"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-okr-vs-kpi",
@@ -675,7 +924,11 @@ const categories = [
         ],
         "pmApplication": [
           "OKR 定方向（季度），KPI 盯执行（周/月）"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-sla",
@@ -698,7 +951,11 @@ const categories = [
         ],
         "pmApplication": [
           "未达成通常按合同赔偿（扣款、延服务期）；SLA 指标要拆到架构和监控上"
-        ]
+        ],
+        "section": "1. 核心模型（PM 必会）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-需求来源",
@@ -709,7 +966,11 @@ const categories = [
         ],
         "content": [
           "用户反馈 / 数据分析 / 竞品分析 / 业务方需求 / 战略规划"
-        ]
+        ],
+        "section": "2. 需求分析",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-需求评估维度",
@@ -723,1072 +984,11 @@ const categories = [
           "用户价值：解决用户什么问题",
           "技术成本：开发难度和资源",
           "ROI：投入产出比"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-用户故事",
-        "title": "用户故事（User Story）",
-        "summary": "\"作为 [用户角色]，我希望 [做某事]，以便 [实现某个目标]\"",
-        "tags": [
-          "产品经理八股"
         ],
-        "content": [
-          "\"作为 [用户角色]，我希望 [做某事]，以便 [实现某个目标]\"",
-          "格式：As a ... I want to ... so that ...",
-          "验收标准：Given ... When ... Then ..."
-        ]
-      }
-    ]
-  },
-  {
-    "id": "interview",
-    "title": "产品八股",
-    "description": "面试高频考点与标准答题框架",
-    "icon": "◇",
-    "items": [
-      {
-        "id": "star",
-        "title": "STAR 法则",
-        "summary": "结构化讲述项目经历的标准框架",
-        "tags": [
-          "面试",
-          "表达"
-        ],
-        "content": [
-          "S（Situation）：背景——项目在什么情况下启动？",
-          "T（Task）：任务——你负责什么？目标是什么？",
-          "A（Action）：行动——你具体做了什么？为什么这样做？",
-          "R（Result）：结果——用数据说话，带来了什么改变？",
-          "示例结构：「在 XX 背景下，我负责 XX，通过 XX 方法，最终实现了 XX 指标提升 XX%。」",
-          "避免只说「我们团队做了…」，突出个人贡献与思考过程。"
-        ],
-        "cases": [
-          "「公司要提升新用户留存（S），我负责 onboarding 优化（T），通过用户访谈定位断点、改版引导流程并 A/B 测试（A），7 日留存从 32% 提升到 41%（R）。」",
-          "「业务方要求对接企学宝（S），我主导需求与排期（T），拆解账号映射与成绩回写 4 条冒烟路径（A），按期上线且培训完成率提升 25%（R）。」"
-        ],
-        "pmApplication": [
-          "每个项目准备 1 个 2 分钟版 + 1 个 5 分钟版 STAR 故事。",
-          "Result 必须量化；没有数据时用「周期缩短」「投诉下降」等可感知结果。",
-          "Action 突出「你」的决策，而非只讲团队做了什么。"
-        ]
-      },
-      {
-        "id": "competitor-analysis",
-        "title": "竞品分析框架",
-        "summary": "系统性地研究竞争对手",
-        "tags": [
-          "竞品",
-          "分析"
-        ],
-        "content": [
-          "分析维度：产品定位、目标用户、核心功能、商业模式、优劣势、近期动态。",
-          "波特五力可辅助行业分析：供应商、买家、替代品、新进入者、同业竞争。",
-          "功能对比矩阵：横轴为功能点，纵轴为竞品，标注支持程度与差异。",
-          "不要只列功能清单，要分析「为什么他们这样做」背后的战略意图。",
-          "输出：竞品报告 + 差异化机会点 + 可借鉴与需规避的策略。"
-        ],
-        "cases": [
-          "分析竞品 A 免费策略背后是用增长换规模，我方 ToB 定位不打价格战，转而强化私有化部署与服务 SLA。",
-          "功能矩阵显示三家都有「报表」，但仅一家支持自定义维度——据此将灵活报表作为差异化卖点写进 MRD。"
-        ],
-        "pmApplication": [
-          "面试结构：定位 → 用户 → 功能对比 → 商业逻辑 → 机会与威胁。",
-          "输出不止 PPT，要有「所以我们应该…」的行动建议。",
-          "每季度更新竞品动态，关注对方战略级变化而非抄功能。"
-        ]
-      },
-      {
-        "id": "estimate-dau",
-        "title": "经典估算题",
-        "summary": "费米估算：从北京咖啡馆数量到 DAU",
-        "tags": [
-          "估算",
-          "逻辑"
-        ],
-        "content": [
-          "费米估算核心：把大问题拆解为可假设的小问题，相乘或相加得出量级。",
-          "示例：估算某 App 日活——中国网民数 × 目标人群占比 × 渗透率 × 使用频次。",
-          "关键步骤：明确边界 → 建立公式 → 合理假设 → 计算 → 敏感性分析。",
-          "假设要能说清理由，如「18-35 岁占比约 30%」需有依据或标注为假设。",
-          "面试官看重逻辑链条，而非精确数字。"
-        ],
-        "cases": [
-          "估算北京咖啡馆数量：北京人口 × 咖啡消费人群占比 × 年均消费次数 ÷ 单店服务能力 → 得到量级，再敏感性调整假设。",
-          "估算短视频 App DAU：智能手机用户 × 短视频渗透率 × 日均打开率，假设每一步注明依据。"
-        ],
-        "pmApplication": [
-          "面试看重逻辑链，写清公式与假设即可，数字差 2 倍往往可接受。",
-          "工作中市场规模估算用于 BRD 立项与资源申请。",
-          "结尾做敏感性分析：「若渗透率只有一半，结论如何变化」。"
-        ]
-      },
-      {
-        "id": "favorite-product",
-        "title": "最喜欢的产品",
-        "summary": "高频开放题的标准答题思路",
-        "tags": [
-          "面试",
-          "产品感"
-        ],
-        "content": [
-          "选题：选你真正了解、能说出细节的产品，而非最热门的。",
-          "结构：产品是什么 → 解决什么问题 → 为什么做得好（功能/体验/商业模式）→ 如果是我会怎么改进。",
-          "展示产品感：用户场景、设计细节、商业逻辑、数据表现（若知晓）。",
-          "改进建议要具体可行，体现批判性思维而非为批评而批评。",
-          "可对比 1-2 个竞品，说明差异化价值。"
-        ],
-        "cases": [
-          "答「最喜欢的产品」选微信：讲清连接场景（社交+支付+小程序生态），再说一个具体细节（如文件助手）体现观察力，最后提「搜索仍可优化」的改进建议。",
-          "避免空泛夸「UI 好看」，要落到用户场景和商业逻辑。"
-        ],
-        "pmApplication": [
-          "提前准备 2 个产品（1 个大众 + 1 个垂类），避免面试当天纠结。",
-          "结构：是什么 → 解决什么问题 → 为什么好 → 如何改进。",
-          "改进建议要具体、可落地，体现产品思维而非挑剔。"
-        ]
-      },
-      {
-        "id": "ab-test",
-        "title": "A/B 测试",
-        "summary": "科学验证产品改动的黄金标准",
-        "tags": [
-          "实验",
-          "数据"
-        ],
-        "content": [
-          "A/B 测试：将用户随机分组，对比不同方案的效果差异，排除其他变量干扰。",
-          "前提：足够样本量、单一变量、明确的转化指标、合理的实验周期。",
-          "常见坑：过早结束实验、偷看数据导致 p-hacking、多重比较未校正。",
-          "统计显著性（通常 p < 0.05）表示结果不太可能是随机波动造成。",
-          "产品决策：显著且正向 → 全量；不显著 → 分析原因或延长实验；负向 → 回滚。"
-        ],
-        "cases": [
-          "按钮文案 A/B：「立即购买」vs「加入购物车」，样本量达标后转化率提升 0.3pp，全量上线。",
-          "反例：实验第 2 天见 B 方案领先就全量，一周后效果回落——说明未跑满周期、未看显著性。"
-        ],
-        "pmApplication": [
-          "面试讲清 5 步：假设 → 设计 → 分流 → 分析 → 决策。",
-          "PRD 写单一变量、核心指标、最小样本与实验周期。",
-          "不显著时分析原因：样本不足、指标选错、季节性干扰。"
-        ]
-      },
-      {
-        "id": "pricing",
-        "title": "定价策略",
-        "summary": "如何为产品定一个好价格",
-        "tags": [
-          "商业",
-          "定价"
-        ],
-        "content": [
-          "成本加成定价：成本 + 利润率，适用于成本透明、竞争少的场景。",
-          "价值定价：基于用户感知价值，适用于差异化明显的产品。",
-          "竞争定价：参考竞品定价，适用于同质化市场。",
-          "常见模式：免费增值（Freemium）、订阅制、按量计费、分层定价。",
-          "价格锚定：先展示高价选项，使中间价位显得合理。"
-        ],
-        "cases": [
-          "SaaS 三层定价：基础版锚定、专业版主力、企业版定制，多数客户选中间档（价格锚定效应）。",
-          "工具类产品 Freemium：免费版限制项目数，个人用户留存传播，团队付费转化。"
-        ],
-        "pmApplication": [
-          "面试定价题：先问清 B 端还是 C 端、成本结构与竞品。",
-          "结合价值定价：用户愿意付多少钱取决于感知价值而非成本。",
-          "上线新定价需做小规模测试，观察转化与流失。"
-        ]
-      },
-      {
-        "id": "growth",
-        "title": "增长模型",
-        "summary": "获客、激活、留存、变现、传播",
-        "tags": [
-          "增长",
-          "AARRR"
-        ],
-        "content": [
-          "获客（Acquisition）：渠道效率（CAC）、获客成本与 LTV 比值应 > 3。",
-          "激活（Activation）：新用户完成关键行为的转化率，如「发布第一条内容」。",
-          "留存（Retention）：次日/7日/30日留存，留存是产品价值的试金石。",
-          "变现（Revenue）：ARPU、付费转化率、客单价。",
-          "传播（Referral）：K 因子 = 邀请数 × 转化率，K > 1 则自然增长。"
-        ],
-        "cases": [
-          "AARRR 完整案例：配送机器人通过优化一键下单（激活）提升后续留存与推荐，而非只买量获客。",
-          "某工具 K=0.3（每用户带来 0.3 个新用户），判断需先优化产品内邀请动机，再加大投放。"
-        ],
-        "pmApplication": [
-          "增长题按 AARRR 逐步答，每步给一个指标 + 优化动作。",
-          "诊断增长瓶颈：看漏斗哪一环转化率最低。",
-          "LTV:CAC > 3 是投放可持续的基本盘。"
-        ]
-      },
-      {
-        "id": "why-pm",
-        "title": "为什么想做产品经理",
-        "summary": "动机类高频题，考察自我认知与稳定性",
-        "tags": [
-          "面试",
-          "动机"
-        ],
-        "content": [
-          "面试官想确认：你是认真想清楚了，还是跟风/临时起意。",
-          "好的回答结构：个人经历触发点 → 对 PM 工作的理解 → 能力与岗位的匹配 → 长期方向。",
-          "避免：「喜欢跟人打交道」「觉得产品很酷」等空泛表述。",
-          "可结合真实故事：某次用户反馈、某个产品体验、某段实习/项目让你确定方向。",
-          "展示你对 PM 的认知：连接用户、商业、技术，对结果负责，而非「画原型的」。"
-        ],
-        "cases": [
-          "好回答：「实习做运营时发现改一个引导文案能显著提升转化，但不知谁决策、如何系统优化——由此想了解 PM 如何对用户价值负责。」",
-          "差回答：「觉得产品很酷、喜欢互联网」——缺乏具体触发点。"
-        ],
-        "pmApplication": [
-          "准备真实故事，体现你理解 PM 是「对结果负责」而非画原型。",
-          "连接过往经历与 PM 能力：沟通、逻辑、用户同理心。",
-          "表达长期意愿，避免「先干着试试」的不稳定信号。"
-        ]
-      },
-      {
-        "id": "demand-vs-want",
-        "title": "用户需求 vs 用户想要",
-        "summary": "经典辨析题，考察需求洞察力",
-        "tags": [
-          "需求",
-          "面试"
-        ],
-        "content": [
-          "用户说的（Want）往往是解决方案，用户真正要的（Need）是背后的动机。",
-          "经典例子：用户要「更快的马」，需求是「更快到达目的地」——解法可以是汽车。",
-          "产品经理要挖到 Need：用「5 个为什么」追问，观察行为而非只听意见。",
-          "直接做用户要求的 Want，可能导致功能堆砌；忽视 Want 则可能失去用户信任——需沟通引导。",
-          "回答时可举自己经历：如何发现真实需求，并给出不同方案对比。"
-        ],
-        "cases": [
-          "经典：用户要「更快的马」，Need 是「更快到达目的地」——汽车是更好解法。",
-          "产品里：用户要「更多筛选条件」，Need 可能是「快速找到合适商品」——解法可以是更好推荐而非堆筛选器。"
-        ],
-        "pmApplication": [
-          "面试用 5 个为什么举自己的例子，展示挖 Need 的过程。",
-          "对业务方需求先复述 Need，再讨论方案，建立信任。",
-          "PRD 区分用户原始反馈与经分析后的需求结论。"
-        ]
-      },
-      {
-        "id": "product-lifecycle",
-        "title": "产品生命周期",
-        "summary": "导入、成长、成熟、衰退各阶段策略",
-        "tags": [
-          "生命周期",
-          "战略"
-        ],
-        "content": [
-          "导入期：验证 PMF，聚焦核心用户和核心场景，指标看留存和 NPS 而非规模。",
-          "成长期：加大获客，优化转化漏斗，建立竞争壁垒，指标看增长率、市场份额。",
-          "成熟期：提升 ARPU、降低成本、防御竞品，指标看利润率、续约率。",
-          "衰退期：收缩、转型、或有序退出，避免无效投入。",
-          "同一公司不同产品可能处于不同阶段，资源分配策略应不同。"
-        ],
-        "cases": [
-          "导入期社交 App 不追 DAU 规模，专注核心群留存与 NPS；成长期再加大渠道投放。",
-          "成熟期电商重点从获客转向客单价与复购，而非无限补贴。"
-        ],
-        "pmApplication": [
-          "面试结合公司产品问处于哪一阶段，答对应策略与指标。",
-          "版本规划与生命周期匹配：导入期验证 PMF，成熟期优化变现。",
-          "避免在衰退期产品继续堆功能，应讨论转型或收缩。"
-        ]
-      },
-      {
-        "id": "how-to-evaluate-idea",
-        "title": "如何评估产品想法",
-        "summary": "结构化解题：市场、用户、可行性、差异化",
-        "tags": [
-          "面试",
-          "评估"
-        ],
-        "content": [
-          "评估框架四维度：市场（够大吗？趋势如何？）、用户（痛点够痛吗？愿意付费吗？）、可行性（我们能做吗？成本可控吗？）、差异化（为什么是我们？）。",
-          "先定义目标用户和场景，再谈方案，避免一上来就评功能。",
-          "用数据或类比支撑：市场规模估算、竞品格局、自身资源禀赋。",
-          "明确最大风险假设，说明如何低成本验证。",
-          "结论可以是「值得做」「需验证后再定」「不建议做」，关键是逻辑完整。"
-        ],
-        "cases": [
-          "评估「校园跑腿 App」：市场（高校密度）、用户（付费意愿访谈）、可行性（运力与合规）、差异化（专注某校区 vs 全国平台）。",
-          "结论可以是「先做单校区 MVP 验证」，而非直接否定或全盘接受。"
-        ],
-        "pmApplication": [
-          "面试用四维度框架，每维 1-2 句话 + 如何验证。",
-          "立项 BRD 用同一框架，便于老板决策。",
-          "明确最大风险假设及低成本验证方式。"
-        ]
-      },
-      {
-        "id": "say-no",
-        "title": "如何拒绝需求",
-        "summary": "考察优先级判断与沟通协调能力",
-        "tags": [
-          "沟通",
-          "优先级"
-        ],
-        "content": [
-          "拒绝的不是人，是「当前阶段不做这件事」——对事不对人。",
-          "标准话术：复述对方诉求 → 说明当前优先级和资源约束 → 给出替代方案或排期预期。",
-          "用数据和战略对齐支撑：「这个需求服务的是 X 用户，但本季度目标是 Y」。",
-          "可记录进 Backlog，而非直接消失，让提出者感受到被尊重。",
-          "老板/大客户诉求需更高层级对齐，PM 不硬扛，推动透明决策。"
-        ],
-        "cases": [
-          "销售要大客户定制功能，PM 复述诉求后说明本季度战略是标准化产品，提议进 backlog Q3 评估 + 用现有配置项部分满足，销售参与优先级评审。",
-          "老板临时加需求：同步资源与目标冲突，提供「做 A 则延期 B」的透明选项供决策。"
-        ],
-        "pmApplication": [
-          "面试考察沟通与优先级：展示尊重 + 数据 + 替代方案。",
-          "拒绝时对事不对人，记录需求进 backlog。",
-          "用战略与指标说话，而非「研发没时间」。"
-        ]
-      },
-      {
-        "id": "funnel-analysis",
-        "title": "漏斗分析面试题",
-        "summary": "给定数据，定位问题并给出优化思路",
-        "tags": [
-          "数据",
-          "面试"
-        ],
-        "content": [
-          "步骤：明确漏斗各环节定义 → 计算每步转化率 → 找到流失最大的环节 → 提出假设 → 给出验证和优化方案。",
-          "对比维度：环比/同比、分渠道、分人群、分版本，避免只看整体平均。",
-          "常见原因：产品体验问题、流量质量差、活动结束、技术故障、竞品动作。",
-          "优化思路：提升上一步存量（扩大漏斗口）、提高步间转化（优化体验）、缩短路径（减少步骤）。",
-          "回答时用「如果是我，我会先……因为……」展示结构化思维。"
-        ],
-        "cases": [
-          "注册漏斗：曝光 100万 → 点击 10万 → 注册 2万 → 激活 8千，最大流失在「注册页验证码失败」——优先修体验而非加更多广告。",
-          "分渠道看漏斗，发现某渠道激活率极低，停投并分析流量质量。"
-        ],
-        "pmApplication": [
-          "面试给定数据先画漏斗、算转化率、定位最大流失环节。",
-          "提出 2-3 个可验证假设与对应实验。",
-          "对比环比、分人群，避免只看整体平均。"
-        ]
-      },
-      {
-        "id": "version-planning",
-        "title": "版本规划题",
-        "summary": "资源有限时如何排功能优先级",
-        "tags": [
-          "规划",
-          "面试"
-        ],
-        "content": [
-          "先对齐目标：本版本要达成什么业务/用户目标？成功指标是什么？",
-          "列出候选功能，按 RICE 或战略对齐度排序。",
-          "考虑依赖关系：基础设施、设计资源、技术债务，避免排了做不完。",
-          "版本宜小宜快，每个版本有清晰主题（如「提升新用户激活」），而非大杂烩。",
-          "说明权衡：为什么选 A 不选 B，展示决策逻辑而非拍脑袋。"
-        ],
-        "cases": [
-          "本版主题「提升新用户激活」：RICE 排序后只做 onboarding + 首单引导，砍掉次要皮肤优化。",
-          "说明依赖：支付能力未就绪则购物车功能整体后移，避免半套上线。"
-        ],
-        "pmApplication": [
-          "面试先问版本目标与成功指标，再排功能。",
-          "每个版本一个主题，避免大杂烩。",
-          "清晰说明「为什么选 A 不选 B」的权衡逻辑。"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-9-1-冒烟测试",
-        "title": "冒烟测试（Smoke Testing）",
-        "summary": "一句话定义：保证\"软件能起来\"的最浅测试——验证核心流程能跑通，不深究细节。目的不是找 bug，是过滤明显的\"开不起来\"。",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "一句话定义：保证\"软件能起来\"的最浅测试——验证核心流程能跑通，不深究细节。目的不是找 bug，是过滤明显的\"开不起来\"。",
-          "关键 3 维：",
-          "目的：验证\"主流程不挂\"——不是找 bug",
-          "范围：关键路径走一遍，能正常打开/登录/发送——不测异常分支",
-          "结论：通过→转详细测试；不通过→当天打回开发，不进详细测试"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-4-个关键边界",
-        "title": "4 个关键边界（避免被挑战）",
-        "summary": "❌ 不是单元测试：不针对函数/方法级别",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "❌ 不是单元测试：不针对函数/方法级别",
-          "❌ 不是集成测试：不测模块交互",
-          "❌ 不是验收测试：不测业务需求满足度（那是 UAT 的事）",
-          "❌ 不是回归测试：不验证历史 bug 没复发",
-          "口诀：冒烟测试 = \"冒个烟看冒不冒黑烟\"——能正常冒白烟（跑起来）就过，冒黑烟（跑不起来）就返工。"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-5-步-checklist",
-        "title": "5 步 checklist（普渡版本）",
-        "summary": "1. 核心入口能打开（登录页 / 主菜单）",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "1. 核心入口能打开（登录页 / 主菜单）",
-          "2. 主流程走通（最关键的一笔业务单据走完）",
-          "3. 数据能写入（新建/编辑能保存到 DB）",
-          "4. 数据能读出（列表/详情能正常显示）",
-          "5. 最常用按钮响应（搜索/筛选/导出）",
-          "5 步全过 = 冒烟通过，可以进详细测试。任一步卡 = 冒烟不通过，当天打回。"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-普渡场景案例-6-17-企学宝一期上线",
-        "title": "普渡场景案例：6/17 企学宝一期上线",
-        "summary": "6/12 提测当天，QA 第一步就是冒烟测试：",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "6/12 提测当天，QA 第一步就是冒烟测试：",
-          "1. 飞书扫码登录（企学宝入口）→ 能不能跳？",
-          "2. 映射后看到企学宝课程列表 → 能不能显示？",
-          "3. 点开一门课 → 能不能播？",
-          "4. 考试提交 → 成绩能不能回写到代理商平台？",
-          "✅ 4 步都过 → 详细测试（功能、性能、异常）",
-          "❌ 任一步卡住 → 6/12 当天打回开发修"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-相邻黑话对比",
-        "title": "相邻黑话对比（被问\"和 X 什么区别\"用得上）",
-        "summary": "冒烟测试 · 一句话=软件能跑起来 · 谁做=QA · 时机=提测当天",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "冒烟测试 · 一句话=软件能跑起来 · 谁做=QA · 时机=提测当天",
-          "回归测试 · 一句话=改完代码后没把老功能搞坏 · 谁做=QA · 时机=每次发版前",
-          "UAT（用户验收） · 一句话=业务方确认\"满足需求\" · 谁做=业务方 · 时机=上线前",
-          "灰度 · 一句话=只对部分用户放量 · 谁做=运维/PM · 时机=上线后"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-提测日标准流程",
-        "title": "提测日标准流程",
-        "summary": "1. 提测邮件/IM 通知（产品/QA/研发）\n2. 研发部署到测试环境\n3. QA 冒烟测试（5 步 checklist）\n   ├─ 通过 → 进入详细测试周期\n   └─ 不通过 → 当天打回，循环回到第 1 步\n4. 详细测试（功能",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "1. 提测邮件/IM 通知（产品/QA/研发）\n2. 研发部署到测试环境\n3. QA 冒烟测试（5 步 checklist）\n   ├─ 通过 → 进入详细测试周期\n   └─ 不通过 → 当天打回，循环回到第 1 步\n4. 详细测试（功能 / 性能 / 异常 / 兼容性）\n5. Bug 修复 + 回归测试\n6. UAT（业务方验收）\n7. 上线",
-          "关键：冒烟测试是\"准入门槛\"，不通过就不进详细测试——这能避免\"带病进入详细测试\"导致的时间和精力浪费。"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-容易踩的坑",
-        "title": "容易踩的坑",
-        "summary": "⚠️ 冒烟通过 ≠ 无 bug：冒烟只验证\"能起来\"，详细 bug 留给详细测试",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "⚠️ 冒烟通过 ≠ 无 bug：冒烟只验证\"能起来\"，详细 bug 留给详细测试",
-          "⚠️ 环境差异：测试环境冒烟通过 ≠ 生产环境没问题（数据库、网络、配置都可能不同）",
-          "⚠️ 数据准备：冒烟测试前要准备好测试数据（账号、订单、库存等），否则跑不通",
-          "⚠️ 不要替代 UAT：冒烟测试是技术验证，UAT 是业务验证，两件事都做"
-        ]
-      },
-      {
-        "id": "kb-pm-bagu-记忆口诀",
-        "title": "记忆口诀",
-        "summary": "\"白烟过、黑烟回\"：能跑通就过，跑不通就打回",
-        "tags": [
-          "产品经理八股"
-        ],
-        "content": [
-          "\"白烟过、黑烟回\"：能跑通就过，跑不通就打回",
-          "\"5 步清单\"：入口→主流程→写→读→按钮",
-          "\"4 个不是\"：不是单测 / 不是集成 / 不是验收 / 不是回归"
-        ]
-      }
-    ]
-  },
-  {
-    "id": "skills",
-    "title": "核心技能",
-    "description": "产品经理的日常工具箱与硬技能",
-    "icon": "△",
-    "items": [
-      {
-        "id": "prd",
-        "title": "PRD 撰写",
-        "summary": "清晰传达需求，减少返工",
-        "tags": [
-          "文档",
-          "PRD"
-        ],
-        "content": [
-          "PRD 核心要素：背景与目标、用户故事、功能描述、交互说明、边界条件、数据埋点、验收标准。",
-          "用户故事格式：作为 [角色]，我希望 [功能]，以便 [价值]。",
-          "功能描述要具体：输入、处理逻辑、输出、异常处理。",
-          "配原型图或流程图，一图胜千言。",
-          "版本管理：变更记录、评审纪要、相关方确认。"
-        ],
-        "cases": [
-          "企学宝对接 PRD 拆解：账号映射接口、标签同步规则、通知推送时序、异常弹窗 5 类——研发可直接拆任务。",
-          "BRD 给老板算 ROI，MRD 对齐市场，PRD 给研发——同一项目三层文档各 5-50 页，读者不同。"
-        ],
-        "pmApplication": [
-          "PRD 标准 7 章：背景、用户故事、功能、非功能、流程、原型、验收标准。",
-          "每条功能写清异常分支与埋点，减少评审扯皮。",
-          "变更走版本记录，测试按验收标准验收。"
-        ]
-      },
-      {
-        "id": "prototype",
-        "title": "原型设计",
-        "summary": "快速可视化产品方案",
-        "tags": [
-          "原型",
-          "UX"
-        ],
-        "content": [
-          "低保真：纸质草图、线框图，用于早期概念验证，成本低、迭代快。",
-          "高保真：可交互原型，接近真实体验，用于评审和开发对齐。",
-          "常用工具：Figma、Axure、墨刀、即时设计。",
-          "原型重点：信息架构、核心流程、关键交互，不必追求视觉完美。",
-          "与 UI 设计分工：产品经理定结构和流程，设计师定视觉和细节。"
-        ],
-        "cases": [
-          "早期用纸质线框测主流程，30 分钟改一版；评审通过后再 Figma 高保真，节省视觉成本。",
-          "评审会只演示核心路径 3 条，异常流程附录异步确认。"
-        ],
-        "pmApplication": [
-          "面试说明低保真 vs 高保真适用场景。",
-          "原型重点是流程与信息架构，不必像素级完美。",
-          "与 UI 分工：PM 定结构，设计定视觉。"
-        ]
-      },
-      {
-        "id": "roadmap",
-        "title": "产品路线图",
-        "summary": "规划产品演进方向",
-        "tags": [
-          "规划",
-          "Roadmap"
-        ],
-        "content": [
-          "Roadmap 回答：做什么、为什么做、什么时候做，而非怎么做。",
-          "按主题（Theme）组织，而非按功能列表堆砌。",
-          "区分 Now / Next / Later，保持灵活性，避免过度承诺。",
-          "与战略对齐：公司目标 → 产品目标 → 功能优先级。",
-          "定期复盘调整，Roadmap 是活的文档，不是一成不变的计划。"
-        ],
-        "cases": [
-          "Now：支付体验；Next：会员体系；Later：跨境——对外承诺按主题，内部 Backlog 可灵活调整。",
-          "Roadmap 与 OKR 对齐：季度 O 是留存，Roadmap 上不堆无关获客功能。"
-        ],
-        "pmApplication": [
-          "Roadmap 回答「为什么现在做」，不是任务列表。",
-          "定期与干系人同步调整，管理预期。",
-          "面试讲一次你如何平衡短期交付与长期愿景。"
-        ]
-      },
-      {
-        "id": "stakeholder",
-        "title": "干系人管理",
-        "summary": "协调多方，推动项目落地",
-        "tags": [
-          "沟通",
-          "协作"
-        ],
-        "content": [
-          "识别干系人：老板、开发、设计、运营、销售、客服、用户代表。",
-          "RACI 矩阵：Responsible（执行）、Accountable（负责）、Consulted（咨询）、Informed（知会）。",
-          "向上管理：定期同步进展、风险、需要的支持，用数据说话。",
-          "跨部门协作：理解各方 KPI，寻找共赢方案，而非对立。",
-          "冲突处理：对事不对人，聚焦目标和用户价值。"
-        ],
-        "cases": [
-          "研发与运营对优先级争执：PM 拉齐共同目标（Q3 留存），用数据说明 onboarding 优先于活动页改版。",
-          "用 RACI 明确需求变更谁审批、谁执行，减少「都以为对方会做」。"
-        ],
-        "pmApplication": [
-          "识别所有干系人及其 KPI，找共赢方案。",
-          "向上管理：定期同步风险与需支持项，别到 deadline 才爆雷。",
-          "冲突聚焦用户价值与数据，对事不对人。"
-        ]
-      },
-      {
-        "id": "metrics-design",
-        "title": "指标设计",
-        "summary": "为产品定义可衡量的成功标准",
-        "tags": [
-          "指标",
-          "OKR"
-        ],
-        "content": [
-          "SMART 原则：Specific、Measurable、Achievable、Relevant、Time-bound。",
-          "Leading vs Lagging：领先指标（可干预）vs 滞后指标（结果）。",
-          "OKR 结构：Objective（定性目标）+ Key Results（可量化关键结果）。",
-          "避免虚荣指标：如总注册用户数，应关注活跃、留存、付费等。",
-          "指标与功能绑定：每个需求应有对应的验收指标。"
-        ],
-        "cases": [
-          "OKR：O 提升新用户留存；KR1 7日留存 35%→42%；KR2 核心功能首日完成率 60%→75%。",
-          "避免虚荣指标：注册量涨但活跃不涨时，改盯激活与留存。"
-        ],
-        "pmApplication": [
-          "每个需求绑定验收指标，上线后复盘是否达成。",
-          "领先指标（如引导完成率）可干预，滞后指标（留存）看结果。",
-          "面试 OKR 题：O 定性、KR 可量化、有期限。"
-        ]
-      },
-      {
-        "id": "user-story-mapping",
-        "title": "用户故事地图",
-        "summary": "从用户目标出发组织 Backlog",
-        "tags": [
-          "规划",
-          "用户故事"
-        ],
-        "content": [
-          "横轴为用户活动流（如：浏览商品 → 加购 → 支付 → 售后），纵轴为优先级和版本。",
-          "顶部是用户目标（Job to be Done），下方拆解为用户故事和任务。",
-          "帮助团队看到全局，避免只盯着单个需求而丢失整体体验。",
-          "Release 线划分版本：第一版走通主路径，后续版本丰富分支和优化。",
-          "适合启动新功能或大改版前的对齐，比纯列表 Backlog 更直观。"
-        ],
-        "cases": [
-          "电商故事地图横轴：浏览→加购→支付→售后，第一版 Release 线只覆盖「浏览到支付主路径」。",
-          "避免 Backlog 只有碎片需求，故事地图让团队看见完整体验。"
-        ],
-        "pmApplication": [
-          "新功能启动前用故事地图对齐全局，再拆 Sprint。",
-          "纵轴按优先级与版本切片，控制范围。",
-          "面试讲规划题可画简化的活动流说明版本划分。"
-        ]
-      },
-      {
-        "id": "analytics-tracking",
-        "title": "数据埋点基础",
-        "summary": "事件设计、属性规范与验收",
-        "tags": [
-          "埋点",
-          "数据"
-        ],
-        "content": [
-          "埋点目的：回答业务问题，而非「什么都埋」——先定指标和分析场景，再定事件。",
-          "事件命名规范：动词_对象_位置，如 click_buy_button_cart，保持全局一致。",
-          "事件属性：谁（user_id）、何时（timestamp）、在哪（page）、做了什么（action）、上下文（extra）。",
-          "PRD 中需写清：事件名、触发时机、属性列表、示例值，便于开发和验收。",
-          "上线后做埋点验收：走查核心路径，核对数据平台是否收到且字段正确。"
-        ],
-        "cases": [
-          "PRD 规定事件 click_buy_button_cart 及属性 sku_id、price，上线后走查支付路径，发现漏埋取消订单事件，当周补齐。",
-          "先定分析问题「支付失败原因分布」，再反推需要哪些埋点，而非全站乱埋。"
-        ],
-        "pmApplication": [
-          "埋点命名全局规范，PRD 附事件表。",
-          "上线后做埋点验收 checklist。",
-          "与数据分析师前置对齐指标口径，避免各说各话。"
-        ]
-      },
-      {
-        "id": "review-meeting",
-        "title": "需求评审会",
-        "summary": "高效评审，减少返工与误解",
-        "tags": [
-          "评审",
-          "协作"
-        ],
-        "content": [
-          "评审前：PRD 和原型提前发出，参会人预读；明确评审目标（对齐方案 vs 拍板决策）。",
-          "评审中：讲清背景和目标，再讲方案；聚焦关键决策点，细节可会后异步确认。",
-          "记录结论：待确认项、责任人、截止时间，会后发纪要。",
-          "控制规模：核心相关方到场即可，避免「围观评审」浪费时间。",
-          "评审不是批斗会，对事不对人，冲突聚焦用户价值和数据。"
-        ],
-        "cases": [
-          "需求评审 10 步中，跨部门评审暴露「测试环境数据不足」阻塞冒烟，当天协调数据准备，避免提测延期。",
-          "宣讲 4 段式：为什么做 → 做什么 → 怎么做 → 验收标准，研发反馈清晰。"
-        ],
-        "pmApplication": [
-          "评审前 24h 发 PRD+原型，会上只决关键问题。",
-          "会后纪要：结论、待办、责任人、DDL。",
-          "控制参会人规模，提高决策效率。"
-        ]
-      },
-      {
-        "id": "info-architecture",
-        "title": "信息架构",
-        "summary": "组织内容与导航，降低认知负担",
-        "tags": [
-          "IA",
-          "UX"
-        ],
-        "content": [
-          "信息架构（IA）解决：内容如何分类、如何命名、如何导航、如何搜索。",
-          "常用方法：卡片分类（Card Sorting）——让用户参与分组，验证分类是否符合心智。",
-          "导航原则：浅而宽优于深而窄；用户当前位置清晰可见（面包屑、高亮）。",
-          "命名用用户语言，避免内部黑话；同一概念全局统一称谓。",
-          "移动端需考虑拇指热区、一级入口数量（通常不超过 5 个）。"
-        ],
-        "cases": [
-          "卡片分类发现用户把「设置」和「账号安全」放一组，产品原分散在两层菜单——合并后设置页访问量更集中、任务完成更快。",
-          "B 端后台导航从 12 个一级项收敛到 5 个主题域，新手上手时间减半。"
-        ],
-        "pmApplication": [
-          "用用户语言命名，避免内部黑话。",
-          "移动端控制一级入口数量，考虑拇指热区。",
-          "IA 变更用可用性测试验证，而非凭感觉。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-4-1-用户故事",
-        "title": "用户故事（User Story）",
-        "summary": "格式:As a [用户角色], I want [做某事], so that [实现某个目标]",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "格式:As a [用户角色], I want [做某事], so that [实现某个目标]",
-          "配套验收标准（Given/When/Then）:",
-          "Given · 作用=前置条件 · 示例=我之前和 AI 聊过 3 轮",
-          "When · 作用=用户动作 · 示例=我再次点击悬浮球",
-          "Then · 作用=系统响应 · 示例=页面自动展开最近 1 轮对话摘要",
-          "3 条 Given/When/Then = 3 个测试用例——主路径 1 + 边界状态 1 + 异常分支 1。"
-        ],
-        "pmApplication": [
-          "每个用户故事至少配 3 条验收标准——只写\"做什么\"不写\"做到什么程度\"的 PRD,研发交付出来大概率\"够用但不是你想要的\"。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-4-2-信息架构",
-        "title": "信息架构（Information Architecture, IA）",
-        "summary": "把\"一堆功能/内容\"组织成\"用户能找到、能理解、能使用\"的结构。",
-        "tags": [
-          "产品策划方法论",
-          "IA"
-        ],
-        "content": [
-          "把\"一堆功能/内容\"组织成\"用户能找到、能理解、能使用\"的结构。",
-          "核心 4 件事:",
-          "1. 组织系统 — 功能怎么分组",
-          "2. 导航系统 — 用户怎么跳转",
-          "3. 标签系统 — 菜单/按钮叫什么",
-          "4. 搜索系统 — 找不到怎么办",
-          "画 IA 的 3 步法:",
-          "1. 拿张纸把所有功能/内容画成方块",
-          "2. 按\"用户找东西的心智路径\"重排(不是按你的开发目录)",
-          "3. 找 3 个真实用户跑\"找任务测试\",看他们点哪、卡哪"
-        ],
-        "cases": [
-          "代理商平台 IA 改造效果\n分组 → 改造前=按业务模块，改造后=按\"用户角色 + 高频任务\"\n培训入口点击率 → 改造前=12%，改造后=38%"
-        ],
-        "pmApplication": [
-          "IA 决定\"产品好不好用\"的 80%,再炫的视觉救不回来混乱的结构。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-4-3-prd-标准-7-章节",
-        "title": "PRD 标准 7 章节",
-        "summary": "1. 背景与目的\n   - 业务背景\n   - 需求目的\n   - 目标用户\n2. 用户故事\n   - As a / I want / so that\n3. 功能需求\n   - 功能点 1/2/3\n   - 业务流程\n   - 验收标准(G",
-        "tags": [
-          "产品策划方法论",
-          "PRD"
-        ],
-        "content": [
-          "1. 背景与目的\n   - 业务背景\n   - 需求目的\n   - 目标用户\n2. 用户故事\n   - As a / I want / so that\n3. 功能需求\n   - 功能点 1/2/3\n   - 业务流程\n   - 验收标准(Given/When/Then)\n4. 非功能需求\n   - 性能要求\n   - 安全要求\n   - 兼容性\n5. 风险与依赖\n   - 风险点\n   - 依赖方\n6. 排期计划\n   - 计划开始\n   - 计划结束\n   - 负责人\n7. 验收标准\n   - UAT 用例\n   - 上线标准"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-4-4-prd-评审-checklist补全项-4",
-        "title": "PRD 评审 Checklist（7 维自检）",
-        "summary": "PRD 写完 → 评审会前 15 分钟,自检 7 维:",
-        "tags": [
-          "产品策划方法论",
-          "PRD"
-        ],
-        "content": [
-          "PRD 写完 → 评审会前 15 分钟,自检 7 维:",
-          "背景/目的：一句话能说清\"为什么做\"吗？",
-          "用户故事：主要场景都有故事覆盖吗？",
-          "功能边界：写明\"做什么\"和\"不做什么\"了吗？",
-          "业务流程：流程图画了吗？",
-          "异常分支：异常状态列了吗？（如\"用户没登录\"\"接口超时\"）",
-          "验收标准：每个功能点都 Given/When/Then 了吗？",
-          "依赖/排期/风险：列了吗？负责人明确吗？",
-          "反着用——评审会上研发提\"这块没写\",PM 翻 checklist 知道\"对,这块是第 5 维我马上补\",而不是\"哦我忘了\"。"
-        ],
-        "cases": [
-          "弹窗 PRD 漏掉\"用户没登录态\"分支(4 类异常 → 实际 5 类),就是没跑 checklist 里的\"异常分支\"——上线后才发现要打回重做。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-4-5-上线-checklist",
-        "title": "上线 Checklist",
-        "summary": "代码完成：[ ] 主流程已实现 / [ ] 异常分支已处理 / [ ] 单测覆盖率 ≥ 80%",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "代码完成：[ ] 主流程已实现 / [ ] 异常分支已处理 / [ ] 单测覆盖率 ≥ 80%",
-          "测试通过：[ ] 冒烟测试通过(5 步 checklist) / [ ] 功能测试通过 / [ ] 性能测试通过 / [ ] 兼容性测试通过",
-          "UAT 通过：[ ] 业务方验收用例 100% 通过 / [ ] 业务方签字确认",
-          "上线物料：[ ] 上线公告已发 / [ ] 客服知识库已更新 / [ ] 客户通知模板已准备",
-          "监控告警：[ ] 核心指标已埋点 / [ ] 告警阈值已设置 / [ ] oncall 排班已确认",
-          "灰度计划：[ ] 灰度比例已确认(5%/20%/50%/100%) / [ ] 回滚预案已写",
-          "时间窗：[ ] 按 4 集群分时上线规则 / [ ] 避开业务高峰"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-1-aarrr",
-        "title": "AARRR（海盗模型）",
-        "summary": "Acquisition 获客 · 核心指标=CAC、渠道来源 · 优化动作=渠道质量分析、SEO/SEM",
-        "tags": [
-          "产品策划方法论",
-          "AARRR"
-        ],
-        "content": [
-          "5 阶段深度拆解:",
-          "Acquisition 获客 · 核心指标=CAC、渠道来源 · 优化动作=渠道质量分析、SEO/SEM",
-          "Activation 激活 · 核心指标=首日完成核心动作率 · 优化动作=首次体验优化、新手引导",
-          "Retention 留存 · 核心指标=次日/7 日/30 日留存 · 优化动作=召回机制、价值交付",
-          "Revenue 变现 · 核心指标=ARPU、付费转化 · 优化动作=定价策略、套餐设计",
-          "Referral 推荐 · 核心指标=邀请转化率、K 因子 · 优化动作=分享激励、口碑传播"
-        ],
-        "pmApplication": [
-          "每一步都有独立指标,不能只盯\"获客\"不看\"留存\"。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-2-上瘾模型",
-        "title": "上瘾模型（Hook Model）",
-        "summary": "4 步循环:触发 → 行动 → 多变的奖励 → 投入",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "4 步循环:触发 → 行动 → 多变的奖励 → 投入",
-          "外部推送/内部情绪：推送通知/无聊",
-          "阻力极小的操作：打开 App",
-          "不知道下次会刷到什么：下一条视频的未知性",
-          "用户产生数据/内容：点赞、关注、收藏"
-        ],
-        "pmApplication": [
-          "做产品时反问自己\"用户为什么每天回来\"——靠\"必须用业务\"驱动 vs 靠\"想用就用\"驱动,设计策略完全不同。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-3-cohort-队列分析",
-        "title": "Cohort 队列分析（同期群分析）",
-        "summary": "把用户按\"首次使用时间\"分组,看每组在后续时间的行为(7 日/30 日留存、复购率),而不是\"所有用户平均\"。",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "把用户按\"首次使用时间\"分组,看每组在后续时间的行为(7 日/30 日留存、复购率),而不是\"所有用户平均\"。",
-          "\"平均数陷阱\"案例:企学宝上线后,整体 7 日留存 30%。但 Cohort 一拆——6/17 首登的代理 7 日留存 45%,6/22 首登的代理 7 日留存只有 18%。"
-        ],
-        "pmApplication": [
-          "所有\"留存问题\"先跑 Cohort 再说结论——平均数会掩盖真相。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-4-nps-净推荐值",
-        "title": "NPS 净推荐值",
-        "summary": "公式:NPS = 推荐者%(9-10分) - 贬损者%(0-6分)(范围 -100 到 +100)",
-        "tags": [
-          "产品策划方法论",
-          "NPS"
-        ],
-        "content": [
-          "公式:NPS = 推荐者%(9-10分) - 贬损者%(0-6分)(范围 -100 到 +100)",
-          "判断标准:",
-          "> 50 优秀",
-          "> 30 良好",
-          "< 0 危险"
-        ],
-        "pmApplication": [
-          "NPS 的真正价值不是数字本身,是\"贬损者的具体吐槽\"——深度追问后分类汇总,高频痛点就是下一期 P0。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-5-a-b-测试-5-步",
-        "title": "A/B 测试 5 步",
-        "summary": "1：定义假设 — \"X 改版后转化率会提升 10%\"",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "1：定义假设 — \"X 改版后转化率会提升 10%\"",
-          "2：设计实验 — 分流比例、观察时长、核心指标",
-          "3：分配流量 — 新老用户各 50%、灰度放出",
-          "4：分析结果 — 数据有显著差异才作数(p<0.05)",
-          "5：决策上线 — 胜出版全量、败出版回滚"
-        ],
-        "pmApplication": [
-          "指标必须\"先于上线\"定义好——不然跑完数据你也不知道\"涨了\"是因为按钮位置还是别的因素。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-5-6-增长飞轮",
-        "title": "增长飞轮（Growth Flywheel）",
-        "summary": "找到\"用户增长 → 产品更好 → 用户更愿意来\"的正反馈循环,而不是线性漏斗。",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "找到\"用户增长 → 产品更好 → 用户更愿意来\"的正反馈循环,而不是线性漏斗。"
-        ],
-        "cases": [
-          "代理商平台\"代理活跃度\"飞轮\n代理活跃使用\n    ↓\n积累数据 + 改进产品\n    ↓\n产品更好用\n    ↓\n新代理主动注册\n    ↓\n代理活跃使用(循环)"
-        ],
-        "pmApplication": [
-          "找到你的飞轮,把每个动作挂上去——每个新需求反问\"它推动飞轮的哪一环\"。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-1-raci-矩阵",
-        "title": "RACI 矩阵",
-        "summary": "R Responsible · 含义=执行人,真干活 · 数量=可多个",
-        "tags": [
-          "产品策划方法论",
-          "RACI"
-        ],
-        "content": [
-          "4 种角色:",
-          "R Responsible · 含义=执行人,真干活 · 数量=可多个",
-          "A Accountable · 含义=责任人,兜底拍板 · 数量=只能 1 个",
-          "C Consulted · 含义=咨询人,给意见 · 数量=可多个",
-          "I Informed · 含义=知会人,结果通知 · 数量=可多个"
-        ],
-        "cases": [
-          "V17 OTA 升级的 RACI(涉及 6 个部门)\n研发：R(出固件包)\n运维：R(监控升级状态)\n产品：A(出问题产品兜底)\n客服：C(看上线公告提供反馈)\n销售：I(升级期间不发新单)\n供应链：I(主板版本变更知会)\n3 步落地:\n1. 列出事项\n2. 标 R/A/C/I\n3. 找\"A 超过 1 个\"或\"全是 R 没 A\"的格子重调"
-        ],
-        "pmApplication": [
-          "RACI 跑完,谁也不甩锅——研发知道自己得干、产品知道自己兜底、客服知道自己该给客户怎么答。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-2-鱼骨图",
-        "title": "鱼骨图（Ishikawa Diagram）",
-        "summary": "6M 分类:Man(人) / Machine(机器) / Method(方法) / Material(物料) / Measurement(测量) / Environment(环境)",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "6M 分类:Man(人) / Machine(机器) / Method(方法) / Material(物料) / Measurement(测量) / Environment(环境)"
-        ],
-        "cases": [
-          "V17 升级\"国内集群升级成功率只有 96.5%\"\nMan：运维值班操作漏步骤\nMachine：OTA 服务器在德国机房,国内访问慢\nMethod：升级窗口 22:00 但部分代理时区偏早\nMaterial：新固件包 1.2GB,部分弱网下载失败\nMeasurement：监控告警阈值太高,问题没暴露\nEnvironment：部分代理餐厅 WiFi 不稳定"
-        ],
-        "pmApplication": [
-          "鱼骨图的核心不是\"画得多漂亮\"而是\"团队一起画\"——研发看技术、客服看用户、运维看流程,3 视角拼出全貌。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-3-5why-分析法",
-        "title": "5Why 分析法",
-        "summary": "遇到问题不要停在\"表面原因\",连续追问 5 次\"为什么\"找到\"根本原因\"。",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "遇到问题不要停在\"表面原因\",连续追问 5 次\"为什么\"找到\"根本原因\"。"
-        ],
-        "cases": [
-          "配送机器人\"突然停在餐厅中央不动\"\nWhy 1：激光雷达报警\nWhy 2：检测到正前方 30cm 有障碍\nWhy 3：顾客把椅子推到机器人正前方\nWhy 4：机器人避障策略是\"绕行\",但卡在桌椅间窄通道没法绕\nWhy 5：建图时这块区域宽度只够机器人单行通过,没在地图上标记\"单行通道\"约束\n根因：地图数据缺失\"单行通道\"标记\n解决方案：建图阶段让服务员标注单行通道(不是优化避障算法)"
-        ],
-        "pmApplication": [
-          "不 5Why 的话,可能去优化避障算法,治标不治本。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-4-pdca-戴明环",
-        "title": "PDCA 戴明环",
-        "summary": "4 步循环:Plan(计划) → Do(执行) → Check(检查) → Act(处理)",
-        "tags": [
-          "产品策划方法论",
-          "PDCA"
-        ],
-        "content": [
-          "4 步循环:Plan(计划) → Do(执行) → Check(检查) → Act(处理)",
-          "核心思想:螺旋上升——每跑一轮 PDCA 改进一个具体问题,再跑下一轮再改进一个。"
-        ],
-        "cases": [
-          "代理商平台\"工单平均处理时长\"优化\nP50 4h → 2.5h：改版工单页 + AI 推荐 / 3h(达预期 80%) / AI 推荐用得少,改规则引擎\n2.5h → 2.3h：规则引擎 + 反馈学习 / 2.3h ✅ / 进入下一轮优化"
-        ],
-        "pmApplication": [
-          "复盘是\"事后总结经验\",PDCA 是\"边做边改的循环\"——强调\"持续\"。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-5-设计冲刺",
-        "title": "设计冲刺（Design Sprint）",
-        "summary": "Google Ventures 的 5 天产品决策法:",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "Google Ventures 的 5 天产品决策法:",
-          "理解：和专家聊、定问题",
-          "发散：画草图不评论",
-          "决策：投票选方案",
-          "原型：做最简可用原型",
-          "测试：5 个真用户跑一遍",
-          "核心思想:5 天节奏逼出所有假设——不是真要做 5 天。"
-        ],
-        "cases": [
-          "V17 升级前跑过一轮设计冲刺——周一对齐\"升级失败要自动回滚还是人工介入\"、周二画 3 套方案、周三投票(自动回滚胜出)、周四做纸面原型、周五找 5 个代理测试。结果:3/5 代理问\"如果回滚失败会怎样\"——PRD 之前没写这个问题,最后补进 PRD。"
-        ],
-        "pmApplication": [
-          "重要功能上线前、需求大但方向不明时跑一轮设计冲刺,哪怕压缩成 5 小时也能帮 PM ① 在动手前暴露分歧 ② 用真用户验证而不是\"领导拍板\" ③ 节省\"做完才发现方向错\"的几周返工。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-6-影响地图",
-        "title": "影响地图（Impact Mapping）",
-        "summary": "用\"目标 → 参与者 → 影响 → 交付物\"4 层结构,把\"为什么做\"和\"做什么\"对齐。",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "用\"目标 → 参与者 → 影响 → 交付物\"4 层结构,把\"为什么做\"和\"做什么\"对齐。",
-          "4 层结构:",
-          "目标 (Goal)\n  ↓ 服务谁\n参与者 (Actor)\n  ↓ 怎么影响他们\n影响 (Impact)\n  ↓ 怎么实现\n交付物 (Deliverable)"
-        ],
-        "cases": [
-          "代理商平台\"降低工单解决时长\"\n目标：区域代理工单 P50 解决时长 4h → 2.5h\n参与者：区域代理、客服\n影响：代理能更快速找到答案、客服能复用历史方案\n交付物：AI 悬浮球 + 工单页改版 + 历史方案库"
-        ],
-        "pmApplication": [
-          "让团队对齐\"为什么做\"——避免\"做完发现不是用户要的\"。"
-        ]
-      },
-      {
-        "id": "kb-product-methodology-6-7-复盘-8-步法",
-        "title": "复盘 8 步法",
-        "summary": "1. 确认范围(time-context 拿日期)",
-        "tags": [
-          "产品策划方法论"
-        ],
-        "content": [
-          "8 步:",
-          "1. 确认范围(time-context 拿日期)",
-          "2. 拉日历(本周所有会议)",
-          "3. 拉妙记(4 份/周典型)",
-          "4. 拉群消息(关键对接群)",
-          "5. 读工作日志(还原日常工作)",
-          "6. 结构化分析(11 字段)",
-          "7. 写复盘表(NO.XXX)",
-          "8. 关联需求(link 字段挂本周需求)"
-        ],
-        "pmApplication": [
-          "8 步缺一步,复盘就会变成\"印象流\",失去\"可索引、可追溯、可复盘经验\"的价值。"
-        ]
+        "section": "2. 需求分析",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-交互设计",
@@ -1799,7 +999,11 @@ const categories = [
         ],
         "content": [
           "任务流程 / 操作反馈 / 异常处理"
-        ]
+        ],
+        "section": "4. 产品设计",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-prd-结构",
@@ -1817,7 +1021,11 @@ const categories = [
           "5. 业务流程",
           "6. 原型/设计稿",
           "7. 验收标准"
-        ]
+        ],
+        "section": "4. 产品设计",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-核心指标",
@@ -1828,7 +1036,11 @@ const categories = [
         ],
         "content": [
           "DAU/MAU（日活/月活）/ GMV（成交总额）/ 转化率 / 留存率 / 流失率"
-        ]
+        ],
+        "section": "5. 数据分析",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-三层核心文档",
@@ -1841,18 +1053,42 @@ const categories = [
           "BRD（商业需求文档） · 回答什么=做这个值不值得 · 给谁看=老板/决策层 · 写多少=5-10 页",
           "MRD（市场需求文档） · 回答什么=市场要什么 · 给谁看=市场/产品 · 写多少=10-20 页",
           "PRD（产品需求文档） · 回答什么=具体怎么做 · 给谁看=研发/设计 · 写多少=20-50 页"
-        ]
+        ],
+        "section": "6. 文档体系（3 层 + 2 类）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-两类辅助文档",
         "title": "两类辅助文档",
-        "summary": "FSD · 全称=Functional Specification Document 功能规格文档 · 用途=详细功能技术规格，研发自测用",
+        "summary": "FSD：Functional Specification Document 功能规格文档（详细功能技术规格，研发自测用）",
         "tags": [
           "产品经理八股"
         ],
         "content": [
-          "FSD · 全称=Functional Specification Document 功能规格文档 · 用途=详细功能技术规格，研发自测用",
-          "UAT · 全称=User Acceptance Testing 用户验收测试 · 用途=用户验收用例，业务方确认"
+          "FSD：Functional Specification Document 功能规格文档（详细功能技术规格，研发自测用）",
+          "UAT：User Acceptance Testing 用户验收测试（用户验收用例，业务方确认）"
+        ],
+        "section": "6. 文档体系（3 层 + 2 类）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "FSD",
+            "meaning": "Functional Specification Document 功能规格文档",
+            "explain": "Functional Specification Document 功能规格文档",
+            "loc": "详细功能技术规格，研发自测用",
+            "case": ""
+          },
+          {
+            "term": "UAT",
+            "meaning": "User Acceptance Testing 用户验收测试",
+            "explain": "User Acceptance Testing 用户验收测试",
+            "loc": "用户验收用例，业务方确认",
+            "case": ""
+          }
         ]
       },
       {
@@ -1868,7 +1104,11 @@ const categories = [
           "研发拆任务：PRD（功能 + 流程 + 验收）",
           "技术实现细节：FSD（接口 + 数据结构）",
           "业务方验收：UAT（用例 + 通过标准）"
-        ]
+        ],
+        "section": "6. 文档体系（3 层 + 2 类）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-案例-代理商平台接企学宝",
@@ -1881,7 +1121,11 @@ const categories = [
           "BRD：给老板算\"这个对接能减少 XX% 培训成本、提升 XX% 代理活跃度、6 个月回本\"",
           "MRD：给市场/产品分析\"企学宝是行业头部、目标代理 100% 覆盖、培训内容能直接复用\"",
           "PRD：给研发拆解\"账号映射接口、标签同步规则、通知推送时序、异常弹窗 5 类\""
-        ]
+        ],
+        "section": "6. 文档体系（3 层 + 2 类）",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-需求评审-10-步",
@@ -1901,7 +1145,11 @@ const categories = [
           "8. 测试验收",
           "9. 上线发布",
           "10. 效果复盘"
-        ]
+        ],
+        "section": "7. 项目管理",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-敏捷开发-4-个会议",
@@ -1915,7 +1163,11 @@ const categories = [
           "Daily Standup：每日站会",
           "Sprint Review：冲刺评审",
           "Sprint Retrospective：冲刺回顾"
-        ]
+        ],
+        "section": "7. 项目管理",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-跨部门沟通-4-原则",
@@ -1929,7 +1181,11 @@ const categories = [
           "用数据说话",
           "提前对齐预期",
           "及时同步进展"
-        ]
+        ],
+        "section": "8. 沟通协作",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
         "id": "kb-pm-bagu-需求宣讲-4-段式",
@@ -1943,20 +1199,415 @@ const categories = [
           "做什么（范围）",
           "怎么做（方案）",
           "做成什么样（验收标准）"
-        ]
+        ],
+        "section": "8. 沟通协作",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
       },
       {
-        "id": "kb-system-architecture-5-1-认证-vs-授权",
-        "title": "认证 vs 授权",
-        "summary": "认证（Authentication） · 回答什么=你是谁？ · 普渡组件=飞书 OAuth、用户名密码",
+        "id": "kb-pm-bagu-9-1-冒烟测试",
+        "title": "冒烟测试（Smoke Testing）",
+        "summary": "一句话定义：保证\"软件能起来\"的最浅测试——验证核心流程能跑通，不深究细节。目的不是找 bug，是过滤明显的\"开不起来\"。",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "一句话定义：保证\"软件能起来\"的最浅测试——验证核心流程能跑通，不深究细节。目的不是找 bug，是过滤明显的\"开不起来\"。",
+          "关键 3 维：",
+          "目的：验证\"主流程不挂\"——不是找 bug",
+          "范围：关键路径走一遍，能正常打开/登录/发送——不测异常分支",
+          "结论：通过→转详细测试；不通过→当天打回开发，不进详细测试"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      },
+      {
+        "id": "kb-pm-bagu-4-个关键边界",
+        "title": "4 个关键边界（避免被挑战）",
+        "summary": "❌ 不是单元测试：不针对函数/方法级别",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "❌ 不是单元测试：不针对函数/方法级别",
+          "❌ 不是集成测试：不测模块交互",
+          "❌ 不是验收测试：不测业务需求满足度（那是 UAT 的事）",
+          "❌ 不是回归测试：不验证历史 bug 没复发",
+          "口诀：冒烟测试 = \"冒个烟看冒不冒黑烟\"——能正常冒白烟（跑起来）就过，冒黑烟（跑不起来）就返工。"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      },
+      {
+        "id": "kb-pm-bagu-相邻黑话对比",
+        "title": "相邻黑话对比（被问\"和 X 什么区别\"用得上）",
+        "summary": "冒烟测试 · 一句话=软件能跑起来 · 谁做=QA · 时机=提测当天",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "冒烟测试 · 一句话=软件能跑起来 · 谁做=QA · 时机=提测当天",
+          "回归测试 · 一句话=改完代码后没把老功能搞坏 · 谁做=QA · 时机=每次发版前",
+          "UAT（用户验收） · 一句话=业务方确认\"满足需求\" · 谁做=业务方 · 时机=上线前",
+          "灰度 · 一句话=只对部分用户放量 · 谁做=运维/PM · 时机=上线后"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      },
+      {
+        "id": "kb-pm-bagu-提测日标准流程",
+        "title": "提测日标准流程",
+        "summary": "1. 提测邮件/IM 通知（产品/QA/研发）\n2. 研发部署到测试环境\n3. QA 冒烟测试（5 步 checklist）\n   ├─ 通过 → 进入详细测试周期\n   └─ 不通过 → 当天打回，循环回到第 1 步\n4. 详细测试（功能",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "1. 提测邮件/IM 通知（产品/QA/研发）\n2. 研发部署到测试环境\n3. QA 冒烟测试（5 步 checklist）\n   ├─ 通过 → 进入详细测试周期\n   └─ 不通过 → 当天打回，循环回到第 1 步\n4. 详细测试（功能 / 性能 / 异常 / 兼容性）\n5. Bug 修复 + 回归测试\n6. UAT（业务方验收）\n7. 上线",
+          "关键：冒烟测试是\"准入门槛\"，不通过就不进详细测试——这能避免\"带病进入详细测试\"导致的时间和精力浪费。"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      },
+      {
+        "id": "kb-pm-bagu-容易踩的坑",
+        "title": "容易踩的坑",
+        "summary": "⚠️ 冒烟通过 ≠ 无 bug：冒烟只验证\"能起来\"，详细 bug 留给详细测试",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "⚠️ 冒烟通过 ≠ 无 bug：冒烟只验证\"能起来\"，详细 bug 留给详细测试",
+          "⚠️ 环境差异：测试环境冒烟通过 ≠ 生产环境没问题（数据库、网络、配置都可能不同）",
+          "⚠️ 数据准备：冒烟测试前要准备好测试数据（账号、订单、库存等），否则跑不通",
+          "⚠️ 不要替代 UAT：冒烟测试是技术验证，UAT 是业务验证，两件事都做"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      },
+      {
+        "id": "kb-pm-bagu-记忆口诀",
+        "title": "记忆口诀",
+        "summary": "\"白烟过、黑烟回\"：能跑通就过，跑不通就打回",
+        "tags": [
+          "产品经理八股"
+        ],
+        "content": [
+          "\"白烟过、黑烟回\"：能跑通就过，跑不通就打回",
+          "\"5 步清单\"：入口→主流程→写→读→按钮",
+          "\"4 个不是\"：不是单测 / 不是集成 / 不是验收 / 不是回归"
+        ],
+        "section": "9. 测试与质量保障",
+        "sourceId": "pm-bagu",
+        "sourceLabel": "产品经理八股",
+        "kind": "article"
+      }
+    ]
+  },
+  {
+    "id": "architecture",
+    "title": "技术架构",
+    "description": "系统架构与技术/行业术语（含机器人）",
+    "icon": "⬡",
+    "items": [
+      {
+        "id": "kb-system-architecture-1-1-三层架构",
+        "title": "三层架构（最经典的分层思维）",
+        "summary": "所有系统都可以拆成 3 层，PM 提任何需求都先问\"动哪一层\"",
         "tags": [
           "系统架构"
         ],
         "content": [
-          "认证（Authentication） · 回答什么=你是谁？ · 普渡组件=飞书 OAuth、用户名密码",
-          "授权（Authorization） · 回答什么=你能做什么？ · 普渡组件=RBAC 角色权限、数据权限",
-          "审计（Audit） · 回答什么=你做了什么？ · 普渡组件=操作日志、登录日志"
+          "所有系统都可以拆成 3 层，PM 提任何需求都先问\"动哪一层\"",
+          "表现层 · 职责=用户看到和操作的界面 · 技术组件举例=Web（React/Vue）、移动端（iOS/Android/小程序）、桌面端 · [本公司]对应=代理商平台 Web、运营管理平台 Web",
+          "业务层 · 职责=处理业务逻辑、流程编排、规则校验 · 技术组件举例=后端服务（Java/Go/Node）、API 网关 · [本公司]对应=订单服务、工单服务、CRM 服务",
+          "数据层 · 职责=存储、查询、数据分析 · 技术组件举例=关系数据库（MySQL/PG）、缓存（Redis）、搜索（ES）、数仓 · [本公司]对应=代理商平台 DB、培训记录库"
+        ],
+        "pmApplication": [
+          "写需求时明确\"动哪几层\"。例：\"工单页加深色模式\" = 只动表现层（前端 CSS）；\"接企学宝同步培训记录\" = 动业务层 + 数据层（要新加同步服务、新加表）。分层意识能让 PM 评估\"这个需求改 1 天还是 1 个月\"。"
+        ],
+        "section": "1. 架构基础（PM 必须懂的核心概念）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-1-2-单体架构-vs-微服务架构",
+        "title": "单体架构 vs 微服务架构",
+        "summary": "[本公司]现状：A、B 两平台是模块化单体（按业务模块拆代码包，但部署还是一个应用），还没到微服务阶段。",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "形态 · 单体（Monolith）=所有功能打包在一个应用里 · 微服务（Microservices）=按业务域拆成几十个独立小服务",
+          "部署 · 单体（Monolith）=一处改全部重新部署 · 微服务（Microservices）=每个服务独立部署、独立伸缩",
+          "技术栈 · 单体（Monolith）=一种语言/框架 · 微服务（Microservices）=多种语言共存",
+          "团队协作 · 单体（Monolith）=改动容易冲突 · 微服务（Microservices）=每个团队负责一个服务",
+          "故障影响 · 单体（Monolith）=一个 bug 全站挂 · 微服务（Microservices）=一个服务挂了不影响其他",
+          "适合 · 单体（Monolith）=产品初期（用户<10万） · 微服务（Microservices）=规模化后（用户>百万、服务多）",
+          "[本公司]现状：A、B 两平台是模块化单体（按业务模块拆代码包，但部署还是一个应用），还没到微服务阶段。"
+        ],
+        "pmApplication": [
+          "不要在单体阶段硬上微服务——成本高、收益小。触发微服务化的 3 个信号：① 单次部署超过 30 分钟 ② 一个团队改动影响另一个团队的发布 ③ 不同模块的资源消耗差 10 倍以上。"
+        ],
+        "section": "1. 架构基础（PM 必须懂的核心概念）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-1-3-前后端分离",
+        "title": "前后端分离",
+        "summary": "传统模式：后端渲染 HTML 页面（PHP/JSP），前端写死在 HTML 里",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "传统模式：后端渲染 HTML 页面（PHP/JSP），前端写死在 HTML 里",
+          "现代模式：前端是独立 SPA（单页应用），后端只提供 JSON API",
+          "前端后端并行开发，效率高：SEO 不友好（要 SSR 解决）",
+          "一套后端 API 服务多端（Web/iOS/Android）：跨域问题（CORS）",
+          "前端技术栈灵活（React/Vue）：接口管理成本上升（要 OpenAPI/GraphQL）",
+          "[本公司]：A 平台是前后端分离架构，前端是 Vue、后端是 Java。"
+        ],
+        "section": "1. 架构基础（PM 必须懂的核心概念）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-2-1-数据库",
+        "title": "数据库（数据层核心）",
+        "summary": "关系数据库（MySQL/PG） · 用途=结构化数据，强事务 · [本公司]场景=代理商平台、工单、订单",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "关系数据库（MySQL/PG） · 用途=结构化数据，强事务 · [本公司]场景=代理商平台、工单、订单",
+          "缓存（Redis/Memcached） · 用途=高频读、临时数据 · [本公司]场景=Session、Token、热数据",
+          "搜索引擎（Elasticsearch） · 用途=全文搜索、复杂查询 · [本公司]场景=工单搜索、知识库检索",
+          "时序数据库（InfluxDB/TDengine） · 用途=时间序列数据 · [本公司]场景=机器人运行数据、传感器日志",
+          "对象存储（OSS/S3） · 用途=大文件存储 · [本公司]场景=OTA 固件包、培训视频",
+          "消息队列（Kafka/RocketMQ） · 用途=异步任务、削峰填谷 · [本公司]场景=通知推送、数据同步"
+        ],
+        "pmApplication": [
+          "写需求必问\"数据存在哪\"——涉及\"数据搬家\"的需求（接企学宝、接 CRM）一定涉及数据层改造。"
+        ],
+        "section": "2. 关键组件（PM 经常听研发提到的\"零件\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-2-2-中间件",
+        "title": "中间件（连接各个服务的\"基础设施\"）",
+        "summary": "中间件=API 网关 · 干什么=统一入口、限流、鉴权 · PM 视角的翻译=\"所有外部调用都从这进\"",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "中间件=API 网关 · 干什么=统一入口、限流、鉴权 · PM 视角的翻译=\"所有外部调用都从这进\"",
+          "中间件=消息队列 · 干什么=异步任务、削峰填谷 · PM 视角的翻译=\"用户点完通知后，后台慢慢处理、不卡页面\"",
+          "中间件=配置中心 · 干什么=动态改配置不重启 · PM 视角的翻译=\"改个功能开关不用发版\"",
+          "中间件=服务注册/发现 · 干什么=服务之间怎么找到对方 · PM 视角的翻译=\"微服务之间互相打电话要拨号本\"",
+          "中间件=链路追踪 · 干什么=一次请求经过哪些服务 · PM 视角的翻译=\"用户报'工单页卡了'，研发能定位到是哪个服务慢\""
+        ],
+        "section": "2. 关键组件（PM 经常听研发提到的\"零件\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-2-3-缓存策略",
+        "title": "缓存策略（最常被问的\"性能优化\"）",
+        "summary": "① 什么数据要缓存？答：读多写少的（用户档案、字典、配置）",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "PM 必懂 3 个问题：",
+          "① 什么数据要缓存？答：读多写少的（用户档案、字典、配置）",
+          "② 缓存多久？答：按业务容忍度（5 分钟？1 小时？1 天？）",
+          "③ 缓存和数据库不一致怎么办？答：最终一致 + 设置合理的过期时间",
+          "经典 3 模式：",
+          "Cache-Aside（旁路缓存）：应用先查缓存，命中就返回；不命中查 DB 再写缓存。最常用",
+          "Write-Through（写穿透）：写 DB 时同步写缓存。强一致场景",
+          "Write-Behind（写回）：先写缓存，异步写 DB。性能高但可能丢数据"
+        ],
+        "section": "2. 关键组件（PM 经常听研发提到的\"零件\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-3-1-多租户架构",
+        "title": "多租户架构（SaaS 化必备）",
+        "summary": "之前在 行业通用词语.md 1.4 节讲过 3 种隔离模式，这里补充选型决策树",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "之前在 行业通用词语.md 1.4 节讲过 3 种隔离模式，这里补充选型决策树",
+          "是否在金融/医疗等强合规行业？\n├─ 是 → 独立数据库（合规+客户定制）\n└─ 否 → 是否需要租户级字段/表结构定制？\n    ├─ 是 → 共享 DB + 独立 schema\n    └─ 否 → 共享 DB + tenant_id（X 培训平台当前方案）",
+          "[本公司]场景：",
+          "X 培训平台：共享 DB + tenant_id，4 个子站 = 4 个租户",
+          "代理商平台：单租户（只服务[本公司]自己），但内部有\"代理商 → 客户\"的二级权限隔离",
+          "未来 SaaS 化：代理商平台如果对外开放给其他机器人厂商，就要升级到多租户"
+        ],
+        "section": "3. 架构模式（成熟方案，直接套）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-3-2-读写分离",
+        "title": "读写分离（数据库性能优化标配）",
+        "summary": "模式：主库写、从库读，应用层按 SQL 类型路由",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "模式：主库写、从库读，应用层按 SQL 类型路由",
+          "读多写少（10:1 以上）：写多读少（写主库直接挂）",
+          "单表数据量 > 1000 万行：表小、业务简单",
+          "报表/分析类查询：强实时一致（金融交易）",
+          "[本公司]场景：工单列表查询是典型读多写少，配置了 1 主 2 从；订单表写多读少，没做读写分离。"
+        ],
+        "section": "3. 架构模式（成熟方案，直接套）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-3-3-分库分表",
+        "title": "分库分表（数据库扛不住时的最后一招）",
+        "summary": "触发条件（PM 该知道的红线）：",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "做法 · 垂直拆分=按业务把表分到不同库 · 水平拆分=按某个字段（user_id/order_id）把同一张表分到多库",
+          "典型场景 · 垂直拆分=用户库、订单库、商品库分开放 · 水平拆分=订单表按月份分 12 个库",
+          "PM 视角 · 垂直拆分=\"业务大了，一个 DB 装不下\" · 水平拆分=\"单表 1 亿行查询太慢\"",
+          "触发条件（PM 该知道的红线）：",
+          "单表 > 5000 万行 或 单库 > 2TB",
+          "单条 SQL 走全表扫描 > 3 秒",
+          "数据库 CPU 长期 > 70%",
+          "[本公司]场景：当前工单表最大也就几百万行，还没到分库分表阶段。PM 知道有这根红线即可。"
+        ],
+        "section": "3. 架构模式（成熟方案，直接套）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-4-1-3-大经典问题",
+        "title": "3 大经典问题",
+        "summary": "高可用（HA）：系统挂的时间少（主备切换、集群部署）",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "高可用（HA）：系统挂的时间少（主备切换、集群部署）",
+          "高并发：同时很多人访问不卡（缓存、限流、扩容）",
+          "高扩展：加机器就能扛更多流量（微服务、读写分离、CDN）"
+        ],
+        "pmApplication": [
+          "写非功能需求时，\"能扛多少 QPS/多少用户\" 一定要明确——研发不会主动告诉你系统能扛什么。"
+        ],
+        "section": "4. 高可用与高并发（PM 必懂的\"系统健壮性\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "高可用（HA）",
+            "meaning": "系统挂的时间少",
+            "explain": "系统挂的时间少",
+            "loc": "主备切换、集群部署",
+            "case": ""
+          },
+          {
+            "term": "高并发",
+            "meaning": "同时很多人访问不卡",
+            "explain": "同时很多人访问不卡",
+            "loc": "缓存、限流、扩容",
+            "case": ""
+          },
+          {
+            "term": "高扩展",
+            "meaning": "加机器就能扛更多流量",
+            "explain": "加机器就能扛更多流量",
+            "loc": "微服务、读写分离、CDN",
+            "case": ""
+          }
         ]
+      },
+      {
+        "id": "kb-system-architecture-4-2-限流-降级-熔断",
+        "title": "限流 / 降级 / 熔断（保护系统的\"三道闸\"）",
+        "summary": "[本公司]场景：第三方系统对接必须设计熔断——如果企学宝接口挂了 30 秒，代理商平台不能卡死，要自动\"切回老逻辑\"或\"提示用户稍后重试\"。",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "限流 · 作用=限制每秒最多 N 个请求 · 触发场景=秒杀活动、API 被刷",
+          "降级 · 作用=主动关掉非核心功能 · 触发场景=大促关推荐、保核心",
+          "熔断 · 作用=下游服务挂了，上游自动断开 · 触发场景=企学宝接口超时 → 代理商平台停止调用",
+          "[本公司]场景：第三方系统对接必须设计熔断——如果企学宝接口挂了 30 秒，代理商平台不能卡死，要自动\"切回老逻辑\"或\"提示用户稍后重试\"。"
+        ],
+        "section": "4. 高可用与高并发（PM 必懂的\"系统健壮性\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-4-3-监控告警",
+        "title": "监控告警（\"线上出问题能第一时间发现\"）",
+        "summary": "① Metrics（指标）：QPS、延迟、错误率、CPU 内存",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "3 大监控支柱：",
+          "① Metrics（指标）：QPS、延迟、错误率、CPU 内存",
+          "② Logs（日志）：请求链路、错误堆栈",
+          "③ Traces（链路追踪）：一次请求经过哪些服务、各花了多少时间"
+        ],
+        "pmApplication": [
+          "上线后必问\"监控接好了吗\"——没监控就是\"盲飞\"。"
+        ],
+        "section": "4. 高可用与高并发（PM 必懂的\"系统健壮性\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-5-1-认证-vs-授权",
+        "title": "认证 vs 授权",
+        "summary": "认证（Authentication） · 回答什么=你是谁？ · [本公司]组件=飞书 OAuth、用户名密码",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "认证（Authentication） · 回答什么=你是谁？ · [本公司]组件=飞书 OAuth、用户名密码",
+          "授权（Authorization） · 回答什么=你能做什么？ · [本公司]组件=RBAC 角色权限、数据权限",
+          "审计（Audit） · 回答什么=你做了什么？ · [本公司]组件=操作日志、登录日志"
+        ],
+        "section": "5. 安全架构（PM 容易忽略的\"红线\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
       },
       {
         "id": "kb-system-architecture-5-2-常见攻击与防御",
@@ -1975,18 +1626,961 @@ const categories = [
         ],
         "pmApplication": [
           "To B 系统的数据安全是\"必答题\"——尤其涉及客户档案、培训记录、订单数据。PRD 里要明确\"敏感字段加密\"、\"权限最小化\"、\"操作留痕\"。"
+        ],
+        "section": "5. 安全架构（PM 容易忽略的\"红线\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-6-云原生与运维",
+        "title": "6. 云原生与运维（PM 知道就行）",
+        "summary": "容器化（Docker）：应用打包成镜像，\"一处构建处处运行\"（[本公司]后端服务已容器化）",
+        "tags": [
+          "系统架构",
+          "PM"
+        ],
+        "content": [
+          "容器化（Docker）：应用打包成镜像，\"一处构建处处运行\"（[本公司]后端服务已容器化）",
+          "K8s：容器编排系统，\"自动部署 + 自动伸缩\"（部分核心服务在 K8s）",
+          "CI/CD：持续集成/持续部署，\"代码提交后自动测试自动上\"（[本公司]已有 CI/CD 流水线）",
+          "IaC：基础设施即代码，\"服务器配置写成脚本可追溯\"（部分使用 Terraform）",
+          "Serverless：\"不用管服务器，写函数就行\"（还未使用）"
+        ],
+        "pmApplication": [
+          "写非功能需求时——\"环境一致性\"（本地跑通 ≠ 测试环境跑通 ≠ 生产跑通）需要 CI/CD 保证；\"弹性伸缩\"是云原生的核心价值。"
+        ],
+        "section": "6. 云原生与运维（PM 知道就行）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "容器化（Docker）",
+            "meaning": "应用打包成镜像，\"一处构建处处运行\"",
+            "explain": "应用打包成镜像，\"一处构建处处运行\"",
+            "loc": "[本公司]后端服务已容器化",
+            "case": ""
+          },
+          {
+            "term": "K8s",
+            "meaning": "容器编排系统，\"自动部署 + 自动伸缩\"",
+            "explain": "容器编排系统，\"自动部署 + 自动伸缩\"",
+            "loc": "部分核心服务在 K8s",
+            "case": ""
+          },
+          {
+            "term": "CI/CD",
+            "meaning": "持续集成/持续部署，\"代码提交后自动测试自动上\"",
+            "explain": "持续集成/持续部署，\"代码提交后自动测试自动上\"",
+            "loc": "[本公司]已有 CI/CD 流水线",
+            "case": ""
+          },
+          {
+            "term": "IaC",
+            "meaning": "基础设施即代码，\"服务器配置写成脚本可追溯\"",
+            "explain": "基础设施即代码，\"服务器配置写成脚本可追溯\"",
+            "loc": "部分使用 Terraform",
+            "case": ""
+          },
+          {
+            "term": "Serverless",
+            "meaning": "\"不用管服务器，写函数就行\"",
+            "explain": "\"不用管服务器，写函数就行\"",
+            "loc": "还未使用",
+            "case": ""
+          }
         ]
       },
       {
+        "id": "kb-system-architecture-7-1-云-边-端架构",
+        "title": "云-边-端架构",
+        "summary": "┌──────────┐         ┌──────────┐         ┌──────────┐\n│   云端    │  4G/WiFi │  边缘端   │  局域网  │   设备端  │\n│ ([本公司]云) │ ←──",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "┌──────────┐         ┌──────────┐         ┌──────────┐\n│   云端    │  4G/WiFi │  边缘端   │  局域网  │   设备端  │\n│ ([本公司]云) │ ←────→  │(机器人本体)│ ←────→ │(传感器)  │\n└──────────┘         └──────────┘         └──────────┘\n   ↑                                              ↑\n   业务平台                                   实时控制\n   (代理商平台)                               (低延迟要求)\n   - 用户管理                                 - SLAM\n   - 订单/工单                                - 避障\n   - 数据分析                                 - 运动控制\n   - 报表                                     - 紧急制动",
+          "设备端 · 延迟要求=< 10ms · [本公司]组件=实时避障、紧急制动",
+          "边缘端（机器人本体） · 延迟要求=< 100ms · [本公司]组件=SLAM、路径规划",
+          "云端 · 延迟要求=< 1s · [本公司]组件=业务平台、报表、OTA"
+        ],
+        "pmApplication": [
+          "实时性需求必须明确放哪一层——\"机器人撞到障碍物要立刻停下\"是设备端的事，不能依赖云端。"
+        ],
+        "section": "7. 机器人/IoT 系统特有架构（[本公司]专属）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-7-2-ota-空中升级架构",
+        "title": "OTA 空中升级架构",
+        "summary": "代理商平台(运营管理)\n       ↓ 生成升级包\nCDN 分发\n       ↓ 下载\n机器人(边缘端)\n       ↓ 校验 + 备份旧版\n       ↓ 应用新版\n       ↓ 失败回滚\n       ↓ 上报结果\n代理商平",
+        "tags": [
+          "系统架构",
+          "OTA"
+        ],
+        "content": [
+          "代理商平台(运营管理)\n       ↓ 生成升级包\nCDN 分发\n       ↓ 下载\n机器人(边缘端)\n       ↓ 校验 + 备份旧版\n       ↓ 应用新版\n       ↓ 失败回滚\n       ↓ 上报结果\n代理商平台(状态监控)",
+          "PM 视角 3 个关键点：",
+          "灰度发布：先 5% → 20% → 50% → 100%（每档观察 1-2 天）",
+          "失败回滚：升级失败 30 秒内自动回到旧版（蓝绿部署）",
+          "升级窗口：默认 4 集群分时（国内/新加坡 22:00，德国次日 14:00，美国次日 11:00）"
+        ],
+        "section": "7. 机器人/IoT 系统特有架构（[本公司]专属）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-7-3-机器人数据流",
+        "title": "机器人数据流（时序数据 + 业务数据双轨）",
+        "summary": "数据类型=时序数据 · 来源=机器人传感器、运行状态 · 存储=时序 DB（InfluxDB/TDengine） · 用途=实时监控、故障诊断",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "数据类型=时序数据 · 来源=机器人传感器、运行状态 · 存储=时序 DB（InfluxDB/TDengine） · 用途=实时监控、故障诊断",
+          "数据类型=业务数据 · 来源=订单、工单、CRM · 存储=关系 DB · 用途=业务流转",
+          "数据类型=地图数据 · 来源=SLAM 建图 · 存储=专用地图服务 · 用途=导航",
+          "数据类型=视频/图像 · 来源=摄像头、深度相机 · 存储=对象存储 · 用途=巡检、清洁效果检测"
+        ],
+        "pmApplication": [
+          "\"机器人数据存储\"是个跨多存储的复杂架构——PM 提需求时要知道\"清洁报告里的地图图片从对象存储拉\"。"
+        ],
+        "section": "7. 机器人/IoT 系统特有架构（[本公司]专属）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-8-1-系统演进的-5-个阶段",
+        "title": "系统演进的 5 个阶段",
+        "summary": "代理商平台：阶段 1-2（模块化单体）",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "阶段 1：单体 (Monolith)\n   ↓ 用户>10万\n阶段 2：模块化单体\n   ↓ 团队>50人\n阶段 3：微服务\n   ↓ 流量>100万QPS\n阶段 4：服务网格（Service Mesh）\n   ↓ 全球化部署\n阶段 5：云原生 + Serverless",
+          "[本公司]现状：",
+          "代理商平台：阶段 1-2（模块化单体）",
+          "[本公司]云：阶段 2-3（部分服务已拆）",
+          "机器人本体：阶段 2（边缘端轻量化服务）"
+        ],
+        "section": "8. 架构演进路径（PM 视角的\"技术债\"认知）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-8-2-技术债识别",
+        "title": "技术债识别（PM 怎么判断\"系统是不是要重构\"）",
+        "summary": "技术债 = 现在偷的懒 = 未来要还的债",
+        "tags": [
+          "系统架构",
+          "PM"
+        ],
+        "content": [
+          "技术债 = 现在偷的懒 = 未来要还的债",
+          "4 大信号：",
+          "1. 改一个需求要 3 倍时间（\"这功能本来 1 天能做完，现在要 3 天\"）",
+          "2. 每次发版都有\"连锁反应\"（\"我改 A 模块，B 模块崩了\"）",
+          "3. 新人看不懂代码（\"老员工不解释就改不动\"）",
+          "4. 线上事故频发（\"每周都有 P 级故障\"）"
+        ],
+        "pmApplication": [
+          "当技术债信号出现时，主动提\"技术债偿还 Sprint\"——不然业务会越来越慢。"
+        ],
+        "section": "8. 架构演进路径（PM 视角的\"技术债\"认知）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-9-1-c4-模型",
+        "title": "C4 模型（4 个层次的架构图）",
+        "summary": "PM 必会画前 2 层——评审会上能用一张 Context 图让所有人\"对齐\"。",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "Context（系统上下文） · 回答什么=系统在更大的世界里和谁互动 · 受众=所有人",
+          "Container（容器） · 回答什么=系统由哪些\"大块\"组成（Web/DB/Service） · 受众=研发、PM",
+          "Component（组件） · 回答什么=每个容器内部由哪些模块组成 · 受众=研发",
+          "Code（代码） · 回答什么=具体的类、函数 · 受众=研发",
+          "PM 必会画前 2 层——评审会上能用一张 Context 图让所有人\"对齐\"。"
+        ],
+        "section": "9. 架构图绘制（PM 必会的\"沟通工具\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-9-2-本公司-云系统-context-图",
+        "title": "[本公司]云系统 Context 图（示例）",
+        "summary": "[本公司]云（代理商平台）\n                              │\n        ┌─────────────────────┼─────────────────────┐\n        │           ",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "[本公司]云（代理商平台）\n                              │\n        ┌─────────────────────┼─────────────────────┐\n        │                     │                     │\n    终端用户                内部用户              外部系统\n   (代理商)              (销售/客服)            (企学宝/CRM)\n        │                     │                     │\n        └───── 飞书 OAuth 登录 ─────────────────────┘\n                              │\n                         对象存储(OSS)\n                         数据库(MySQL)\n                         缓存(Redis)"
+        ],
+        "section": "9. 架构图绘制（PM 必会的\"沟通工具\"）",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-10-pm-必会的-10-个架构问题",
+        "title": "10. PM 必会的 10 个架构问题",
+        "summary": "评审会上被研发问\"这个需求怎么做\"时，能答出这些 = 入门",
+        "tags": [
+          "系统架构",
+          "PM"
+        ],
+        "content": [
+          "评审会上被研发问\"这个需求怎么做\"时，能答出这些 = 入门",
+          "数据存在哪？：\"就存起来啊\"",
+          "同步还是异步？：\"都行\"",
+          "能扛多少 QPS？：\"应该挺多的\"",
+          "延迟要求是？：\"快点就行\"",
+          "一致性要求？：\"别出错\"",
+          "触发频率？：\"用户点就触发\"",
+          "失败怎么兜底？：\"应该不会失败\"",
+          "数据量预估？：\"几千条吧\"",
+          "谁来维护？：\"开发吧\"",
+          "上线标准？：\"做完就上\"",
+          "正确答案模板：",
+          "1. 数据存在 MySQL 主库 + Redis 缓存",
+          "2. 异步推送（Kafka 消息队列）",
+          "3. 预估 QPS 1000（早高峰 + 晚高峰）",
+          "4. 同步接口 P99 < 200ms，异步任务 < 5min",
+          "5. 最终一致即可（允许 1 分钟内同步）",
+          "6. 用户主动触发 + 定时（每天 9:00）",
+          "7. 接口失败重试 3 次 + 兜底页提示",
+          "8. 日均新增 1 万条，3 年保留",
+          "9. 研发 + 运维共同维护（oncall 轮值）",
+          "10. 灰度 1% → 10% → 100%，监控告警接好"
+        ],
+        "section": "10. PM 必会的 10 个架构问题",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-system-architecture-11-关联文件-推荐阅读",
+        "title": "11. 关联文件 / 推荐阅读",
+        "summary": "基础术语：行业通用词语.md → 第一部分（云服务模式 / SaaS 指标）",
+        "tags": [
+          "系统架构"
+        ],
+        "content": [
+          "基础术语：行业通用词语.md → 第一部分（云服务模式 / SaaS 指标）",
+          "业务流程：工作流程.md → PRD 模板 + 需求处理 7 步",
+          "PM 视角：产品经理八股.md → SLA / SLO / SLI / 上线规则",
+          "机器人特有：daily-log.md → ROS 2.0（6/28 推送）"
+        ],
+        "section": "11. 关联文件 / 推荐阅读",
+        "sourceId": "system-architecture",
+        "sourceLabel": "系统架构",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-1-1-云服务模式",
+        "title": "云服务模式（4 种 X as a Service）",
+        "summary": "记忆口诀：IaaS 卖算力 / PaaS 卖平台 / SaaS 卖软件 / HaaS 卖硬件",
+        "tags": [
+          "行业通用词语"
+        ],
+        "content": [
+          "记忆口诀：IaaS 卖算力 / PaaS 卖平台 / SaaS 卖软件 / HaaS 卖硬件",
+          "IaaS：Infrastructure as a Service 基础设施即服务 — 卖\"服务器/存储/网络\"等底层资源",
+          "PaaS：Platform as a Service 平台即服务 — 卖\"开发平台/中间件\"，让开发者专注业务",
+          "SaaS：Software as a Service 软件即服务 — 卖\"成品软件订阅\"，客户按月/年付费，厂商统一部署升级",
+          "HaaS：Hardware as a Service 硬件即服务 — 卖\"硬件订阅\"，客户按月付使用费，所有权不转移，运维打包",
+          "【本公司的\"云服务\"地图】",
+          "IaaS · [本公司]对应=阿里云、华为云 · 说明=别人做的，本公司租用",
+          "PaaS · [本公司]对应=阿里云函数计算 · 说明=别人做的",
+          "SaaS（外部） · [本公司]对应=企学宝、飞书、Salesforce · 说明=本公司订阅使用",
+          "SaaS（自研） · [本公司]对应=X 培训平台（bizlearnify.com） · 说明=[本公司]自己做的多租户 SaaS",
+          "HaaS（未来） · [本公司]对应=配送机器人按月租 · 说明=未来方向，订阅制 + 服务打包",
+          "本地软件 · [本公司]对应=代理商平台、运营管理平台 · 说明=[本公司]自研，未来可 SaaS 化"
+        ],
+        "cases": [
+          "IaaS：AWS EC2、阿里云 ECS",
+          "PaaS：Heroku、阿里云函数计算",
+          "SaaS：飞书、钉钉、Salesforce、企学宝",
+          "HaaS：配送机器人按月租、医疗 CT 按扫描次数付、打印机按张数付"
+        ],
+        "section": "第一部分：技术架构",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "IaaS",
+            "meaning": "Infrastructure as a Service 基础设施即服务",
+            "explain": "卖\"服务器/存储/网络\"等底层资源",
+            "loc": "",
+            "case": "AWS EC2、阿里云 ECS"
+          },
+          {
+            "term": "PaaS",
+            "meaning": "Platform as a Service 平台即服务",
+            "explain": "卖\"开发平台/中间件\"，让开发者专注业务",
+            "loc": "",
+            "case": "Heroku、阿里云函数计算"
+          },
+          {
+            "term": "SaaS",
+            "meaning": "Software as a Service 软件即服务",
+            "explain": "卖\"成品软件订阅\"，客户按月/年付费，厂商统一部署升级",
+            "loc": "",
+            "case": "飞书、钉钉、Salesforce、企学宝"
+          },
+          {
+            "term": "HaaS",
+            "meaning": "Hardware as a Service 硬件即服务",
+            "explain": "卖\"硬件订阅\"，客户按月付使用费，所有权不转移，运维打包",
+            "loc": "",
+            "case": "配送机器人按月租、医疗 CT 按扫描次数付、打印机按张数付"
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-1-2-saas-关键指标",
+        "title": "SaaS 关键指标",
+        "summary": "ARR：Annual Recurring Revenue（年度经常性收入）",
+        "tags": [
+          "行业通用词语"
+        ],
+        "content": [
+          "ARR：Annual Recurring Revenue（年度经常性收入）",
+          "MRR：Monthly Recurring Revenue（月度经常性收入）",
+          "Churn Rate：流失率（客户停用比例）",
+          "LTV：Life-Time Value（客户生命周期价值）",
+          "CAC：Customer Acquisition Cost（客户获取成本）",
+          "NRR：Net Revenue Retention（净收入留存率（>100% 才是好 SaaS））"
+        ],
+        "section": "第一部分：技术架构",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "ARR",
+            "meaning": "Annual Recurring Revenue",
+            "explain": "Annual Recurring Revenue",
+            "loc": "年度经常性收入",
+            "case": ""
+          },
+          {
+            "term": "MRR",
+            "meaning": "Monthly Recurring Revenue",
+            "explain": "Monthly Recurring Revenue",
+            "loc": "月度经常性收入",
+            "case": ""
+          },
+          {
+            "term": "Churn Rate",
+            "meaning": "流失率",
+            "explain": "流失率",
+            "loc": "客户停用比例",
+            "case": ""
+          },
+          {
+            "term": "LTV",
+            "meaning": "Life-Time Value",
+            "explain": "Life-Time Value",
+            "loc": "客户生命周期价值",
+            "case": ""
+          },
+          {
+            "term": "CAC",
+            "meaning": "Customer Acquisition Cost",
+            "explain": "Customer Acquisition Cost",
+            "loc": "客户获取成本",
+            "case": ""
+          },
+          {
+            "term": "NRR",
+            "meaning": "Net Revenue Retention",
+            "explain": "Net Revenue Retention",
+            "loc": "净收入留存率（>100% 才是好 SaaS）",
+            "case": ""
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-1-3-saas-pm-特有设计点",
+        "title": "SaaS PM 特有设计点",
+        "summary": "多租户：一套服务服务多客户，租户间数据隔离",
+        "tags": [
+          "行业通用词语",
+          "PM"
+        ],
+        "content": [
+          "多租户：一套服务服务多客户，租户间数据隔离",
+          "订阅计费：按月/年/用量/超额付费（不是一次性买断）",
+          "API 开放：客户要集成，必须开放",
+          "租户级配置：皮肤、品牌、字段可按租户配置（不写死）",
+          "向后兼容：升级不能影响老客户",
+          "SLA 承诺：99.9% 可用率是常见的，要写入合同",
+          "数据导出：客户要能带走数据（防锁定）"
+        ],
+        "section": "第一部分：技术架构",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-1-4-多租户3-种模式",
+        "title": "多租户（Multi-Tenancy）3 种模式",
+        "summary": "X 培训平台用的是子站点 + 共享数据库模式（每个子站点 = 一个租户），4 个子站点隔离。",
+        "tags": [
+          "行业通用词语"
+        ],
+        "content": [
+          "共享数据库 + tenant_id 区分 · 隔离级别=低 · 成本=低 · 适合场景=中小型 SaaS",
+          "共享数据库 + 独立 schema · 隔离级别=中 · 成本=中 · 适合场景=中型 SaaS",
+          "独立数据库 · 隔离级别=高 · 成本=高 · 适合场景=大客户/金融/医疗",
+          "X 培训平台用的是子站点 + 共享数据库模式（每个子站点 = 一个租户），4 个子站点隔离。"
+        ],
+        "section": "第一部分：技术架构",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-1-5-产品标准化术语",
+        "title": "产品标准化术语",
+        "summary": "SPU：Standard Product Unit 标准化产品单元 — 产品的\"概念集合\"，描述\"这是一类什么产品\"",
+        "tags": [
+          "行业通用词语"
+        ],
+        "content": [
+          "SPU：Standard Product Unit 标准化产品单元 — 产品的\"概念集合\"，描述\"这是一类什么产品\"",
+          "SKU：Stock Keeping Unit 库存计量单元 — 产品的\"具体一箱/一台\"，带具体属性",
+          "BOM：Bill of Materials 物料清单 — 产品所需的全部零部件及数量",
+          "ECN：Engineering Change Notice 工程变更通知 — 产品设计/工艺的变更通知",
+          "【SPU vs SKU 关键差异】",
+          "SPU = 产品的\"型号\"（粗颗粒度） — 跨代升级",
+          "SKU = 产品的\"具体一箱/一台\"（细颗粒度，带属性） — 同代内属性变化",
+          "颗粒度 · SPU=粗 · SKU=细",
+          "变化频率 · SPU=季度/年级 · SKU=一次发布会新增几十个",
+          "颗粒度增长 · SPU=加法 · SKU=乘法（颜色×尺码×容量 = 大量 SKU）",
+          "用途 · SPU=营销/规划 · SKU=仓储/销售/库存",
+          "【PM 设计原则】",
+          "SPU 控制在 5-15 个，单 SPU 下 SKU 控制在 20-50 个",
+          "选 3-5 个关键属性（颜色、尺寸、容量、版本），不要 10 个",
+          "SKU 4 个生命周期：新品期 / 主销期 / 滞销期 / 退市期",
+          "SPU/SKU/库存/订单/财务 5 套数据实时同步（否则对账灾难）"
+        ],
+        "cases": [
+          "SPU：[本公司]\"欢乐送\"是 1 个 SPU；iPhone 16 Pro 是 1 个 SPU",
+          "SKU：欢乐送-标准版/欢乐送-Pro-带顶视-白色 = 2 个 SKU",
+          "BOM：机器人 BOM：主板+激光雷达+轮组+...",
+          "ECN：\"这款机器人主板 V2.0 发出 ECN\""
+        ],
+        "section": "第一部分：技术架构",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "SPU",
+            "meaning": "Standard Product Unit 标准化产品单元",
+            "explain": "产品的\"概念集合\"，描述\"这是一类什么产品\"",
+            "loc": "",
+            "case": "[本公司]\"欢乐送\"是 1 个 SPU；iPhone 16 Pro 是 1 个 SPU"
+          },
+          {
+            "term": "SKU",
+            "meaning": "Stock Keeping Unit 库存计量单元",
+            "explain": "产品的\"具体一箱/一台\"，带具体属性",
+            "loc": "",
+            "case": "欢乐送-标准版/欢乐送-Pro-带顶视-白色 = 2 个 SKU"
+          },
+          {
+            "term": "BOM",
+            "meaning": "Bill of Materials 物料清单",
+            "explain": "产品所需的全部零部件及数量",
+            "loc": "",
+            "case": "机器人 BOM：主板+激光雷达+轮组+..."
+          },
+          {
+            "term": "ECN",
+            "meaning": "Engineering Change Notice 工程变更通知",
+            "explain": "产品设计/工艺的变更通知",
+            "loc": "",
+            "case": "\"这款机器人主板 V2.0 发出 ECN\""
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-amr",
+        "title": "AMR",
+        "summary": "Autonomous Mobile Robot 自主移动机器人",
+        "tags": [
+          "行业通用词语",
+          "AMR"
+        ],
+        "content": [
+          "Autonomous Mobile Robot 自主移动机器人",
+          "参见：本公司的配送机器人属于 AMR"
+        ],
+        "section": "第三部分：机器人/配送行业",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "AMR",
+            "meaning": "Autonomous Mobile Robot 自主移动机器人",
+            "explain": "Autonomous Mobile Robot 自主移动机器人",
+            "loc": "本公司的配送机器人属于 AMR",
+            "case": ""
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-slam",
+        "title": "SLAM",
+        "summary": "Simultaneous Localization and Mapping 即时定位与地图构建",
+        "tags": [
+          "行业通用词语",
+          "SLAM"
+        ],
+        "content": [
+          "Simultaneous Localization and Mapping 即时定位与地图构建",
+          "参见：机器人自主导航的核心技术"
+        ],
+        "section": "第三部分：机器人/配送行业",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "SLAM",
+            "meaning": "Simultaneous Localization and Mapping 即时定位与地图构建",
+            "explain": "Simultaneous Localization and Mapping 即时定位与地图构建",
+            "loc": "机器人自主导航的核心技术",
+            "case": ""
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-ros",
+        "title": "ROS",
+        "summary": "Robot Operating System 机器人操作系统",
+        "tags": [
+          "行业通用词语",
+          "ROS"
+        ],
+        "content": [
+          "Robot Operating System 机器人操作系统",
+          "参见：机器人软件开发框架"
+        ],
+        "section": "第三部分：机器人/配送行业",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "ROS",
+            "meaning": "Robot Operating System 机器人操作系统",
+            "explain": "Robot Operating System 机器人操作系统",
+            "loc": "机器人软件开发框架",
+            "case": ""
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-ota",
+        "title": "OTA",
+        "summary": "Over-The-Air 空中升级",
+        "tags": [
+          "行业通用词语",
+          "OTA"
+        ],
+        "content": [
+          "Over-The-Air 空中升级",
+          "参见：远程推送软件更新"
+        ],
+        "section": "第三部分：机器人/配送行业",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "OTA",
+            "meaning": "Over-The-Air 空中升级",
+            "explain": "Over-The-Air 空中升级",
+            "loc": "远程推送软件更新",
+            "case": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "business",
+    "title": "业务管理",
+    "description": "ERP / CRM / SCM / OA / IPD 等业务系统认知",
+    "icon": "▣",
+    "items": [
+      {
+        "id": "kb-industry-terms-2-1-erp",
+        "title": "ERP（Enterprise Resource Planning 企业资源计划）",
+        "summary": "定义：整合企业核心业务（财务/采购/库存/生产/销售/人力）的管理系统，让数据一处录入、处处可用。",
+        "tags": [
+          "行业通用词语",
+          "ERP"
+        ],
+        "content": [
+          "定义：整合企业核心业务（财务/采购/库存/生产/销售/人力）的管理系统，让数据一处录入、处处可用。",
+          "关键特征：",
+          "🏢 企业级：服务整个公司",
+          "🔗 高度集成：财务+采购+库存+生产+销售+人力一套系统",
+          "💾 统一数据库：所有模块共享数据源",
+          "🔄 流程自动化：跨部门流程自动触发",
+          "📊 实时报表：业务数据实时汇总",
+          "经典 ERP 8 大模块",
+          "💡 记忆口诀：「财采销存、生人客供」",
+          "财务 · 管什么=总账、应收应付、固定资产、报表 · [本公司]场景类比=[本公司]财务系统",
+          "采购 · 管什么=采购申请、订单、收货、付款 · [本公司]场景类比=物料采购",
+          "销售 · 管什么=报价、订单、发货、回款 · [本公司]场景类比=代理商订单",
+          "库存 · 管什么=入库、出库、盘点、调拨 · [本公司]场景类比=运营管理平台-调拨维保",
+          "生产 · 管什么=BOM、工单、生产排程、车间管理 · [本公司]场景类比=机器人装配线",
+          "人力 · 管什么=员工档案、考勤、薪资、绩效 · [本公司]场景类比=HR 系统",
+          "CRM · 管什么=客户、商机、合同、售后 · [本公司]场景类比=代理商/客户管理",
+          "供应链 · 管什么=物流、仓储、供应商 · [本公司]场景类比=物流系统",
+          "本公司的\"轻量级 ERP 生态\"（用自研 + 多个 SaaS 组合）：",
+          "经典 ERP 模块=销售 · [本公司]自研系统=代理商平台 · 状态=✅ 已落地",
+          "经典 ERP 模块=库存 · [本公司]自研系统=运营管理平台-调拨 · 状态=✅ 已优化（V3.5.0）",
+          "经典 ERP 模块=维保 · [本公司]自研系统=运营管理平台-维保 · 状态=✅ 已落地",
+          "经典 ERP 模块=财务 · [本公司]自研系统=[本公司]财务系统 · 状态=✅ 独立系统",
+          "经典 ERP 模块=生产 · [本公司]自研系统=[本公司] MES/装配线 · 状态=✅ 独立系统",
+          "经典 ERP 模块=培训 · [本公司]自研系统=企学宝（外部 SaaS） · 状态=⏳ 对接中（6.17 上线）",
+          "经典 ERP 模块=CRM · [本公司]自研系统=代理商平台-CRM · 状态=✅ 已落地",
+          "经典 ERP 模块=OA · [本公司]自研系统=飞书审批 + OA 调拨单 · 状态=✅ 已落地",
+          "经典 ERP 模块=BI · [本公司]自研系统=数据看板（自研） · 状态=✅ 已有雏形",
+          "主流 ERP 产品：",
+          "国际顶级 · 产品=SAP S/4HANA、Oracle ERP Cloud · 适合=500 强",
+          "国际中端 · 产品=Microsoft Dynamics 365、Infor · 适合=跨国企业",
+          "国内老牌 · 产品=用友 U9/NC Cloud、金蝶云·星瀚 · 适合=中大型企业",
+          "云 ERP 新势力 · 产品=Workday、NetSuite · 适合=中型企业",
+          "开源/低成本 · 产品=Odoo、ERPNext · 适合=中小企业",
+          "行业垂直 · 产品=明源云（地产）、蓝凌 OA · 适合=单一行业"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-2-crm",
+        "title": "CRM（Customer Relationship Management 客户关系管理）",
+        "summary": "管理企业与客户关系的系统和方法",
+        "tags": [
+          "行业通用词语",
+          "CRM"
+        ],
+        "content": [
+          "管理企业与客户关系的系统和方法"
+        ],
+        "cases": [
+          "代理商平台对接 CRM，实现客户信息统一管理"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-3-scm",
+        "title": "SCM（Supply Chain Management 供应链管理）",
+        "summary": "SCM（Supply Chain Management 供应链管理）",
+        "tags": [
+          "行业通用词语",
+          "SCM"
+        ],
+        "content": [
+          "机器人配件和维修备件管理"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-4-oa",
+        "title": "OA（Office Automation 办公自动化）",
+        "summary": "流程审批、文档管理、协同办公",
+        "tags": [
+          "行业通用词语",
+          "OA"
+        ],
+        "content": [
+          "流程审批、文档管理、协同办公",
+          "[本公司]用飞书审批 + OA 调拨单"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-5-ipd",
+        "title": "IPD（Integrated Product Development 集成产品开发）",
+        "summary": "一套产品开发流程和方法论，强调跨部门协作、异步开发、结构化流程",
+        "tags": [
+          "行业通用词语",
+          "IPD"
+        ],
+        "content": [
+          "一套产品开发流程和方法论，强调跨部门协作、异步开发、结构化流程"
+        ],
+        "cases": [
+          "华为引入 IPD 后，产品上市周期大幅缩短"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-6-bu",
+        "title": "BU（Business Unit 业务单元）",
+        "summary": "企业内部相对独立的业务部门/利润中心",
+        "tags": [
+          "行业通用词语",
+          "BU"
+        ],
+        "content": [
+          "企业内部相对独立的业务部门/利润中心"
+        ],
+        "cases": [
+          "\"这个需求需要协调多个 BU\""
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article"
+      },
+      {
+        "id": "kb-industry-terms-2-7-服务请求类",
+        "title": "服务请求类",
+        "summary": "SR：Service Request 服务请求 — 客户服务请求，通常指售后问题处理",
+        "tags": [
+          "行业通用词语"
+        ],
+        "content": [
+          "SR：Service Request 服务请求 — 客户服务请求，通常指售后问题处理",
+          "PR：Problem Report / Pull Request — 问题报告 / 代码合并请求"
+        ],
+        "cases": [
+          "SR：\"收到一个 SR，需要处理机器故障\"",
+          "PR：研发场景指代码合并；客服场景指问题报告"
+        ],
+        "section": "第二部分：业务管理",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "article",
+        "terms": [
+          {
+            "term": "SR",
+            "meaning": "Service Request 服务请求",
+            "explain": "客户服务请求，通常指售后问题处理",
+            "loc": "",
+            "case": "\"收到一个 SR，需要处理机器故障\""
+          },
+          {
+            "term": "PR",
+            "meaning": "Problem Report / Pull Request",
+            "explain": "问题报告 / 代码合并请求",
+            "loc": "",
+            "case": "研发场景指代码合并；客服场景指问题报告"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "security",
+    "title": "权限安全",
+    "description": "SSO、RBAC、账号映射与安全边界",
+    "icon": "◇",
+    "items": [
+      {
+        "id": "kb-industry-terms-sso",
+        "title": "SSO",
+        "summary": "用户只需登录一次，即可访问所有相互信任的系统",
+        "tags": [
+          "行业通用词语",
+          "SSO"
+        ],
+        "content": [
+          "SSO（Single Sign-On 单点登录）",
+          "用户只需登录一次，即可访问所有相互信任的系统"
+        ],
+        "cases": [
+          "代理商用飞书账号登录代理商平台后，跳转企学宝/CRM 时无需重新登录"
+        ],
+        "section": "第四部分：权限与安全",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "SSO",
+            "meaning": "Single Sign-On 单点登录",
+            "explain": "用户只需登录一次，即可访问所有相互信任的系统",
+            "loc": "",
+            "case": "代理商用飞书账号登录代理商平台后，跳转企学宝/CRM 时无需重新登录"
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-账号映射",
+        "title": "账号映射",
+        "summary": "不同系统间账号的对应关系，确保用户在一个系统登录后，其他关联系统能识别同一用户",
+        "tags": [
+          "行业通用词语",
+          "账号映射"
+        ],
+        "content": [
+          "账号映射（Account Mapping）",
+          "不同系统间账号的对应关系，确保用户在一个系统登录后，其他关联系统能识别同一用户"
+        ],
+        "cases": [
+          "代理商平台账号与企学宝账号的映射：国内用 SSO+手机号，海外独立对接"
+        ],
+        "section": "第四部分：权限与安全",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "账号映射",
+            "meaning": "Account Mapping",
+            "explain": "不同系统间账号的对应关系，确保用户在一个系统登录后，其他关联系统能识别同一用户",
+            "loc": "",
+            "case": "代理商平台账号与企学宝账号的映射：国内用 SSO+手机号，海外独立对接"
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-rbac",
+        "title": "RBAC",
+        "summary": "按角色分配权限，用户属于某个角色，角色拥有一组权限",
+        "tags": [
+          "行业通用词语",
+          "RBAC"
+        ],
+        "content": [
+          "RBAC（Role-Based Access Control 基于角色的访问控制）",
+          "按角色分配权限，用户属于某个角色，角色拥有一组权限"
+        ],
+        "cases": [
+          "代理商平台的权限体系：管理员拥有全部功能权限，普通客服仅有查看工单权限"
+        ],
+        "section": "第四部分：权限与安全",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "RBAC",
+            "meaning": "Role-Based Access Control 基于角色的访问控制",
+            "explain": "按角色分配权限，用户属于某个角色，角色拥有一组权限",
+            "loc": "",
+            "case": "代理商平台的权限体系：管理员拥有全部功能权限，普通客服仅有查看工单权限"
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-功能权限",
+        "title": "功能权限",
+        "summary": "决定用户能看到/操作哪些菜单、按钮",
+        "tags": [
+          "行业通用词语",
+          "功能权限"
+        ],
+        "content": [
+          "功能权限（能否操作某个功能）",
+          "决定用户能看到/操作哪些菜单、按钮"
+        ],
+        "cases": [
+          "代理商能看到\"工单管理\"菜单，普通客服看不到"
+        ],
+        "section": "第四部分：权限与安全",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "功能权限",
+            "meaning": "能否操作某个功能",
+            "explain": "决定用户能看到/操作哪些菜单、按钮",
+            "loc": "",
+            "case": "代理商能看到\"工单管理\"菜单，普通客服看不到"
+          }
+        ]
+      },
+      {
+        "id": "kb-industry-terms-数据权限",
+        "title": "数据权限",
+        "summary": "决定用户能看到哪些具体数据范围",
+        "tags": [
+          "行业通用词语",
+          "数据权限"
+        ],
+        "content": [
+          "数据权限（能否看到某些数据）",
+          "决定用户能看到哪些具体数据范围"
+        ],
+        "cases": [
+          "区域 A 代理商只能看到自己区域的工单，看不到区域 B 的"
+        ],
+        "section": "第四部分：权限与安全",
+        "sourceId": "industry-terms",
+        "sourceLabel": "行业通用词语",
+        "kind": "term",
+        "terms": [
+          {
+            "term": "数据权限",
+            "meaning": "能否看到某些数据",
+            "explain": "决定用户能看到哪些具体数据范围",
+            "loc": "",
+            "case": "区域 A 代理商只能看到自己区域的工单，看不到区域 B 的"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "workflow",
+    "title": "工作流程",
+    "description": "需求处理、PRD 与上线复盘流程",
+    "icon": "↻",
+    "items": [
+      {
         "id": "kb-workflow-1-需求接收",
         "title": "1. 需求接收",
-        "summary": "动作：进入需求池，标注来源和初步描述",
+        "summary": "来源：用户反馈 / 业务方 / 数据分析 / 竞品",
         "tags": [
           "工作流程"
         ],
         "content": [
+          "来源：用户反馈 / 业务方 / 数据分析 / 竞品",
           "动作：进入需求池，标注来源和初步描述"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-2-需求分析",
@@ -2000,7 +2594,11 @@ const categories = [
           "明确目标用户和使用场景",
           "梳理核心流程和边界",
           "评估价值和优先级"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-3-方案设计",
@@ -2013,7 +2611,11 @@ const categories = [
           "撰写 PRD",
           "制作原型/低保真",
           "确定验收标准"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-4-评审对齐",
@@ -2026,7 +2628,11 @@ const categories = [
           "内部评审（PM 组）",
           "跨部门评审（研发/设计/测试）",
           "确认排期和分工"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-5-开发跟踪",
@@ -2040,7 +2646,11 @@ const categories = [
           "跟踪开发进展",
           "处理技术疑问",
           "验收功能实现"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-6-上线发布",
@@ -2053,7 +2663,11 @@ const categories = [
           "确认上线时间",
           "准备上线文档",
           "跟踪上线效果"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
         "id": "kb-workflow-7-复盘总结",
@@ -2066,72 +2680,27 @@ const categories = [
           "回顾目标达成",
           "记录问题和解决方案",
           "更新知识库"
-        ]
+        ],
+        "section": "需求处理 7 步流程",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-step"
       },
       {
-        "id": "kb-workflow-4-集群分时发布",
-        "title": "4 集群分时发布",
-        "summary": "核心原则：4 集群不同时上线，分两天 4 个时段发布，避开集群负载高峰 + 给运维留响应窗口。",
+        "id": "kb-workflow-prd-模板",
+        "title": "PRD 模板（7 章节标准结构）",
+        "summary": "# [需求名称]\n\n## 1. 背景与目的\n- 业务背景\n- 需求目的\n- 目标用户\n\n## 2. 用户故事\n- 作为...我希望...以便...\n\n## 3. 功能需求\n### 3.1 功能点 1\n- 描述\n- 业务流程\n- 验收标准\n\n",
         "tags": [
-          "工作流程"
+          "工作流程",
+          "PRD"
         ],
         "content": [
-          "国内集群 · 上线时间=上线当天 22:00（北京时间） · 备注=默认首选",
-          "新加坡集群 · 上线时间=上线当天 22:00（北京时间） · 备注=与国内同步",
-          "德国集群 · 上线时间=上线次日 14:00（北京时间） · 备注=避国内晚高峰",
-          "美国集群 · 上线时间=上线次日 11:00（北京时间） · 备注=美东当地时间前一天 22:00 左右",
-          "核心原则：4 集群不同时上线，分两天 4 个时段发布，避开集群负载高峰 + 给运维留响应窗口。"
-        ]
-      },
-      {
-        "id": "kb-workflow-优先级规则",
-        "title": "优先级规则",
-        "summary": "项目明确指定具体时间 → 以项目要求为准（如 OTA 紧急安全补丁可指定全部集群同步）",
-        "tags": [
-          "工作流程"
+          "# [需求名称]\n\n## 1. 背景与目的\n- 业务背景\n- 需求目的\n- 目标用户\n\n## 2. 用户故事\n- 作为...我希望...以便...\n\n## 3. 功能需求\n### 3.1 功能点 1\n- 描述\n- 业务流程\n- 验收标准\n\n### 3.2 功能点 2\n...\n\n## 4. 非功能需求\n- 性能要求\n- 安全要求\n- 兼容性\n\n## 5. 风险与依赖\n- 风险点\n- 依赖方\n\n## 6. 排期计划\n- 计划开始\n- 计划结束\n- 负责人"
         ],
-        "content": [
-          "项目明确指定具体时间 → 以项目要求为准（如 OTA 紧急安全补丁可指定全部集群同步）",
-          "未指定 → 按默认规则填写（自动套用）"
-        ]
-      },
-      {
-        "id": "kb-workflow-应用场景",
-        "title": "应用场景",
-        "summary": "写上线公告时（release-announcement skill 套模板，按默认规则生成发布时间）",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "写上线公告时（release-announcement skill 套模板，按默认规则生成发布时间）",
-          "排期计划对齐时（PRD/评审纪要标注\"上线时间 = D 日 22:00 北京\"）",
-          "客户沟通时（对外说明\"国内当晚/海外次日\"分批上线节奏）"
-        ]
-      },
-      {
-        "id": "kb-workflow-反例",
-        "title": "反例（不要这么写）",
-        "summary": "❌ \"4 集群同时上线\" — 违反分时发布原则",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "❌ \"4 集群同时上线\" — 违反分时发布原则",
-          "❌ \"国内 22:00，海外也 22:00（当地时间）\" — 德国/美国集群当地 22:00 对应北京 04:00-12:00，不是默认规则",
-          "❌ 不写明集群具体时间 — 客户/客服无法答疑"
-        ]
-      },
-      {
-        "id": "kb-workflow-v17-上线公告实战参考",
-        "title": "V17 上线公告实战参考",
-        "summary": "国内 6/16 22:00 / 德国 6/17 14:00 / 美国 6/17 11:00 / 新加坡 6/17 22:00",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "国内 6/16 22:00 / 德国 6/17 14:00 / 美国 6/17 11:00 / 新加坡 6/17 22:00",
-          "文档：JGfYdmqd0o01awxQW4QcERJAncf"
-        ]
+        "section": "文档规范",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "prd-template"
       },
       {
         "id": "kb-workflow-prd-写作-4-原则",
@@ -2146,7 +2715,11 @@ const categories = [
           "2. 需求可测：每个功能点都有验收标准",
           "3. 边界明确：说清楚\"做什么\"和\"不做什么\"",
           "4. 风险可视：列清楚依赖方 + 风险点"
-        ]
+        ],
+        "section": "文档规范",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "prd-template"
       },
       {
         "id": "kb-workflow-与研发协作",
@@ -2160,7 +2733,11 @@ const categories = [
           "对接方式：技术方案评审会",
           "响应时效：技术疑问 24 小时内回复",
           "协作工具：飞书项目 / 多维表格"
-        ]
+        ],
+        "section": "与各部门协作 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "collab-item"
       },
       {
         "id": "kb-workflow-与设计协作",
@@ -2174,7 +2751,11 @@ const categories = [
           "对接方式：设计评审会 + 走查",
           "响应时效：原型 3-5 个工作日",
           "协作工具：Figma / 即时设计"
-        ]
+        ],
+        "section": "与各部门协作 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "collab-item"
       },
       {
         "id": "kb-workflow-与测试协作",
@@ -2188,7 +2769,11 @@ const categories = [
           "对接方式：测试用例评审会",
           "响应时效：测试用例 1 个工作日",
           "协作工具：测试用例库"
-        ]
+        ],
+        "section": "与各部门协作 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "collab-item"
       },
       {
         "id": "kb-workflow-与业务方协作",
@@ -2202,7 +2787,11 @@ const categories = [
           "对接方式：需求宣讲会 + 验收会",
           "响应时效：业务方反馈 1 个工作日",
           "协作工具：飞书群 + 邮件"
-        ]
+        ],
+        "section": "与各部门协作 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "collab-item"
       },
       {
         "id": "kb-workflow-日常积累",
@@ -2214,7 +2803,11 @@ const categories = [
         "content": [
           "每天 10:00 自动推送 3 个 PM 知识点到 daily-log.md",
           "每周五 18:00 复盘——把值得长期保留的知识点从 daily-log.md 迁移到对应主题文件"
-        ]
+        ],
+        "section": "知识库管理 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-item"
       },
       {
         "id": "kb-workflow-月度整理",
@@ -2226,7 +2819,11 @@ const categories = [
         "content": [
           "把 daily-log.md 中高频出现的术语沉淀到 行业通用词语.md",
           "把高频需求类型沉淀到本文档的\"典型需求场景\"章节"
-        ]
+        ],
+        "section": "知识库管理 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-item"
       },
       {
         "id": "kb-workflow-知识检索",
@@ -2239,7 +2836,11 @@ const categories = [
           "遇到陌生术语 → 查 行业通用词语.md",
           "写 PRD 前 → 查 工作流程.md（本文档）+ 产品经理八股.md",
           "跨部门沟通前 → 查 产品经理八股.md 的\"沟通协作\""
-        ]
+        ],
+        "section": "知识库管理 SOP",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "workflow-item"
       },
       {
         "id": "kb-workflow-默认节奏",
@@ -2251,7 +2852,11 @@ const categories = [
         "content": [
           "每周五 18:00 推送复盘报告（USER.md 立规）",
           "例外：重大节点冲刺/上线前，可临时提前到周四，需在 W 复盘文件里标注（MEMORY 立规 6/11）"
-        ]
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "retro-item"
       },
       {
         "id": "kb-workflow-8-步走完",
@@ -2269,7 +2874,11 @@ const categories = [
           "6. 结构化分析 — 按 11 字段组织内容（见下方\"复盘表字段\"）",
           "7. 写复盘表 — 在「个人需求管理系统」Base 的「复盘表」（table_id=tblbeEeBpcBsLfaL）按 NO.XXX 编号写入",
           "8. 关联需求 — 通过 link 字段关联本周涉及的需求 record_id（W23 关联 5 个，W24 关联 3 个）"
-        ]
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "retro-item"
       },
       {
         "id": "kb-workflow-复盘表-11-字段",
@@ -2290,7 +2899,11 @@ const categories = [
           "下周计划 · 类型=text · 用途=优先级最高的事项",
           "同类问题解决方案 · 类型=text · 用途=下次遇到同类怎么解决",
           "关联需求 · 类型=link → 需求表 · 用途=本周涉及的需求 record_id 列表"
-        ]
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "retro-item"
       },
       {
         "id": "kb-workflow-复盘表写入命令模板",
@@ -2300,8 +2913,12 @@ const categories = [
           "工作流程"
         ],
         "content": [
-          "# 1. 准备 batch JSON\njq '{fields: [\"复盘周期\",\"本周完成\",...,\"关联需求\"], rows: [[<value1>,<value2>,...]]}' \\\n   /home/gem/.aily/workdir/w{N}_review.json \\\n   > /home/gem/.aily/workdir/w{N}_review_batch.json\n# 2. 批量创建\nlarksuite-cli base +record-batch-create --as user \\\n  --base-token \"QTrqbJ0wDadiZasNii5ctD61nle\" \\\n  --table-id \"tblbeEeBpcBsLfaL\" \\\n  --json \"$(cat /home/gem/.aily/workdir/w{N}_review_batch.json)\""
-        ]
+          "# 1. 准备 batch JSON\njq '{fields: [\"复盘周期\",\"本周完成\",...,\"关联需求\"], rows: [[<value1>,<value2>,...]]}' \\\n   /home/gem/.aily/workdir/w{N}_review.json \\\n   > /home/gem/.aily/workdir/w{N}_review_batch.json\n\n# 2. 批量创建\nlarksuite-cli base +record-batch-create --as user \\\n  --base-token \"QTrqbJ0wDadiZasNii5ctD61nle\" \\\n  --table-id \"tblbeEeBpcBsLfaL\" \\\n  --json \"$(cat /home/gem/.aily/workdir/w{N}_review_batch.json)\""
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "prd-template"
       },
       {
         "id": "kb-workflow-复盘产物-3-件套",
@@ -2314,7 +2931,11 @@ const categories = [
           "复盘表（NO.XXX）：结构化记录，可索引、可关联",
           "周复盘文件 memory/work/weekly/2026-W{N}.md：详细版，含链接、引用",
           "IM 推送摘要：用 im_message 推给用户，3 行总结 + 复盘表链接"
-        ]
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "retro-item"
       },
       {
         "id": "kb-workflow-关联需求识别",
@@ -2327,738 +2948,992 @@ const categories = [
           "W23 关联的 5 个需求 record_id：recviZSHCzeWNq（企学宝）/ recvln3jRpRClX（飞书消息推送）/ recXQNm2ZGlg61（CRM）/ recvln3jjA4QEM（企学宝调研）/ recgSI6zYHaIoh（巡航任务）",
           "新增需求需先在「需求表」（table_id=tbl4ZqjX8c8OyQhG）创建，再在复盘表 link 字段引用",
           "复盘表写完后必须验证关联：打开 Base 链接，肉眼检查「关联需求」字段是否显示"
-        ]
+        ],
+        "section": "复盘 SOP（W23 立规，W24 落地）",
+        "sourceId": "workflow",
+        "sourceLabel": "工作流程",
+        "kind": "retro-item"
       }
     ]
   },
   {
-    "id": "domain",
-    "title": "行业认知",
-    "description": "B 端与 C 端、商业模式与产品类型",
-    "icon": "○",
+    "id": "reference",
+    "title": "快速参考",
+    "description": "关键词速查、知识图谱与学习路径",
+    "icon": "◎",
     "items": [
       {
-        "id": "b-vs-c",
-        "title": "B 端 vs C 端",
-        "summary": "两类产品的本质差异",
+        "id": "kb-keyword-index-a",
+        "title": "A",
+        "summary": "AARRR：增长黑客 5 阶段:Acquisition/Activation/Retention/Revenue/Referral（01-PM方法论/产品策划方法论.md 5. 数据层）",
         "tags": [
-          "B端",
-          "C端"
+          "关键词速查表"
         ],
         "content": [
-          "C 端（To Consumer）：用户即决策者，注重体验、增长、留存，决策链短，迭代快。",
-          "B 端（To Business）：多角色决策（采购、使用、管理），注重效率、ROI、定制化，销售周期长。",
-          "C 端核心：流量、转化、留存、变现；B 端核心：获客、实施、续约、增购。",
-          "B 端产品需理解客户业务流程和组织架构；C 端需理解用户心理和行为。",
-          "SaaS 是 B 端常见模式：订阅制、低边际成本、网络效应有限。"
+          "AARRR：增长黑客 5 阶段:Acquisition/Activation/Retention/Revenue/Referral（01-PM方法论/产品策划方法论.md 5. 数据层）",
+          "A/B 测试：同一功能做 2 个版本,看哪个数据好（01-PM方法论/产品策划方法论.md 5. 数据层）",
+          "AMR：Autonomous Mobile Robot,自主移动机器人（02-技术架构/行业通用词语.md）",
+          "API：Application Programming Interface,系统间对接接口（02-技术架构/系统架构.md）",
+          "AIDA：营销漏斗:Attention/Interest/Desire/Action（01-PM方法论/产品策划方法论.md 1. 战略层）"
         ],
-        "cases": [
-          "飞书（B 端）：多角色决策、重实施与续约，功能强调权限、审计、集成；抖音（C 端）：个人即决策，重体验与算法分发。",
-          "同一公司 ToB 与 ToC 产品线 KPI 完全不同，不能混用同一套增长打法。"
-        ],
-        "pmApplication": [
-          "面试先判断产品类型，再答策略与指标。",
-          "B 端重流程、合同、交付；C 端重留存、增长、体验。",
-          "选职业方向时结合自身偏好与能力结构。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "AARRR",
+            "meaning": "增长黑客 5 阶段:Acquisition/Activation/Retention/Revenue/Referral",
+            "explain": "增长黑客 5 阶段:Acquisition/Activation/Retention/Revenue/Referral",
+            "loc": "01-PM方法论/产品策划方法论.md 5. 数据层",
+            "case": ""
+          },
+          {
+            "term": "A/B 测试",
+            "meaning": "同一功能做 2 个版本,看哪个数据好",
+            "explain": "同一功能做 2 个版本,看哪个数据好",
+            "loc": "01-PM方法论/产品策划方法论.md 5. 数据层",
+            "case": ""
+          },
+          {
+            "term": "AMR",
+            "meaning": "Autonomous Mobile Robot,自主移动机器人",
+            "explain": "Autonomous Mobile Robot,自主移动机器人",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "API",
+            "meaning": "Application Programming Interface,系统间对接接口",
+            "explain": "Application Programming Interface,系统间对接接口",
+            "loc": "02-技术架构/系统架构.md",
+            "case": ""
+          },
+          {
+            "term": "AIDA",
+            "meaning": "营销漏斗:Attention/Interest/Desire/Action",
+            "explain": "营销漏斗:Attention/Interest/Desire/Action",
+            "loc": "01-PM方法论/产品策划方法论.md 1. 战略层",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "business-model",
-        "title": "商业模式",
-        "summary": "产品如何创造并获取价值",
+        "id": "kb-keyword-index-b",
+        "title": "B",
+        "summary": "BMC：Business Model Canvas,商业模式画布 9 格子（01-PM方法论/产品策划方法论.md 1. 战略层）",
         "tags": [
-          "商业",
-          "模式"
+          "关键词速查表"
         ],
         "content": [
-          "商业模式画布九要素：客户细分、价值主张、渠道、客户关系、收入来源、核心资源、关键业务、重要合作、成本结构。",
-          "常见模式：广告、订阅、交易佣金、增值服务、授权许可。",
-          "平台模式：连接供需双方，网络效应越强壁垒越高（如淘宝、滴滴）。",
-          "双边市场：需平衡两端（如骑手与乘客），冷启动是最大挑战。",
-          "单位经济（Unit Economics）：每单/每用户的收入与成本，决定能否规模化盈利。"
+          "BMC：Business Model Canvas,商业模式画布 9 格子（01-PM方法论/产品策划方法论.md 1. 战略层）",
+          "BOM：Bill of Materials,物料清单（02-技术架构/行业通用词语.md）",
+          "BRD：Business Requirements Document,商业需求文档（01-PM方法论/产品策划方法论.md 4. 设计层）",
+          "BU：Business Unit,业务单元（02-技术架构/行业通用词语.md）"
         ],
-        "cases": [
-          "淘宝平台模式：连接买卖双方，佣金+广告；双边冷启动先扶持一端（商家）。",
-          "SaaS 订阅：低边际成本，但需持续交付价值否则 Churn 上升。"
-        ],
-        "pmApplication": [
-          "用商业模式画布分析竞品与自身。",
-          "功能优先级与收入来源挂钩：变现路径上的功能优先。",
-          "面试「如何商业化」结合用户价值与单位经济。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "BMC",
+            "meaning": "Business Model Canvas,商业模式画布 9 格子",
+            "explain": "Business Model Canvas,商业模式画布 9 格子",
+            "loc": "01-PM方法论/产品策划方法论.md 1. 战略层",
+            "case": ""
+          },
+          {
+            "term": "BOM",
+            "meaning": "Bill of Materials,物料清单",
+            "explain": "Bill of Materials,物料清单",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "BRD",
+            "meaning": "Business Requirements Document,商业需求文档",
+            "explain": "Business Requirements Document,商业需求文档",
+            "loc": "01-PM方法论/产品策划方法论.md 4. 设计层",
+            "case": ""
+          },
+          {
+            "term": "BU",
+            "meaning": "Business Unit,业务单元",
+            "explain": "Business Unit,业务单元",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "platform",
-        "title": "平台型产品",
-        "summary": "连接多方，构建生态",
+        "id": "kb-keyword-index-c",
+        "title": "C",
+        "summary": "Cohort：队列分析(同期群分析)（01-PM方法论/产品策划方法论.md 5. 数据层）",
         "tags": [
-          "平台",
-          "生态"
+          "关键词速查表"
         ],
         "content": [
-          "平台价值 = 网络效应：用户越多，对每个用户的价值越大。",
-          "冷启动策略：先服务一端（如 Uber 先积累司机）、补贴、聚焦细分场景。",
-          "治理机制：规则、信用体系、纠纷处理，维持生态健康。",
-          "平台 vs 自营：平台轻资产、扩张快，但控制力弱；自营重资产、体验可控。",
-          "典型案例：微信（社交+生态）、美团（本地生活）、抖音（内容+电商）。"
+          "Cohort：队列分析(同期群分析)（01-PM方法论/产品策划方法论.md 5. 数据层）",
+          "CI/CD：Continuous Integration/Continuous Deployment（02-技术架构/系统架构.md 云原生章节）",
+          "CRM：Customer Relationship Management,客户关系管理（02-技术架构/行业通用词语.md）",
+          "CR：Change Request,变更请求（02-技术架构/行业通用词语.md）"
         ],
-        "cases": [
-          "微信生态：小程序、支付、公众号形成网络效应，新功能可复用社交关系链冷启动。",
-          "本地生活平台冷启动：先密集覆盖单城市供需，再复制。"
-        ],
-        "pmApplication": [
-          "平台产品需设计治理规则与信用体系。",
-          "思考双边平衡：补贴哪端、如何防刷单。",
-          "面试平台题讲网络效应与冷启动策略。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "Cohort",
+            "meaning": "队列分析(同期群分析)",
+            "explain": "队列分析(同期群分析)",
+            "loc": "01-PM方法论/产品策划方法论.md 5. 数据层",
+            "case": ""
+          },
+          {
+            "term": "CI/CD",
+            "meaning": "Continuous Integration/Continuous Deployment",
+            "explain": "Continuous Integration/Continuous Deployment",
+            "loc": "02-技术架构/系统架构.md 云原生章节",
+            "case": ""
+          },
+          {
+            "term": "CRM",
+            "meaning": "Customer Relationship Management,客户关系管理",
+            "explain": "Customer Relationship Management,客户关系管理",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "CR",
+            "meaning": "Change Request,变更请求",
+            "explain": "Change Request,变更请求",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "ai-product",
-        "title": "AI 产品思维",
-        "summary": "大模型时代的产品设计要点",
+        "id": "kb-keyword-index-d",
+        "title": "D",
+        "summary": "Docker：容器化技术,打包应用+依赖（02-技术架构/系统架构.md 云原生）",
         "tags": [
-          "AI",
-          "趋势"
+          "关键词速查表"
         ],
         "content": [
-          "AI 产品核心：解决什么问题，而非炫技。技术服务于用户价值。",
-          "人机协作：AI 辅助决策，人类保留最终控制权，尤其在关键场景。",
-          "Prompt 即产品：对话式产品的交互设计、引导、容错。",
-          "评估指标：准确率、召回率、用户满意度、任务完成率，需针对场景定义。",
-          "伦理与合规：数据隐私、偏见、可解释性、内容安全。"
+          "Docker：容器化技术,打包应用+依赖（02-技术架构/系统架构.md 云原生）",
+          "DAU：Daily Active Users,日活跃用户（01-PM方法论/产品经理八股.md）"
         ],
-        "cases": [
-          "智能客服：人机协作，高风险问题转人工；指标看解决率与用户满意度，而非只看模型准确率。",
-          "AI 写作产品用 Prompt 模板降低用户门槛，A/B 测试不同引导文案的任务完成率。"
-        ],
-        "pmApplication": [
-          "先定义场景与评估标准，再选模型能力。",
-          "设计容错与可解释性，关键决策保留人类确认。",
-          "关注合规：数据隐私、内容安全、偏见。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "Docker",
+            "meaning": "容器化技术,打包应用+依赖",
+            "explain": "容器化技术,打包应用+依赖",
+            "loc": "02-技术架构/系统架构.md 云原生",
+            "case": ""
+          },
+          {
+            "term": "DAU",
+            "meaning": "Daily Active Users,日活跃用户",
+            "explain": "Daily Active Users,日活跃用户",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "content-product",
-        "title": "内容产品逻辑",
-        "summary": "供给、分发、消费与创作者生态",
+        "id": "kb-keyword-index-e",
+        "title": "E",
+        "summary": "ECN：Engineering Change Notice,工程变更通知（02-技术架构/行业通用词语.md）",
         "tags": [
-          "内容",
-          "推荐"
+          "关键词速查表"
         ],
         "content": [
-          "内容产品三角：创作者（供给）、消费者（需求）、平台（分发与规则）。",
-          "核心指标：消费时长、互动率、创作活跃度、内容供给多样性。",
-          "冷启动：PGC 打底 + 激励 UGC，或从细分垂类切入建立密度。",
-          "推荐系统决定分发效率，需平衡探索（新内容）与利用（爆款）。",
-          "典型案例：抖音（算法分发）、小红书（社区+搜索）、B站（圈层文化）。"
+          "ECN：Engineering Change Notice,工程变更通知（02-技术架构/行业通用词语.md）",
+          "ERP：Enterprise Resource Planning,企业资源计划(8 大模块)（02-技术架构/行业通用词语.md）"
         ],
-        "cases": [
-          "抖音：算法分发 + PGC 打底 UGC，平衡探索与利用避免信息茧房单一化。",
-          "小红书冷启动从美妆垂类建立内容密度，再扩展品类。"
-        ],
-        "pmApplication": [
-          "内容三角：供给、消费、创作者激励需同时设计。",
-          "核心指标：时长、互动、创作活跃，而非仅 DAU。",
-          "推荐策略产品需与算法团队对齐目标函数。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "ECN",
+            "meaning": "Engineering Change Notice,工程变更通知",
+            "explain": "Engineering Change Notice,工程变更通知",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "ERP",
+            "meaning": "Enterprise Resource Planning,企业资源计划(8 大模块)",
+            "explain": "Enterprise Resource Planning,企业资源计划(8 大模块)",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "ecommerce",
-        "title": "电商产品核心",
-        "summary": "人货场、转化链路与履约体验",
+        "id": "kb-keyword-index-f",
+        "title": "F",
+        "summary": "FSD：Functional Specifications Document,功能规格说明（01-PM方法论/产品策划方法论.md 4. 设计层）",
         "tags": [
-          "电商",
-          "交易"
+          "关键词速查表"
         ],
         "content": [
-          "人货场：精准人群、有竞争力的货品、高效的场（搜索/推荐/活动）。",
-          "转化链路：曝光 → 点击 → 加购 → 下单 → 支付 → 复购，每步都有优化空间。",
-          "供给侧：商家入驻、商品管理、库存、定价；需求侧：导购、信任、支付、售后。",
-          "大促是压力测试：技术稳定性、供应链、客服，需提前数月规划。",
-          "差异化：价格（拼多多）、体验（京东物流）、内容（直播电商）、会员（亚马逊 Prime）。"
+          "FSD：Functional Specifications Document,功能规格说明（01-PM方法论/产品策划方法论.md 4. 设计层）",
+          "Fogg 行为模型：B=MAP,行为=动机+能力+提示（01-PM方法论/产品策划方法论.md）"
         ],
-        "cases": [
-          "大促前 3 个月锁定支付与库存方案，当天冒烟验证主路径：浏览→下单→支付→库存扣减。",
-          "拼多多用价格与社交裂变，京东用物流体验——差异化不在同一维度硬拼。"
-        ],
-        "pmApplication": [
-          "优化转化链路每一步，先找数据上最大流失点。",
-          "大促是系统工程：技术、供应链、客服协同。",
-          "面试电商题画「人货场」与漏斗。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "FSD",
+            "meaning": "Functional Specifications Document,功能规格说明",
+            "explain": "Functional Specifications Document,功能规格说明",
+            "loc": "01-PM方法论/产品策划方法论.md 4. 设计层",
+            "case": ""
+          },
+          {
+            "term": "Fogg 行为模型",
+            "meaning": "B=MAP,行为=动机+能力+提示",
+            "explain": "B=MAP,行为=动机+能力+提示",
+            "loc": "01-PM方法论/产品策划方法论.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "saas-metrics",
-        "title": "SaaS 关键指标",
-        "summary": "B 端订阅产品的核心度量",
+        "id": "kb-keyword-index-h",
+        "title": "H",
+        "summary": "HaaS：Hardware as a Service,硬件即服务（02-技术架构/行业通用词语.md）",
         "tags": [
-          "SaaS",
-          "B端"
+          "关键词速查表"
         ],
         "content": [
-          "MRR/ARR：月度/年度经常性收入，SaaS 健康度的核心。",
-          "Churn Rate：客户流失率，B2B 看 Logo Churn 和 Revenue Churn。",
-          "LTV:CAC 比值应 > 3，CAC Payback Period（回本周期）越短越好。",
-          "NRR（净收入留存）：> 100% 表示存量客户增购 > 流失，是增长质量信号。",
-          "产品驱动增长（PLG）：免费试用/Freemium 降低获客成本，靠产品体验转化付费。"
+          "HaaS：Hardware as a Service,硬件即服务（02-技术架构/行业通用词语.md）",
+          "HA：High Availability,高可用（02-技术架构/系统架构.md）"
         ],
-        "cases": [
-          "NRR 105%：存量客户扩购大于流失，说明产品粘性与 upsell 健康。",
-          "LTV:CAC=2 低于健康线，判断需降低获客成本或提升 onboarding 留存后再加大投放。"
-        ],
-        "pmApplication": [
-          "B 端产品面试常问 MRR、Churn、NRR，需能解释含义与改进方向。",
-          "PLG 产品关注免费到付费转化漏斗。",
-          "功能规划与续约、增购指标挂钩。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "HaaS",
+            "meaning": "Hardware as a Service,硬件即服务",
+            "explain": "Hardware as a Service,硬件即服务",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "HA",
+            "meaning": "High Availability,高可用",
+            "explain": "High Availability,高可用",
+            "loc": "02-技术架构/系统架构.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "fintech-basics",
-        "title": "金融产品常识",
-        "summary": "合规、风控与信任是底线",
+        "id": "kb-keyword-index-i",
+        "title": "I",
+        "summary": "IaaS：Infrastructure as a Service（02-技术架构/行业通用词语.md）",
         "tags": [
-          "金融",
-          "合规"
+          "关键词速查表"
         ],
         "content": [
-          "金融业务强监管：牌照、反洗钱、用户适当性、信息披露，产品方案需法务合规评审。",
-          "风控贯穿全流程：身份验证、交易监控、欺诈检测、信用评估。",
-          "用户信任成本极高：一次安全事故可能摧毁品牌，安全设计优先于功能炫技。",
-          "常见品类：支付、理财、信贷、保险，各有不同的监管主体和要求。",
-          "产品经理需理解基本金融概念：利率、费率、净值、风险等级、T+1 等。"
+          "IaaS：Infrastructure as a Service（02-技术架构/行业通用词语.md）",
+          "IA：Information Architecture,信息架构（01-PM方法论/产品策划方法论.md 4. 设计层）",
+          "IPD：Integrated Product Development,集成产品开发（02-技术架构/行业通用词语.md）",
+          "ICE：Impact+Confidence+Ease,增长实验评分（01-PM方法论/产品策划方法论.md 3. 需求层）"
         ],
-        "cases": [
-          "支付产品上线前过合规评审：反洗钱、用户适当性、信息披露文案法务签字。",
-          "某理财 App 一次安全舆情导致大量赎回，说明金融品类信任成本极高。"
-        ],
-        "pmApplication": [
-          "金融需求先问牌照与合规边界，再设计功能。",
-          "风控与体验平衡：关键环节宁可多一步验证。",
-          "了解基本术语：利率、费率、T+1、风险等级。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "IaaS",
+            "meaning": "Infrastructure as a Service",
+            "explain": "Infrastructure as a Service",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "IA",
+            "meaning": "Information Architecture,信息架构",
+            "explain": "Information Architecture,信息架构",
+            "loc": "01-PM方法论/产品策划方法论.md 4. 设计层",
+            "case": ""
+          },
+          {
+            "term": "IPD",
+            "meaning": "Integrated Product Development,集成产品开发",
+            "explain": "Integrated Product Development,集成产品开发",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "ICE",
+            "meaning": "Impact+Confidence+Ease,增长实验评分",
+            "explain": "Impact+Confidence+Ease,增长实验评分",
+            "loc": "01-PM方法论/产品策划方法论.md 3. 需求层",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-1-1-云服务模式",
-        "title": "云服务模式（4 种 X as a Service）",
-        "summary": "记忆口诀：IaaS 卖算力 / PaaS 卖平台 / SaaS 卖软件 / HaaS 卖硬件",
+        "id": "kb-keyword-index-j",
+        "title": "J",
+        "summary": "JTBD：Jobs To Be Done,待完成任务理论（01-PM方法论/产品策划方法论.md）",
         "tags": [
-          "行业通用词语"
+          "关键词速查表"
         ],
         "content": [
-          "记忆口诀：IaaS 卖算力 / PaaS 卖平台 / SaaS 卖软件 / HaaS 卖硬件",
-          "IaaS · 全称=Infrastructure as a Service 基础设施即服务 · 解释=卖\"服务器/存储/网络\"等底层资源 · 案例=AWS EC2、阿里云 ECS",
-          "PaaS · 全称=Platform as a Service 平台即服务 · 解释=卖\"开发平台/中间件\"，让开发者专注业务 · 案例=Heroku、阿里云函数计算",
-          "SaaS · 全称=Software as a Service 软件即服务 · 解释=卖\"成品软件订阅\"，客户按月/年付费，厂商统一部署升级 · 案例=飞书、钉钉、Salesforce、企学宝",
-          "HaaS · 全称=Hardware as a Service 硬件即服务 · 解释=卖\"硬件订阅\"，客户按月付使用费，所有权不转移，运维打包 · 案例=普渡机器人按月租、医疗 CT 按扫描次数付、打印机按张数付",
-          "【普渡的\"云服务\"地图】",
-          "IaaS · 普渡对应=阿里云、华为云 · 说明=别人做的，普渡租用",
-          "PaaS · 普渡对应=阿里云函数计算 · 说明=别人做的",
-          "SaaS（外部） · 普渡对应=企学宝、飞书、Salesforce · 说明=普渡订阅使用",
-          "SaaS（自研） · 普渡对应=普渡云学堂（bizlearnify.com） · 说明=普渡自己做的多租户 SaaS",
-          "HaaS（未来） · 普渡对应=普渡机器人按月租 · 说明=未来方向，订阅制 + 服务打包",
-          "本地软件 · 普渡对应=代理商平台、运营管理平台 · 说明=普渡自研，未来可 SaaS 化"
+          "JTBD：Jobs To Be Done,待完成任务理论（01-PM方法论/产品策划方法论.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "JTBD",
+            "meaning": "Jobs To Be Done,待完成任务理论",
+            "explain": "Jobs To Be Done,待完成任务理论",
+            "loc": "01-PM方法论/产品策划方法论.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-1-2-saas-关键指标",
-        "title": "SaaS 关键指标",
-        "summary": "ARR · 全称=Annual Recurring Revenue · 含义=年度经常性收入",
+        "id": "kb-keyword-index-k",
+        "title": "K",
+        "summary": "K8s：Kubernetes,容器编排系统（02-技术架构/系统架构.md）",
         "tags": [
-          "行业通用词语"
+          "关键词速查表"
         ],
         "content": [
-          "ARR · 全称=Annual Recurring Revenue · 含义=年度经常性收入",
-          "MRR · 全称=Monthly Recurring Revenue · 含义=月度经常性收入",
-          "Churn Rate · 全称=流失率 · 含义=客户停用比例",
-          "LTV · 全称=Life-Time Value · 含义=客户生命周期价值",
-          "CAC · 全称=Customer Acquisition Cost · 含义=客户获取成本",
-          "NRR · 全称=Net Revenue Retention · 含义=净收入留存率（>100% 才是好 SaaS）"
+          "K8s：Kubernetes,容器编排系统（02-技术架构/系统架构.md）",
+          "KANO 模型：3 维度需求分类:基本/期望/兴奋（01-PM方法论/产品经理八股.md）",
+          "KPI：Key Performance Indicator（01-PM方法论/产品经理八股.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "K8s",
+            "meaning": "Kubernetes,容器编排系统",
+            "explain": "Kubernetes,容器编排系统",
+            "loc": "02-技术架构/系统架构.md",
+            "case": ""
+          },
+          {
+            "term": "KANO 模型",
+            "meaning": "3 维度需求分类:基本/期望/兴奋",
+            "explain": "3 维度需求分类:基本/期望/兴奋",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          },
+          {
+            "term": "KPI",
+            "meaning": "Key Performance Indicator",
+            "explain": "Key Performance Indicator",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-1-3-saas-pm-特有设计点",
-        "title": "SaaS PM 特有设计点",
-        "summary": "多租户：一套服务服务多客户，租户间数据隔离",
+        "id": "kb-keyword-index-m",
+        "title": "M",
+        "summary": "MVP：Minimum Viable Product,最小可行产品（01-PM方法论/产品经理八股.md）",
         "tags": [
-          "行业通用词语",
-          "PM"
+          "关键词速查表"
         ],
         "content": [
-          "多租户：一套服务服务多客户，租户间数据隔离",
-          "订阅计费：按月/年/用量/超额付费（不是一次性买断）",
-          "API 开放：客户要集成，必须开放",
-          "租户级配置：皮肤、品牌、字段可按租户配置（不写死）",
-          "向后兼容：升级不能影响老客户",
-          "SLA 承诺：99.9% 可用率是常见的，要写入合同",
-          "数据导出：客户要能带走数据（防锁定）"
+          "MVP：Minimum Viable Product,最小可行产品（01-PM方法论/产品经理八股.md）",
+          "MRD：Market Requirements Document,市场需求文档（01-PM方法论/产品策划方法论.md）",
+          "MoSCoW：Must/Should/Could/Won't 优先级分桶（01-PM方法论/产品策划方法论.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "MVP",
+            "meaning": "Minimum Viable Product,最小可行产品",
+            "explain": "Minimum Viable Product,最小可行产品",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          },
+          {
+            "term": "MRD",
+            "meaning": "Market Requirements Document,市场需求文档",
+            "explain": "Market Requirements Document,市场需求文档",
+            "loc": "01-PM方法论/产品策划方法论.md",
+            "case": ""
+          },
+          {
+            "term": "MoSCoW",
+            "meaning": "Must/Should/Could/Won't 优先级分桶",
+            "explain": "Must/Should/Could/Won't 优先级分桶",
+            "loc": "01-PM方法论/产品策划方法论.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-1-4-多租户3-种模式",
-        "title": "多租户（Multi-Tenancy）3 种模式",
-        "summary": "普渡云学堂用的是子站点 + 共享数据库模式（每个子站点 = 一个租户），4 个子站点隔离。",
+        "id": "kb-keyword-index-n",
+        "title": "N",
+        "summary": "NPS：Net Promoter Score,净推荐值（01-PM方法论/产品策划方法论.md 5. 数据层）",
         "tags": [
-          "行业通用词语"
+          "关键词速查表"
         ],
         "content": [
-          "共享数据库 + tenant_id 区分 · 隔离级别=低 · 成本=低 · 适合场景=中小型 SaaS",
-          "共享数据库 + 独立 schema · 隔离级别=中 · 成本=中 · 适合场景=中型 SaaS",
-          "独立数据库 · 隔离级别=高 · 成本=高 · 适合场景=大客户/金融/医疗",
-          "普渡云学堂用的是子站点 + 共享数据库模式（每个子站点 = 一个租户），4 个子站点隔离。"
+          "NPS：Net Promoter Score,净推荐值（01-PM方法论/产品策划方法论.md 5. 数据层）",
+          "NSM：North Star Metric,北极星指标（01-PM方法论/产品策划方法论.md 1. 战略层）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "NPS",
+            "meaning": "Net Promoter Score,净推荐值",
+            "explain": "Net Promoter Score,净推荐值",
+            "loc": "01-PM方法论/产品策划方法论.md 5. 数据层",
+            "case": ""
+          },
+          {
+            "term": "NSM",
+            "meaning": "North Star Metric,北极星指标",
+            "explain": "North Star Metric,北极星指标",
+            "loc": "01-PM方法论/产品策划方法论.md 1. 战略层",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-1-5-产品标准化术语",
-        "title": "产品标准化术语",
-        "summary": "SPU = 产品的\"型号\"（粗颗粒度） — 跨代升级",
+        "id": "kb-keyword-index-o",
+        "title": "O",
+        "summary": "OA：Office Automation,办公自动化（02-技术架构/行业通用词语.md）",
         "tags": [
-          "行业通用词语"
+          "关键词速查表"
         ],
         "content": [
-          "SPU · 全称=Standard Product Unit 标准化产品单元 · 解释=产品的\"概念集合\"，描述\"这是一类什么产品\" · 案例=普渡\"欢乐送\"是 1 个 SPU；iPhone 16 Pro 是 1 个 SPU",
-          "SKU · 全称=Stock Keeping Unit 库存计量单元 · 解释=产品的\"具体一箱/一台\"，带具体属性 · 案例=欢乐送-标准版/欢乐送-Pro-带顶视-白色 = 2 个 SKU",
-          "BOM · 全称=Bill of Materials 物料清单 · 解释=产品所需的全部零部件及数量 · 案例=机器人 BOM：主板+激光雷达+轮组+...",
-          "ECN · 全称=Engineering Change Notice 工程变更通知 · 解释=产品设计/工艺的变更通知 · 案例=\"这款机器人主板 V2.0 发出 ECN\"",
-          "【SPU vs SKU 关键差异】",
-          "SPU = 产品的\"型号\"（粗颗粒度） — 跨代升级",
-          "SKU = 产品的\"具体一箱/一台\"（细颗粒度，带属性） — 同代内属性变化",
-          "颗粒度 · SPU=粗 · SKU=细",
-          "变化频率 · SPU=季度/年级 · SKU=一次发布会新增几十个",
-          "颗粒度增长 · SPU=加法 · SKU=乘法（颜色×尺码×容量 = 大量 SKU）",
-          "用途 · SPU=营销/规划 · SKU=仓储/销售/库存",
-          "【PM 设计原则】",
-          "SPU 控制在 5-15 个，单 SPU 下 SKU 控制在 20-50 个",
-          "选 3-5 个关键属性（颜色、尺寸、容量、版本），不要 10 个",
-          "SKU 4 个生命周期：新品期 / 主销期 / 滞销期 / 退市期",
-          "SPU/SKU/库存/订单/财务 5 套数据实时同步（否则对账灾难）"
+          "OA：Office Automation,办公自动化（02-技术架构/行业通用词语.md）",
+          "OTA：Over The Air,空中下载升级(机器人远程升级)（02-技术架构/系统架构.md 机器人架构）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "OA",
+            "meaning": "Office Automation,办公自动化",
+            "explain": "Office Automation,办公自动化",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "OTA",
+            "meaning": "Over The Air,空中下载升级(机器人远程升级)",
+            "explain": "Over The Air,空中下载升级(机器人远程升级)",
+            "loc": "02-技术架构/系统架构.md 机器人架构",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-1-erp",
-        "title": "ERP（Enterprise Resource Planning 企业资源计划）",
-        "summary": "定义：整合企业核心业务（财务/采购/库存/生产/销售/人力）的管理系统，让数据一处录入、处处可用。",
+        "id": "kb-keyword-index-p",
+        "title": "P",
+        "summary": "PaaS：Platform as a Service（02-技术架构/行业通用词语.md）",
         "tags": [
-          "行业通用词语",
-          "ERP"
+          "关键词速查表"
         ],
         "content": [
-          "定义：整合企业核心业务（财务/采购/库存/生产/销售/人力）的管理系统，让数据一处录入、处处可用。",
-          "关键特征：",
-          "🏢 企业级：服务整个公司",
-          "🔗 高度集成：财务+采购+库存+生产+销售+人力一套系统",
-          "💾 统一数据库：所有模块共享数据源",
-          "🔄 流程自动化：跨部门流程自动触发",
-          "📊 实时报表：业务数据实时汇总",
-          "经典 ERP 8 大模块",
-          "💡 记忆口诀：「财采销存、生人客供」",
-          "财务 · 管什么=总账、应收应付、固定资产、报表 · 普渡场景类比=普渡财务系统",
-          "采购 · 管什么=采购申请、订单、收货、付款 · 普渡场景类比=物料采购",
-          "销售 · 管什么=报价、订单、发货、回款 · 普渡场景类比=代理商订单",
-          "库存 · 管什么=入库、出库、盘点、调拨 · 普渡场景类比=运营管理平台-调拨维保",
-          "生产 · 管什么=BOM、工单、生产排程、车间管理 · 普渡场景类比=机器人装配线",
-          "人力 · 管什么=员工档案、考勤、薪资、绩效 · 普渡场景类比=HR 系统",
-          "CRM · 管什么=客户、商机、合同、售后 · 普渡场景类比=代理商/客户管理",
-          "供应链 · 管什么=物流、仓储、供应商 · 普渡场景类比=物流系统",
-          "普渡的\"轻量级 ERP 生态\"（用自研 + 多个 SaaS 组合）：",
-          "经典 ERP 模块=销售 · 普渡自研系统=代理商平台 · 状态=✅ 已落地",
-          "经典 ERP 模块=库存 · 普渡自研系统=运营管理平台-调拨 · 状态=✅ 已优化（V3.5.0）",
-          "经典 ERP 模块=维保 · 普渡自研系统=运营管理平台-维保 · 状态=✅ 已落地",
-          "经典 ERP 模块=财务 · 普渡自研系统=普渡财务系统 · 状态=✅ 独立系统",
-          "经典 ERP 模块=生产 · 普渡自研系统=普渡 MES/装配线 · 状态=✅ 独立系统",
-          "经典 ERP 模块=培训 · 普渡自研系统=企学宝（外部 SaaS） · 状态=⏳ 对接中（6.17 上线）",
-          "经典 ERP 模块=CRM · 普渡自研系统=代理商平台-CRM · 状态=✅ 已落地",
-          "经典 ERP 模块=OA · 普渡自研系统=飞书审批 + OA 调拨单 · 状态=✅ 已落地",
-          "经典 ERP 模块=BI · 普渡自研系统=数据看板（自研） · 状态=✅ 已有雏形",
-          "主流 ERP 产品：",
-          "国际顶级 · 产品=SAP S/4HANA、Oracle ERP Cloud · 适合=500 强",
-          "国际中端 · 产品=Microsoft Dynamics 365、Infor · 适合=跨国企业",
-          "国内老牌 · 产品=用友 U9/NC Cloud、金蝶云·星瀚 · 适合=中大型企业",
-          "云 ERP 新势力 · 产品=Workday、NetSuite · 适合=中型企业",
-          "开源/低成本 · 产品=Odoo、ERPNext · 适合=中小企业",
-          "行业垂直 · 产品=明源云（地产）、蓝凌 OA · 适合=单一行业"
+          "PaaS：Platform as a Service（02-技术架构/行业通用词语.md）",
+          "PDCA：Plan-Do-Check-Act,戴明环（01-PM方法论/产品策划方法论.md 6. 协作层）",
+          "PMF：Product Market Fit,产品市场契合（01-PM方法论/产品经理八股.md）",
+          "PRD：Product Requirements Document,产品需求文档（05-工作流程/工作流程.md PRD 模板）",
+          "PR：Problem Report,问题报告（02-技术架构/行业通用词语.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "PaaS",
+            "meaning": "Platform as a Service",
+            "explain": "Platform as a Service",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "PDCA",
+            "meaning": "Plan-Do-Check-Act,戴明环",
+            "explain": "Plan-Do-Check-Act,戴明环",
+            "loc": "01-PM方法论/产品策划方法论.md 6. 协作层",
+            "case": ""
+          },
+          {
+            "term": "PMF",
+            "meaning": "Product Market Fit,产品市场契合",
+            "explain": "Product Market Fit,产品市场契合",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          },
+          {
+            "term": "PRD",
+            "meaning": "Product Requirements Document,产品需求文档",
+            "explain": "Product Requirements Document,产品需求文档",
+            "loc": "05-工作流程/工作流程.md PRD 模板",
+            "case": ""
+          },
+          {
+            "term": "PR",
+            "meaning": "Problem Report,问题报告",
+            "explain": "Problem Report,问题报告",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-2-crm",
-        "title": "CRM（Customer Relationship Management 客户关系管理）",
-        "summary": "管理企业与客户关系的系统和方法",
+        "id": "kb-keyword-index-r",
+        "title": "R",
+        "summary": "RACI：Responsible/Accountable/Consulted/Informed 责任图（01-PM方法论/产品策划方法论.md 6. 协作层）",
         "tags": [
-          "行业通用词语",
-          "CRM"
+          "关键词速查表"
         ],
         "content": [
-          "管理企业与客户关系的系统和方法"
+          "RACI：Responsible/Accountable/Consulted/Informed 责任图（01-PM方法论/产品策划方法论.md 6. 协作层）",
+          "RBAC：Role-Based Access Control,基于角色访问控制（02-技术架构/行业通用词语.md）",
+          "RICE：Reach/Impact/Confidence/Effort 评分（01-PM方法论/产品策划方法论.md 3. 需求层）",
+          "ROS：Robot Operating System,机器人操作系统（02-技术架构/行业通用词语.md）"
         ],
-        "cases": [
-          "代理商平台对接 CRM，实现客户信息统一管理"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "RACI",
+            "meaning": "Responsible/Accountable/Consulted/Informed 责任图",
+            "explain": "Responsible/Accountable/Consulted/Informed 责任图",
+            "loc": "01-PM方法论/产品策划方法论.md 6. 协作层",
+            "case": ""
+          },
+          {
+            "term": "RBAC",
+            "meaning": "Role-Based Access Control,基于角色访问控制",
+            "explain": "Role-Based Access Control,基于角色访问控制",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "RICE",
+            "meaning": "Reach/Impact/Confidence/Effort 评分",
+            "explain": "Reach/Impact/Confidence/Effort 评分",
+            "loc": "01-PM方法论/产品策划方法论.md 3. 需求层",
+            "case": ""
+          },
+          {
+            "term": "ROS",
+            "meaning": "Robot Operating System,机器人操作系统",
+            "explain": "Robot Operating System,机器人操作系统",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-4-oa",
-        "title": "OA（Office Automation 办公自动化）",
-        "summary": "流程审批、文档管理、协同办公",
+        "id": "kb-keyword-index-s",
+        "title": "S",
+        "summary": "SaaS：Software as a Service（02-技术架构/行业通用词语.md）",
         "tags": [
-          "行业通用词语",
-          "OA"
+          "关键词速查表"
         ],
         "content": [
-          "流程审批、文档管理、协同办公",
-          "普渡用飞书审批 + OA 调拨单"
+          "SaaS：Software as a Service（02-技术架构/行业通用词语.md）",
+          "SCM：Supply Chain Management,供应链管理（02-技术架构/行业通用词语.md）",
+          "SLAM：Simultaneous Localization and Mapping,同时定位与建图（02-技术架构/行业通用词语.md）",
+          "SLA：Service Level Agreement,服务等级协议（01-PM方法论/产品经理八股.md）",
+          "SKU：Stock Keeping Unit,库存单位（02-技术架构/行业通用词语.md）",
+          "SPU：Standard Product Unit,标准产品单元（02-技术架构/行业通用词语.md）",
+          "SR：Service Request,服务请求（02-技术架构/行业通用词语.md）",
+          "SSO：Single Sign-On,单点登录（02-技术架构/行业通用词语.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "SaaS",
+            "meaning": "Software as a Service",
+            "explain": "Software as a Service",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SCM",
+            "meaning": "Supply Chain Management,供应链管理",
+            "explain": "Supply Chain Management,供应链管理",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SLAM",
+            "meaning": "Simultaneous Localization and Mapping,同时定位与建图",
+            "explain": "Simultaneous Localization and Mapping,同时定位与建图",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SLA",
+            "meaning": "Service Level Agreement,服务等级协议",
+            "explain": "Service Level Agreement,服务等级协议",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          },
+          {
+            "term": "SKU",
+            "meaning": "Stock Keeping Unit,库存单位",
+            "explain": "Stock Keeping Unit,库存单位",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SPU",
+            "meaning": "Standard Product Unit,标准产品单元",
+            "explain": "Standard Product Unit,标准产品单元",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SR",
+            "meaning": "Service Request,服务请求",
+            "explain": "Service Request,服务请求",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          },
+          {
+            "term": "SSO",
+            "meaning": "Single Sign-On,单点登录",
+            "explain": "Single Sign-On,单点登录",
+            "loc": "02-技术架构/行业通用词语.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-5-ipd",
-        "title": "IPD（Integrated Product Development 集成产品开发）",
-        "summary": "一套产品开发流程和方法论，强调跨部门协作、异步开发、结构化流程",
+        "id": "kb-keyword-index-u",
+        "title": "U",
+        "summary": "UAT：User Acceptance Testing,用户验收测试（01-PM方法论/产品策划方法论.md 4. 设计层）",
         "tags": [
-          "行业通用词语",
-          "IPD"
+          "关键词速查表"
         ],
         "content": [
-          "一套产品开发流程和方法论，强调跨部门协作、异步开发、结构化流程"
+          "UAT：User Acceptance Testing,用户验收测试（01-PM方法论/产品策划方法论.md 4. 设计层）",
+          "UCD：User Centered Design,以用户为中心设计（01-PM方法论/产品经理八股.md）"
         ],
-        "cases": [
-          "华为引入 IPD 后，产品上市周期大幅缩短"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "UAT",
+            "meaning": "User Acceptance Testing,用户验收测试",
+            "explain": "User Acceptance Testing,用户验收测试",
+            "loc": "01-PM方法论/产品策划方法论.md 4. 设计层",
+            "case": ""
+          },
+          {
+            "term": "UCD",
+            "meaning": "User Centered Design,以用户为中心设计",
+            "explain": "User Centered Design,以用户为中心设计",
+            "loc": "01-PM方法论/产品经理八股.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-6-bu",
-        "title": "BU（Business Unit 业务单元）",
-        "summary": "企业内部相对独立的业务部门/利润中心",
+        "id": "kb-keyword-index-v",
+        "title": "V",
+        "summary": "VPC：Value Proposition Canvas,价值主张画布（01-PM方法论/产品策划方法论.md 1. 战略层）",
         "tags": [
-          "行业通用词语",
-          "BU"
+          "关键词速查表"
         ],
         "content": [
-          "企业内部相对独立的业务部门/利润中心"
+          "VPC：Value Proposition Canvas,价值主张画布（01-PM方法论/产品策划方法论.md 1. 战略层）"
         ],
-        "cases": [
-          "\"这个需求需要协调多个 BU\""
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "VPC",
+            "meaning": "Value Proposition Canvas,价值主张画布",
+            "explain": "Value Proposition Canvas,价值主张画布",
+            "loc": "01-PM方法论/产品策划方法论.md 1. 战略层",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-industry-terms-2-7-服务请求类",
-        "title": "服务请求类",
-        "summary": "SR · 全称=Service Request 服务请求 · 解释=客户服务请求，通常指售后问题处理 · 案例=\"收到一个 SR，需要处理机器故障\"",
+        "id": "kb-keyword-index-5-why",
+        "title": "5 Why",
+        "summary": "5Why：连续问 5 次为什么,找根因（01-PM方法论/产品策划方法论.md 6. 协作层）",
         "tags": [
-          "行业通用词语"
+          "关键词速查表"
         ],
         "content": [
-          "SR · 全称=Service Request 服务请求 · 解释=客户服务请求，通常指售后问题处理 · 案例=\"收到一个 SR，需要处理机器故障\"",
-          "PR · 全称=Problem Report / Pull Request · 解释=问题报告 / 代码合并请求 · 案例=研发场景指代码合并；客服场景指问题报告"
+          "5Why：连续问 5 次为什么,找根因（01-PM方法论/产品策划方法论.md 6. 协作层）",
+          "4P / 4C：营销 4 元素(产品/价格/渠道/促销)（01-PM方法论/产品策划方法论.md）"
+        ],
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter",
+        "terms": [
+          {
+            "term": "5Why",
+            "meaning": "连续问 5 次为什么,找根因",
+            "explain": "连续问 5 次为什么,找根因",
+            "loc": "01-PM方法论/产品策划方法论.md 6. 协作层",
+            "case": ""
+          },
+          {
+            "term": "4P / 4C",
+            "meaning": "营销 4 元素(产品/价格/渠道/促销)",
+            "explain": "营销 4 元素(产品/价格/渠道/促销)",
+            "loc": "01-PM方法论/产品策划方法论.md",
+            "case": ""
+          }
         ]
       },
       {
-        "id": "kb-system-architecture-1-1-三层架构",
-        "title": "三层架构（最经典的分层思维）",
-        "summary": "所有系统都可以拆成 3 层，PM 提任何需求都先问\"动哪一层\"",
+        "id": "kb-keyword-index-用法",
+        "title": "用法",
+        "summary": "# 找术语定义\ngrep -A 5 \"^### .* SR \" 02-技术架构/行业通用词语.md\n\n# 找方法论案例\ngrep -B 2 -A 8 \"RICE\" 01-PM方法论/产品策划方法论.md",
         "tags": [
-          "系统架构"
+          "关键词速查表"
         ],
         "content": [
-          "所有系统都可以拆成 3 层，PM 提任何需求都先问\"动哪一层\"",
-          "表现层 · 职责=用户看到和操作的界面 · 技术组件举例=Web（React/Vue）、移动端（iOS/Android/小程序）、桌面端 · 普渡对应=代理商平台 Web、运营管理平台 Web",
-          "业务层 · 职责=处理业务逻辑、流程编排、规则校验 · 技术组件举例=后端服务（Java/Go/Node）、API 网关 · 普渡对应=订单服务、工单服务、CRM 服务",
-          "数据层 · 职责=存储、查询、数据分析 · 技术组件举例=关系数据库（MySQL/PG）、缓存（Redis）、搜索（ES）、数仓 · 普渡对应=代理商平台 DB、培训记录库"
+          "# 找术语定义\ngrep -A 5 \"^### .* SR \" 02-技术架构/行业通用词语.md\n\n# 找方法论案例\ngrep -B 2 -A 8 \"RICE\" 01-PM方法论/产品策划方法论.md"
         ],
-        "pmApplication": [
-          "写需求时明确\"动哪几层\"。例：\"工单页加深色模式\" = 只动表现层（前端 CSS）；\"接企学宝同步培训记录\" = 动业务层 + 数据层（要新加同步服务、新加表）。分层意识能让 PM 评估\"这个需求改 1 天还是 1 个月\"。"
+        "sourceId": "keyword-index",
+        "sourceLabel": "关键词速查表",
+        "kind": "glossary-letter"
+      },
+      {
+        "id": "kb-mindmap-主图谱",
+        "title": "主图谱",
+        "summary": "主图谱",
+        "tags": [
+          "思维导图"
+        ],
+        "content": [
+          "【知识图谱】"
+        ],
+        "section": "6 大主题知识图谱",
+        "sourceId": "mindmap",
+        "sourceLabel": "思维导图",
+        "kind": "mermaid",
+        "mermaid": [
+          "mindmap\n  root((产品知识库<br/>v1.0))\n    1. PM 方法论\n      战略层\n        北极星指标 NSM\n        商业模式画布 BMC\n        价值主张画布 VPC\n        OKR\n        影响地图\n      用户层\n        用户画像\n        同理心地图\n        用户旅程地图 UJM\n        可用性测试\n        用户访谈\n      需求层\n        4 维度评估\n        RICE\n        MoSCoW\n        优先级矩阵\n      设计层\n        用户故事\n        IA 信息架构\n        PRD 7 章节\n        PRD 评审 Checklist\n        上线 Checklist\n      数据层\n        AARRR\n        Cohort\n        NPS\n        A/B 测试\n        增长飞轮\n      协作层\n        RACI\n        5Why\n        PDCA\n        鱼骨图\n        设计冲刺\n    2. 技术架构\n      架构基础\n        三层架构\n        单体 vs 微服务\n        前后端分离\n      关键组件\n        数据库\n        中间件\n        缓存\n      架构模式\n        多租户\n        读写分离\n        分库分表\n      高可用\n        HA\n        限流/降级/熔断\n        3 大监控\n      云原生\n        Docker\n        K8s\n        CI/CD\n      机器人特有\n        云-边-端\n        OTA\n        SLAM\n    3. 业务管理\n      企业系统\n        ERP\n        CRM\n        SCM\n        OA\n      机器人\n        AMR\n        SLAM\n        ROS\n        OTA\n      研发方法\n        IPD\n        BU\n      服务请求\n        SR\n        PR\n        CR\n    4. 权限安全\n      单点登录\n        SSO\n        OAuth 2.0\n      账号映射\n      权限控制\n        RBAC\n        功能权限\n        数据权限\n    5. 工作流程\n      需求处理 7 步\n      PRD 模板\n      跨部门协作 SOP\n      复盘 8 步\n    6. 每日学习\n      130+ 方法论\n      每天 3 个推送"
         ]
       },
       {
-        "id": "kb-system-architecture-1-2-单体架构-vs-微服务架构",
-        "title": "单体架构 vs 微服务架构",
-        "summary": "普渡现状：代理商平台 + 运营管理平台是模块化单体（按业务模块拆代码包，但部署还是一个应用），还没到微服务阶段。",
+        "id": "kb-mindmap-4-阶段学习路径图",
+        "title": "4 阶段学习路径图",
+        "summary": "4 阶段学习路径图",
         "tags": [
-          "系统架构"
+          "思维导图"
         ],
         "content": [
-          "形态 · 单体（Monolith）=所有功能打包在一个应用里 · 微服务（Microservices）=按业务域拆成几十个独立小服务",
-          "部署 · 单体（Monolith）=一处改全部重新部署 · 微服务（Microservices）=每个服务独立部署、独立伸缩",
-          "技术栈 · 单体（Monolith）=一种语言/框架 · 微服务（Microservices）=多种语言共存",
-          "团队协作 · 单体（Monolith）=改动容易冲突 · 微服务（Microservices）=每个团队负责一个服务",
-          "故障影响 · 单体（Monolith）=一个 bug 全站挂 · 微服务（Microservices）=一个服务挂了不影响其他",
-          "适合 · 单体（Monolith）=产品初期（用户<10万） · 微服务（Microservices）=规模化后（用户>百万、服务多）",
-          "普渡现状：代理商平台 + 运营管理平台是模块化单体（按业务模块拆代码包，但部署还是一个应用），还没到微服务阶段。"
+          "【知识图谱】"
         ],
-        "pmApplication": [
-          "不要在单体阶段硬上微服务——成本高、收益小。触发微服务化的 3 个信号：① 单次部署超过 30 分钟 ② 一个团队改动影响另一个团队的发布 ③ 不同模块的资源消耗差 10 倍以上。"
+        "section": "6 大主题知识图谱",
+        "sourceId": "mindmap",
+        "sourceLabel": "思维导图",
+        "kind": "mermaid",
+        "mermaid": [
+          "graph LR\n  A[阶段 1<br/>入门] --> B[阶段 2<br/>基础]\n  B --> C[阶段 3<br/>进阶]\n  C --> D[阶段 4<br/>实战]\n\n  A1[PM 八股<br/>30 分钟] --> A\n  A2[daily-log<br/>看 30 个] --> A\n\n  B1[产品策划<br/>6 大体系] --> B\n  B2[工作流程<br/>7 步] --> B\n\n  C1[系统架构<br/>10 题] --> C\n  C2[行业术语<br/>300+] --> C\n\n  D1[实战 owner<br/>中型需求] --> D\n  D2[跨部门协作<br/>RACI] --> D"
         ]
       },
       {
-        "id": "kb-system-architecture-1-3-前后端分离",
-        "title": "前后端分离",
-        "summary": "传统模式：后端渲染 HTML 页面（PHP/JSP），前端写死在 HTML 里",
+        "id": "kb-mindmap-需求处理-7-步流程",
+        "title": "需求处理 7 步流程",
+        "summary": "*注:Mermaid 语法可在 GitHub / VS Code / 飞书云文档直接渲染*",
         "tags": [
-          "系统架构"
+          "思维导图"
         ],
         "content": [
-          "传统模式：后端渲染 HTML 页面（PHP/JSP），前端写死在 HTML 里",
-          "现代模式：前端是独立 SPA（单页应用），后端只提供 JSON API",
-          "前端后端并行开发，效率高：SEO 不友好（要 SSR 解决）",
-          "一套后端 API 服务多端（Web/iOS/Android）：跨域问题（CORS）",
-          "前端技术栈灵活（React/Vue）：接口管理成本上升（要 OpenAPI/GraphQL）",
-          "普渡：代理商平台是前后端分离架构，前端是 Vue、后端是 Java。"
+          "【知识图谱】",
+          "*注:Mermaid 语法可在 GitHub / VS Code / 飞书云文档直接渲染*"
+        ],
+        "section": "6 大主题知识图谱",
+        "sourceId": "mindmap",
+        "sourceLabel": "思维导图",
+        "kind": "mermaid",
+        "mermaid": [
+          "graph LR\n  A[1. 接收] --> B[2. 分析]\n  B --> C[3. 设计]\n  C --> D[4. 评审]\n  D --> E[5. 跟踪]\n  E --> F[6. 上线]\n  F --> G[7. 复盘]\n  G --> A"
         ]
       },
       {
-        "id": "kb-system-architecture-2-1-数据库",
-        "title": "数据库（数据层核心）",
-        "summary": "关系数据库（MySQL/PG） · 用途=结构化数据，强事务 · 普渡场景=代理商平台、工单、订单",
+        "id": "kb-learning-path-阶段-1-入门",
+        "title": "阶段 1:入门(第 1-2 周)",
+        "summary": "目标:能讲清楚 PM 核心 10 个概念",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "关系数据库（MySQL/PG） · 用途=结构化数据，强事务 · 普渡场景=代理商平台、工单、订单",
-          "缓存（Redis/Memcached） · 用途=高频读、临时数据 · 普渡场景=Session、Token、热数据",
-          "搜索引擎（Elasticsearch） · 用途=全文搜索、复杂查询 · 普渡场景=工单搜索、知识库检索",
-          "时序数据库（InfluxDB/TDengine） · 用途=时间序列数据 · 普渡场景=机器人运行数据、传感器日志",
-          "对象存储（OSS/S3） · 用途=大文件存储 · 普渡场景=OTA 固件包、培训视频",
-          "消息队列（Kafka/RocketMQ） · 用途=异步任务、削峰填谷 · 普渡场景=通知推送、数据同步"
+          "目标:能讲清楚 PM 核心 10 个概念",
+          "【必读(共 1 小时)】",
+          "[ ] 01-PM方法论/产品经理八股.md — 30 分钟通读",
+          "[ ] 06-每日学习/daily-log.md — 看前 30 个方法论,每天 5 个,1 周看完",
+          "【输出物】",
+          "一张\"我理解的 AARRR / MVP / KANO / RICE\"手写笔记",
+          "一段\"我是产品经理\"的 60 秒自我介绍(用上至少 3 个术语)",
+          "【检验标准】",
+          "别人问\"什么是 RICE?\",你能用 30 秒讲清楚并举例"
         ],
-        "pmApplication": [
-          "写需求必问\"数据存在哪\"——涉及\"数据搬家\"的需求（接企学宝、接 CRM）一定涉及数据层改造。"
-        ]
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-2-2-中间件",
-        "title": "中间件（连接各个服务的\"基础设施\"）",
-        "summary": "中间件=API 网关 · 干什么=统一入口、限流、鉴权 · PM 视角的翻译=\"所有外部调用都从这进\"",
+        "id": "kb-learning-path-阶段-2-基础",
+        "title": "阶段 2:基础(第 3-4 周)",
+        "summary": "目标:能独立写一份简单 PRD",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "中间件=API 网关 · 干什么=统一入口、限流、鉴权 · PM 视角的翻译=\"所有外部调用都从这进\"",
-          "中间件=消息队列 · 干什么=异步任务、削峰填谷 · PM 视角的翻译=\"用户点完通知后，后台慢慢处理、不卡页面\"",
-          "中间件=配置中心 · 干什么=动态改配置不重启 · PM 视角的翻译=\"改个功能开关不用发版\"",
-          "中间件=服务注册/发现 · 干什么=服务之间怎么找到对方 · PM 视角的翻译=\"微服务之间互相打电话要拨号本\"",
-          "中间件=链路追踪 · 干什么=一次请求经过哪些服务 · PM 视角的翻译=\"用户报'工单页卡了'，研发能定位到是哪个服务慢\""
-        ]
+          "目标:能独立写一份简单 PRD",
+          "【必读(共 3 小时)】",
+          "[ ] 01-PM方法论/产品策划方法论.md — 通读 6 大体系",
+          "战略层 / 用户层(2 小时)",
+          "需求层 / 设计层(1 小时)",
+          "[ ] 05-工作流程/工作流程.md — 需求处理 7 步 + PRD 模板(30 分钟)",
+          "【输出物】",
+          "一份完整 PRD(从背景到验收标准,7 章节齐全)",
+          "一份\"我做的需求\"复盘(8 步法)",
+          "【检验标准】",
+          "你的 PRD 能在 30 分钟内给到研发,对方不需要追问\"为什么这么做\""
+        ],
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-2-3-缓存策略",
-        "title": "缓存策略（最常被问的\"性能优化\"）",
-        "summary": "① 什么数据要缓存？答：读多写少的（用户档案、字典、配置）",
+        "id": "kb-learning-path-阶段-3-进阶",
+        "title": "阶段 3:进阶(第 5-6 周)",
+        "summary": "目标:能听懂研发的技术方案,不被术语唬住",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "PM 必懂 3 个问题：",
-          "① 什么数据要缓存？答：读多写少的（用户档案、字典、配置）",
-          "② 缓存多久？答：按业务容忍度（5 分钟？1 小时？1 天？）",
-          "③ 缓存和数据库不一致怎么办？答：最终一致 + 设置合理的过期时间",
-          "经典 3 模式：",
-          "Cache-Aside（旁路缓存）：应用先查缓存，命中就返回；不命中查 DB 再写缓存。最常用",
-          "Write-Through（写穿透）：写 DB 时同步写缓存。强一致场景",
-          "Write-Behind（写回）：先写缓存，异步写 DB。性能高但可能丢数据"
-        ]
+          "目标:能听懂研发的技术方案,不被术语唬住",
+          "【必读(共 3 小时)】",
+          "[ ] 02-技术架构/系统架构.md — 重点看\"PM 必会 10 个架构问题\"(2 小时)",
+          "[ ] 02-技术架构/行业通用词语.md — 全部章节速查(1 小时)",
+          "【输出物】",
+          "一份\"我评审过的技术方案\"5W 分析(What/Why/Who/When/How)",
+          "一份\"我用的术语清单\"(≥30 个)",
+          "【检验标准】",
+          "评审会上,研发说\"这个用消息队列做异步解耦\",你立刻懂他在说什么"
+        ],
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-3-1-多租户架构",
-        "title": "多租户架构（SaaS 化必备）",
-        "summary": "之前在 行业通用词语.md 1.4 节讲过 3 种隔离模式，这里补充选型决策树",
+        "id": "kb-learning-path-阶段-4-实战",
+        "title": "阶段 4:实战(第 7-8 周)",
+        "summary": "目标:能独立 owner 一个中型需求,跨 3 个部门",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "之前在 行业通用词语.md 1.4 节讲过 3 种隔离模式，这里补充选型决策树",
-          "是否在金融/医疗等强合规行业？\n├─ 是 → 独立数据库（合规+客户定制）\n└─ 否 → 是否需要租户级字段/表结构定制？\n    ├─ 是 → 共享 DB + 独立 schema\n    └─ 否 → 共享 DB + tenant_id（普渡云学堂当前方案）",
-          "普渡场景：",
-          "普渡云学堂：共享 DB + tenant_id，4 个子站 = 4 个租户",
-          "代理商平台：单租户（只服务普渡自己），但内部有\"代理商 → 客户\"的二级权限隔离",
-          "未来 SaaS 化：代理商平台如果对外开放给其他机器人厂商，就要升级到多租户"
-        ]
+          "目标:能独立 owner 一个中型需求,跨 3 个部门",
+          "【必做(共 4 小时学习 + 实战)】",
+          "[ ] 01-PM方法论/产品策划方法论.md — 协作层(RACI / 4 原则)",
+          "[ ] 实战:在工作中选 1 个中型需求,完整跑一遍 7 步流程",
+          "[ ] 用 4 维度评估 / RICE 排过 1 次优先级",
+          "[ ] 做过 1 次跨部门复盘",
+          "【输出物】",
+          "一份\"我 owner 的需求\"完整记录(背景/分析/PRD/评审/上线/复盘)",
+          "一份\"我的方法论应用清单\"(≥10 个,用上的方法论)",
+          "【检验标准】",
+          "你的 mentor 说\"这个需求可以独立 owner\" → 入门完成 ✅"
+        ],
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-3-2-读写分离",
-        "title": "读写分离（数据库性能优化标配）",
-        "summary": "模式：主库写、从库读，应用层按 SQL 类型路由",
+        "id": "kb-learning-path-进阶",
+        "title": "进阶(9-16 周)",
+        "summary": "目标:从\"做事\"到\"做对的事\"",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "模式：主库写、从库读，应用层按 SQL 类型路由",
-          "读多写少（10:1 以上）：写多读少（写主库直接挂）",
-          "单表数据量 > 1000 万行：表小、业务简单",
-          "报表/分析类查询：强实时一致（金融交易）",
-          "普渡场景：代理商平台工单列表查询是典型读多写少，配置了 1 主 2 从；订单表写多读少，没做读写分离。"
-        ]
+          "目标:从\"做事\"到\"做对的事\"",
+          "【选读】",
+          "[ ] 01-PM方法论/产品策划方法论.md — 反复看,每次有新理解",
+          "[ ] 02-技术架构/系统架构.md — 配合实际项目读",
+          "[ ] 06-每日学习/daily-log.md — 持续每天 3 个",
+          "【输出物】",
+          "一份\"我做过的 10 个需求\"复盘合集",
+          "一份\"我用的方法论体系\"(3-5 个最常用)",
+          "【检验标准】",
+          "跨部门找你评审 → 你有\"PM 专业\"的口碑"
+        ],
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-3-3-分库分表",
-        "title": "分库分表（数据库扛不住时的最后一招）",
-        "summary": "触发条件（PM 该知道的红线）：",
+        "id": "kb-learning-path-3-个常见坑",
+        "title": "3 个常见坑",
+        "summary": "1 周想全读完：按 4 阶段走,每阶段 1-2 周",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "做法 · 垂直拆分=按业务把表分到不同库 · 水平拆分=按某个字段（user_id/order_id）把同一张表分到多库",
-          "典型场景 · 垂直拆分=用户库、订单库、商品库分开放 · 水平拆分=订单表按月份分 12 个库",
-          "PM 视角 · 垂直拆分=\"业务大了，一个 DB 装不下\" · 水平拆分=\"单表 1 亿行查询太慢\"",
-          "触发条件（PM 该知道的红线）：",
-          "单表 > 5000 万行 或 单库 > 2TB",
-          "单条 SQL 走全表扫描 > 3 秒",
-          "数据库 CPU 长期 > 70%",
-          "普渡场景：当前代理商平台单表最大也就几百万行，还没到分库分表阶段。PM 知道有这根红线即可。"
-        ]
+          "1 周想全读完：按 4 阶段走,每阶段 1-2 周",
+          "知道 RICE 但没排过需求：每个方法论找 1 个工作场景用",
+          "读了一堆笔记没了：每阶段必须有输出物"
+        ],
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       },
       {
-        "id": "kb-system-architecture-4-1-3-大经典问题",
-        "title": "3 大经典问题",
-        "summary": "高可用（HA） · 解释=系统挂的时间少 · 解决方案=主备切换、集群部署",
+        "id": "kb-learning-path-学习方法-3-句话",
+        "title": "学习方法 3 句话",
+        "summary": "1. 先框架,后细节 — 先看 README,再看具体章节",
         "tags": [
-          "系统架构"
+          "学习路径"
         ],
         "content": [
-          "高可用（HA） · 解释=系统挂的时间少 · 解决方案=主备切换、集群部署",
-          "高并发 · 解释=同时很多人访问不卡 · 解决方案=缓存、限流、扩容",
-          "高扩展 · 解释=加机器就能扛更多流量 · 解决方案=微服务、读写分离、CDN"
+          "1. 先框架,后细节 — 先看 README,再看具体章节",
+          "2. 边学边用 — 学 RICE 就立刻排一次自己手里的需求",
+          "3. 写出来 — 每个方法论用 1 句话讲给非 PM 听,讲得出来才算懂",
+          "*最后更新:2026-07-15*"
         ],
-        "pmApplication": [
-          "写非功能需求时，\"能扛多少 QPS/多少用户\" 一定要明确——研发不会主动告诉你系统能扛什么。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-4-2-限流-降级-熔断",
-        "title": "限流 / 降级 / 熔断（保护系统的\"三道闸\"）",
-        "summary": "普渡场景：企学宝对接必须设计熔断——如果企学宝接口挂了 30 秒，代理商平台不能卡死，要自动\"切回老逻辑\"或\"提示用户稍后重试\"。",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "限流 · 作用=限制每秒最多 N 个请求 · 触发场景=秒杀活动、API 被刷",
-          "降级 · 作用=主动关掉非核心功能 · 触发场景=大促关推荐、保核心",
-          "熔断 · 作用=下游服务挂了，上游自动断开 · 触发场景=企学宝接口超时 → 代理商平台停止调用",
-          "普渡场景：企学宝对接必须设计熔断——如果企学宝接口挂了 30 秒，代理商平台不能卡死，要自动\"切回老逻辑\"或\"提示用户稍后重试\"。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-4-3-监控告警",
-        "title": "监控告警（\"线上出问题能第一时间发现\"）",
-        "summary": "① Metrics（指标）：QPS、延迟、错误率、CPU 内存",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "3 大监控支柱：",
-          "① Metrics（指标）：QPS、延迟、错误率、CPU 内存",
-          "② Logs（日志）：请求链路、错误堆栈",
-          "③ Traces（链路追踪）：一次请求经过哪些服务、各花了多少时间"
-        ],
-        "pmApplication": [
-          "上线后必问\"监控接好了吗\"——没监控就是\"盲飞\"。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-7-1-云-边-端架构",
-        "title": "云-边-端架构",
-        "summary": "┌──────────┐         ┌──────────┐         ┌──────────┐\n│   云端    │  4G/WiFi │  边缘端   │  局域网  │   设备端  │\n│ (普渡云) │ ←────→",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "┌──────────┐         ┌──────────┐         ┌──────────┐\n│   云端    │  4G/WiFi │  边缘端   │  局域网  │   设备端  │\n│ (普渡云) │ ←────→  │(机器人本体)│ ←────→ │(传感器)  │\n└──────────┘         └──────────┘         └──────────┘\n   ↑                                              ↑\n   业务平台                                   实时控制\n   (代理商平台)                               (低延迟要求)\n   - 用户管理                                 - SLAM\n   - 订单/工单                                - 避障\n   - 数据分析                                 - 运动控制\n   - 报表                                     - 紧急制动",
-          "设备端 · 延迟要求=< 10ms · 普渡组件=实时避障、紧急制动",
-          "边缘端（机器人本体） · 延迟要求=< 100ms · 普渡组件=SLAM、路径规划",
-          "云端 · 延迟要求=< 1s · 普渡组件=业务平台、报表、OTA"
-        ],
-        "pmApplication": [
-          "实时性需求必须明确放哪一层——\"机器人撞到障碍物要立刻停下\"是设备端的事，不能依赖云端。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-7-2-ota-空中升级架构",
-        "title": "OTA 空中升级架构",
-        "summary": "代理商平台(运营管理)\n       ↓ 生成升级包\nCDN 分发\n       ↓ 下载\n机器人(边缘端)\n       ↓ 校验 + 备份旧版\n       ↓ 应用新版\n       ↓ 失败回滚\n       ↓ 上报结果\n代理商平",
-        "tags": [
-          "系统架构",
-          "OTA"
-        ],
-        "content": [
-          "代理商平台(运营管理)\n       ↓ 生成升级包\nCDN 分发\n       ↓ 下载\n机器人(边缘端)\n       ↓ 校验 + 备份旧版\n       ↓ 应用新版\n       ↓ 失败回滚\n       ↓ 上报结果\n代理商平台(状态监控)",
-          "PM 视角 3 个关键点：",
-          "灰度发布：先 5% → 20% → 50% → 100%（每档观察 1-2 天）",
-          "失败回滚：升级失败 30 秒内自动回到旧版（蓝绿部署）",
-          "升级窗口：默认 4 集群分时（国内/新加坡 22:00，德国次日 14:00，美国次日 11:00）"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-7-3-机器人数据流",
-        "title": "机器人数据流（时序数据 + 业务数据双轨）",
-        "summary": "数据类型=时序数据 · 来源=机器人传感器、运行状态 · 存储=时序 DB（InfluxDB/TDengine） · 用途=实时监控、故障诊断",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "数据类型=时序数据 · 来源=机器人传感器、运行状态 · 存储=时序 DB（InfluxDB/TDengine） · 用途=实时监控、故障诊断",
-          "数据类型=业务数据 · 来源=订单、工单、CRM · 存储=关系 DB · 用途=业务流转",
-          "数据类型=地图数据 · 来源=SLAM 建图 · 存储=专用地图服务 · 用途=导航",
-          "数据类型=视频/图像 · 来源=摄像头、深度相机 · 存储=对象存储 · 用途=巡检、清洁效果检测"
-        ],
-        "pmApplication": [
-          "\"机器人数据存储\"是个跨多存储的复杂架构——PM 提需求时要知道\"清洁报告里的地图图片从对象存储拉\"。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-8-1-系统演进的-5-个阶段",
-        "title": "系统演进的 5 个阶段",
-        "summary": "代理商平台：阶段 1-2（模块化单体）",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "阶段 1：单体 (Monolith)\n   ↓ 用户>10万\n阶段 2：模块化单体\n   ↓ 团队>50人\n阶段 3：微服务\n   ↓ 流量>100万QPS\n阶段 4：服务网格（Service Mesh）\n   ↓ 全球化部署\n阶段 5：云原生 + Serverless",
-          "普渡现状：",
-          "代理商平台：阶段 1-2（模块化单体）",
-          "普渡云：阶段 2-3（部分服务已拆）",
-          "机器人本体：阶段 2（边缘端轻量化服务）"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-8-2-技术债识别",
-        "title": "技术债识别（PM 怎么判断\"系统是不是要重构\"）",
-        "summary": "技术债 = 现在偷的懒 = 未来要还的债",
-        "tags": [
-          "系统架构",
-          "PM"
-        ],
-        "content": [
-          "技术债 = 现在偷的懒 = 未来要还的债",
-          "4 大信号：",
-          "1. 改一个需求要 3 倍时间（\"这功能本来 1 天能做完，现在要 3 天\"）",
-          "2. 每次发版都有\"连锁反应\"（\"我改 A 模块，B 模块崩了\"）",
-          "3. 新人看不懂代码（\"老员工不解释就改不动\"）",
-          "4. 线上事故频发（\"每周都有 P 级故障\"）"
-        ],
-        "pmApplication": [
-          "当技术债信号出现时，主动提\"技术债偿还 Sprint\"——不然业务会越来越慢。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-9-1-c4-模型",
-        "title": "C4 模型（4 个层次的架构图）",
-        "summary": "PM 必会画前 2 层——评审会上能用一张 Context 图让所有人\"对齐\"。",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "Context（系统上下文） · 回答什么=系统在更大的世界里和谁互动 · 受众=所有人",
-          "Container（容器） · 回答什么=系统由哪些\"大块\"组成（Web/DB/Service） · 受众=研发、PM",
-          "Component（组件） · 回答什么=每个容器内部由哪些模块组成 · 受众=研发",
-          "Code（代码） · 回答什么=具体的类、函数 · 受众=研发",
-          "PM 必会画前 2 层——评审会上能用一张 Context 图让所有人\"对齐\"。"
-        ]
-      },
-      {
-        "id": "kb-system-architecture-9-2-普渡云系统-context-图",
-        "title": "普渡云系统 Context 图（示例）",
-        "summary": "普渡云（代理商平台）\n                              │\n        ┌─────────────────────┼─────────────────────┐\n        │              ",
-        "tags": [
-          "系统架构"
-        ],
-        "content": [
-          "普渡云（代理商平台）\n                              │\n        ┌─────────────────────┼─────────────────────┐\n        │                     │                     │\n    终端用户                内部用户              外部系统\n   (代理商)              (销售/客服)            (企学宝/CRM)\n        │                     │                     │\n        └───── 飞书 OAuth 登录 ─────────────────────┘\n                              │\n                         对象存储(OSS)\n                         数据库(MySQL)\n                         缓存(Redis)"
-        ]
+        "section": "4 阶段 8 周学习路径",
+        "sourceId": "learning-path",
+        "sourceLabel": "学习路径",
+        "kind": "path-stage"
       }
     ]
   }
