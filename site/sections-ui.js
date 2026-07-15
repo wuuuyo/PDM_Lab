@@ -8,17 +8,16 @@
   const tr = (key, params, fallback) => window.PMLabI18n?.t(key, params, fallback) ?? fallback ?? key
   const ui = (group, key, params) => tr(`content.${group}.${key}`, params)
 
-  function renderLearningPathCards(paths, compact) {
-    return paths.map((p) => `
-      <a href="#/industry/learning-path/${p.id}" class="learning-path-card ${compact ? 'learning-path-card-compact' : ''}">
-        ${p.badge ? `<span class="path-badge">${window.escapeHtml(p.badge)}</span>` : ''}
-        <h3>${window.escapeHtml(p.title)}</h3>
-        <p>${window.escapeHtml(p.summary)}</p>
-        <div class="learning-path-meta">
-          <span>${window.escapeHtml(p.duration)}</span>
-          <span>${window.escapeHtml(p.weeklyHours)}</span>
+  function renderLearningPathCards(paths) {
+    return paths.map((p, i) => `
+      <a href="#/industry/learning-path/${p.id}" class="sec-hub-card">
+        <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
+        <div class="sec-hub-card-body">
+          <h2>${window.escapeHtml(p.title)}${p.badge ? ` · ${window.escapeHtml(p.badge)}` : ''}</h2>
+          <p>${window.escapeHtml(p.summary)}</p>
+          <span class="sec-hub-card-meta">${window.escapeHtml(p.duration)} · ${window.escapeHtml(p.weeklyHours)}</span>
         </div>
-        ${!compact ? `<span class="map-link">${window.escapeHtml(ui('industryUi', 'viewDetail'))}</span>` : ''}
+        <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
       </a>`).join('')
   }
 
@@ -47,40 +46,94 @@
       </div>`
   }
 
+  const INDUSTRY_HUB_ORDER = [
+    { id: 'basics', titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
+    { id: 'sub-roles', titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
+    { id: 'learning-path', titleKey: 'sectionPaths', descKey: 'sectionPathsDesc' },
+  ]
+
+  function industrySectionMeta(id) {
+    return INDUSTRY_HUB_ORDER.find((s) => s.id === id)
+  }
+
   function renderIndustryHub() {
-    const sections = Industry().getSections()
-    const paths = Industry().getLearningPaths()
-    return `
-      <div class="page industry-page">
-        <header class="page-hero-block">
-          <span class="hero-badge">${window.escapeHtml(ui('industryUi', 'badge'))}</span>
-          <h1>${window.escapeHtml(ui('industryUi', 'hubTitle'))}</h1>
-          <p>${window.escapeHtml(ui('industryUi', 'hubDesc'))}</p>
-        </header>
-
-        <section class="section learning-path-section">
-          <h2 class="section-title">${window.escapeHtml(ui('industryUi', 'pathsSectionTitle'))}</h2>
-          <p class="section-desc">${window.escapeHtml(ui('industryUi', 'pathsSectionDesc'))}</p>
-          <div class="learning-path-grid">
-            ${renderLearningPathCards(paths, false)}
+    const pathCount = Industry().getLearningPaths().length
+    const cards = INDUSTRY_HUB_ORDER.map((plate, index) => {
+      const sec = Industry().getSection(plate.id)
+      const meta = plate.id === 'learning-path'
+        ? ui('industryUi', 'pathCount', { n: pathCount })
+        : ui('industryUi', 'itemCount', { n: sec?.items?.length || 0 })
+      return `
+        <a href="#/industry/${plate.id}" class="sec-hub-card">
+          <span class="sec-hub-card-index">${String(index + 1).padStart(2, '0')}</span>
+          <div class="sec-hub-card-body">
+            <h2>${window.escapeHtml(ui('industryUi', plate.titleKey))}</h2>
+            <p>${window.escapeHtml(ui('industryUi', plate.descKey))}</p>
+            <span class="sec-hub-card-meta">${window.escapeHtml(meta)}</span>
           </div>
-        </section>
+          <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+        </a>`
+    }).join('')
+    return `
+      <div class="page sec-hub-page industry-page">
+        <header class="sec-hub-hero">
+          <p class="sec-hub-eyebrow">${window.escapeHtml(ui('industryUi', 'badge'))}</p>
+          <h1>${window.escapeHtml(ui('industryUi', 'hubTitle'))}</h1>
+          <p class="sec-hub-desc">${window.escapeHtml(ui('industryUi', 'hubDesc'))}</p>
+        </header>
+        <div class="sec-hub-grid">${cards}</div>
+      </div>`
+  }
 
-        ${sections.map((sec) => `
-          <section class="section">
-            <h2 class="section-title">${sec.icon} ${sec.title}</h2>
-            <p class="section-desc">${sec.description}</p>
-            <div class="article-list">
-              ${sec.items.map((item) => `
-                <a href="#/industry/${sec.id}/${item.id}" class="article-card">
-                  <div class="article-card-body">
-                    <h3>${window.escapeHtml(item.title)}</h3>
-                    <p>${window.escapeHtml(item.summary)}</p>
-                    <div class="article-tags">${item.tags.map((t) => `<span class="tag">${window.escapeHtml(t)}</span>`).join('')}</div>
-                  </div>
-                </a>`).join('')}
-            </div>
-          </section>`).join('')}
+  function renderIndustrySection(sectionId) {
+    const meta = industrySectionMeta(sectionId)
+    const sec = Industry().getSection(sectionId)
+    if (!meta || !sec) {
+      return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
+    }
+
+    const title = ui('industryUi', meta.titleKey)
+    const desc = ui('industryUi', meta.descKey)
+
+    if (sectionId === 'learning-path') {
+      const paths = Industry().getLearningPaths()
+      return `
+        <div class="page sec-hub-page industry-page">
+          <header class="page-header">
+            <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">${window.escapeHtml(title)}</span>
+          </header>
+          <header class="sec-hub-hero">
+            <h1>${window.escapeHtml(title)}</h1>
+            <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
+          </header>
+          <div class="sec-hub-grid">${renderLearningPathCards(paths)}</div>
+        </div>`
+    }
+
+    return `
+      <div class="page sec-hub-page industry-page">
+        <header class="page-header">
+          <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">${window.escapeHtml(title)}</span>
+        </header>
+        <header class="sec-hub-hero">
+          <h1>${window.escapeHtml(title)}</h1>
+          <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
+        </header>
+        <div class="sec-hub-grid">
+          ${sec.items.map((item, i) => `
+            <a href="#/industry/${sec.id}/${item.id}" class="sec-hub-card">
+              <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
+              <div class="sec-hub-card-body">
+                <h2>${window.escapeHtml(item.title)}</h2>
+                <p>${window.escapeHtml(item.summary)}</p>
+              </div>
+              <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+            </a>`).join('')}
+        </div>
       </div>`
   }
 
@@ -91,7 +144,8 @@
       <div class="page learning-path-page">
         <header class="page-header">
           <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a><span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current">${window.escapeHtml(ui('industryUi', 'pathBreadcrumb'))}</span>
+          <a href="#/industry/learning-path" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'pathBreadcrumb'))}</a><span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">${window.escapeHtml(path.title)}</span>
         </header>
         <header class="page-hero-block">
           ${path.badge ? `<span class="hero-badge">${window.escapeHtml(path.badge)}</span>` : ''}
@@ -117,10 +171,12 @@
           </div>
         </section>
 
-        <section class="section path-more-section">
-          <h2 class="section-title">${window.escapeHtml(ui('industryUi', 'otherPathsTitle'))}</h2>
-          <div class="learning-path-grid learning-path-grid-compact">
-            ${renderLearningPathCards(Industry().getLearningPaths().filter((p) => p.id !== pathId), true)}
+        <section class="sec-hub-path path-more-section">
+          <div class="sec-hub-path-head">
+            <h2>${window.escapeHtml(ui('industryUi', 'otherPathsTitle'))}</h2>
+          </div>
+          <div class="sec-hub-grid">
+            ${renderLearningPathCards(Industry().getLearningPaths().filter((p) => p.id !== pathId))}
           </div>
         </section>
       </div>`
@@ -130,20 +186,19 @@
     const sec = Industry().getSection(sectionId)
     const item = Industry().getItem(sectionId, itemId)
     if (!sec || !item) return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
-    const pathCta = sectionId === 'learning-path'
-      ? `<div class="hero-actions"><a href="#/industry/learning-path/newcomer-8w" class="btn-primary">${window.escapeHtml(ui('industryUi', 'viewFullPath'))}</a></div>`
-      : ''
+    const meta = industrySectionMeta(sectionId)
+    const secLabel = meta ? ui('industryUi', meta.titleKey) : sec.title
     return `
       <div class="page article-page">
         <header class="page-header">
           <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a><span class="breadcrumb-sep">/</span>
+          <a href="#/industry/${sectionId}" class="breadcrumb">${window.escapeHtml(secLabel)}</a><span class="breadcrumb-sep">/</span>
           <span class="breadcrumb-current">${window.escapeHtml(item.title)}</span>
         </header>
         <article class="article-content">
-          <div class="article-meta"><span class="article-category">${window.escapeHtml(sec.title)}</span></div>
+          <div class="article-meta"><span class="article-category">${window.escapeHtml(secLabel)}</span></div>
           <h1>${window.escapeHtml(item.title)}</h1>
           <p class="article-summary">${window.escapeHtml(item.summary)}</p>
-          ${pathCta}
           <div class="article-body">${item.content.map((p) => `<p>${window.escapeHtml(p)}</p>`).join('')}</div>
         </article>
       </div>`
@@ -385,6 +440,7 @@
 
   window.PDMSections = {
     renderIndustryHub,
+    renderIndustrySection,
     renderIndustryArticle,
     renderLearningPathDetail,
     renderToolsHub,

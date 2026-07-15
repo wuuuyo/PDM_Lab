@@ -2563,7 +2563,7 @@ const categories = [
   {
     "id": "workflow",
     "title": "工作流程",
-    "description": "需求处理、PRD 与上线复盘流程",
+    "description": "需求处理与 PRD 规范",
     "icon": "↻",
     "items": [
       {
@@ -2842,118 +2842,6 @@ const categories = [
         "sourceLabel": "工作流程",
         "kind": "workflow-item"
       },
-      {
-        "id": "kb-workflow-默认节奏",
-        "title": "默认节奏",
-        "summary": "每周五 18:00 推送复盘报告（USER.md 立规）",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "每周五 18:00 推送复盘报告（USER.md 立规）",
-          "例外：重大节点冲刺/上线前，可临时提前到周四，需在 W 复盘文件里标注（MEMORY 立规 6/11）"
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "retro-item"
-      },
-      {
-        "id": "kb-workflow-8-步走完",
-        "title": "8 步走完",
-        "summary": "1. 确认范围 — time-context 拿到本周日期范围（不要凭记忆）",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "1. 确认范围 — time-context 拿到本周日期范围（不要凭记忆）",
-          "2. 拉日历 — calendar +agenda 拉本周所有日历事件，输出 9 个会议清单",
-          "3. 拉妙记 — vc +notes --meeting-ids <id> 按会议 ID 拉智能纪要（4 份/周典型），整理关键决策和行动项",
-          "4. 拉群消息 — im +chat-messages-list 拉关键群聊（对接群/方案沟通群/项目群）本周消息",
-          "5. 读工作日志 — 读 memory/work/daily/{本周日期}.md 还原日常工作",
-          "6. 结构化分析 — 按 11 字段组织内容（见下方\"复盘表字段\"）",
-          "7. 写复盘表 — 在「个人需求管理系统」Base 的「复盘表」（table_id=tblbeEeBpcBsLfaL）按 NO.XXX 编号写入",
-          "8. 关联需求 — 通过 link 字段关联本周涉及的需求 record_id（W23 关联 5 个，W24 关联 3 个）"
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "retro-item"
-      },
-      {
-        "id": "kb-workflow-复盘表-11-字段",
-        "title": "复盘表 11 字段（个人需求管理系统 → 复盘表）",
-        "summary": "ID · 类型=auto_number · 用途=NO.001 自动递增",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "ID · 类型=auto_number · 用途=NO.001 自动递增",
-          "复盘周期 · 类型=text · 用途=\"2026-06-08 ~ 2026-06-14\"",
-          "本周完成 · 类型=text · 用途=已完成的任务/需求（多行）",
-          "关键进展 · 类型=text · 用途=里程碑/评审通过/对齐完成",
-          "进行中事项 · 类型=text · 用途=跨周推进的项目",
-          "关键卡点 · 类型=text · 用途=问题+卡在哪+截止+负责人",
-          "未考虑到的地方 · 类型=text · 用途=遗漏点+原因+教训",
-          "沉淀与收获 · 类型=text · 用途=方法论/经验教训",
-          "下周计划 · 类型=text · 用途=优先级最高的事项",
-          "同类问题解决方案 · 类型=text · 用途=下次遇到同类怎么解决",
-          "关联需求 · 类型=link → 需求表 · 用途=本周涉及的需求 record_id 列表"
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "retro-item"
-      },
-      {
-        "id": "kb-workflow-复盘表写入命令模板",
-        "title": "复盘表写入命令模板",
-        "summary": "# 1. 准备 batch JSON\njq '{fields: [\"复盘周期\",\"本周完成\",...,\"关联需求\"], rows: [[<value1>,<value2>,...]]}' \\\n   /home/gem/.aily/workd",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "# 1. 准备 batch JSON\njq '{fields: [\"复盘周期\",\"本周完成\",...,\"关联需求\"], rows: [[<value1>,<value2>,...]]}' \\\n   /home/gem/.aily/workdir/w{N}_review.json \\\n   > /home/gem/.aily/workdir/w{N}_review_batch.json\n\n# 2. 批量创建\nlarksuite-cli base +record-batch-create --as user \\\n  --base-token \"QTrqbJ0wDadiZasNii5ctD61nle\" \\\n  --table-id \"tblbeEeBpcBsLfaL\" \\\n  --json \"$(cat /home/gem/.aily/workdir/w{N}_review_batch.json)\""
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "prd-template"
-      },
-      {
-        "id": "kb-workflow-复盘产物-3-件套",
-        "title": "复盘产物 3 件套",
-        "summary": "复盘表（NO.XXX）：结构化记录，可索引、可关联",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "复盘表（NO.XXX）：结构化记录，可索引、可关联",
-          "周复盘文件 memory/work/weekly/2026-W{N}.md：详细版，含链接、引用",
-          "IM 推送摘要：用 im_message 推给用户，3 行总结 + 复盘表链接"
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "retro-item"
-      },
-      {
-        "id": "kb-workflow-关联需求识别",
-        "title": "关联需求识别",
-        "summary": "W23 关联的 5 个需求 record_id：recviZSHCzeWNq（企学宝）/ recvln3jRpRClX（飞书消息推送）/ recXQNm2ZGlg61（CRM）/ recvln3jjA4QEM（企学宝调研）/ recgSI6",
-        "tags": [
-          "工作流程"
-        ],
-        "content": [
-          "W23 关联的 5 个需求 record_id：recviZSHCzeWNq（企学宝）/ recvln3jRpRClX（飞书消息推送）/ recXQNm2ZGlg61（CRM）/ recvln3jjA4QEM（企学宝调研）/ recgSI6zYHaIoh（巡航任务）",
-          "新增需求需先在「需求表」（table_id=tbl4ZqjX8c8OyQhG）创建，再在复盘表 link 字段引用",
-          "复盘表写完后必须验证关联：打开 Base 链接，肉眼检查「关联需求」字段是否显示"
-        ],
-        "section": "复盘 SOP（W23 立规，W24 落地）",
-        "sourceId": "workflow",
-        "sourceLabel": "工作流程",
-        "kind": "retro-item"
-      }
     ]
   },
   {

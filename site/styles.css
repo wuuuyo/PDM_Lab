@@ -5161,3 +5161,66 @@ html.sidebar-collapsed .nav-icon {
   line-height: 1.45;
   color: var(--text-muted);
 }
+
+/* ---------- 学习路径 / 需求 7 步：强制单列，避免双列造成阅读乱序 ---------- */
+.kb-path-stage-grid,
+.workflow-demand-list {
+  grid-template-columns: 1fr !important;
+}
+
+.kb-path-stage-card {
+  cursor: default;
+  min-height: 0;
+}
+
+.kb-path-stage-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.kb-path-stage-meta {
+  margin: 0 0 10px !important;
+  font-size: 0.75rem !important;
+  font-weight: 650;
+  color: var(--text-muted) !important;
+}
+
+.kb-path-stage-tasks {
+  margin: 0 0 12px;
+  padding: 0 0 0 1.1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.kb-path-stage-tasks a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.kb-path-stage-tasks a:hover { text-decoration: underline; }
+
+.kb-path-stage-out {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(45, 90, 74, 0.06);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.kb-path-stage-out span {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.industry-page .page-header {
+  margin-bottom: 8px;
+}

@@ -106,7 +106,7 @@ function getMergedCategories() {
 
   const shared = window.PDMSharedKnowledge?.getItems() || []
 
-  return categories.map((cat) => {
+  const list = categories.map((cat) => {
 
     const sharedItems = shared
 
@@ -123,6 +123,11 @@ function getMergedCategories() {
     }
 
   })
+
+  // 快速参考置顶，其余保持原有顺序
+  const ref = list.find((c) => c.id === 'reference')
+  if (!ref) return list
+  return [ref, ...list.filter((c) => c.id !== 'reference')]
 
 }
 

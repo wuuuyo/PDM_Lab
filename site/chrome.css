@@ -1525,8 +1525,18 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
 
   .home-cap-grid,
   .home-flow,
-  .home-rail {
+  .home-rail,
+  .sec-hub-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .sec-hub-page {
+    max-width: 100%;
+  }
+
+  .sec-hub-card {
+    min-height: 96px;
+    padding: 16px 16px 18px;
   }
 
   .admin-filter-bar,

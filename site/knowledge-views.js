@@ -67,6 +67,45 @@
 
   /* ---------- 工作流程 ---------- */
 
+  /** 需求处理 7 步：固定顺序与正文，避免数据排序 / 污染导致乱序 */
+  const WORKFLOW_DEMAND_STEPS = [
+    {
+      key: '需求接收',
+      id: 'kb-workflow-1-需求接收',
+      content: ['来源：用户反馈 / 业务方 / 数据分析 / 竞品', '动作：进入需求池，标注来源和初步描述'],
+    },
+    {
+      key: '需求分析',
+      id: 'kb-workflow-2-需求分析',
+      content: ['理解业务背景和目标', '明确目标用户和使用场景', '梳理核心流程和边界', '评估价值和优先级'],
+    },
+    {
+      key: '方案设计',
+      id: 'kb-workflow-3-方案设计',
+      content: ['撰写 PRD', '制作原型/低保真', '确定验收标准'],
+    },
+    {
+      key: '评审对齐',
+      id: 'kb-workflow-4-评审对齐',
+      content: ['内部评审（PM 组）', '跨部门评审（研发/设计/测试）', '确认排期和分工'],
+    },
+    {
+      key: '开发跟踪',
+      id: 'kb-workflow-5-开发跟踪',
+      content: ['加入需求看板', '跟踪开发进展', '处理技术疑问', '验收功能实现'],
+    },
+    {
+      key: '上线发布',
+      id: 'kb-workflow-6-上线发布',
+      content: ['确认上线时间', '准备上线文档', '跟踪上线效果'],
+    },
+    {
+      key: '复盘总结',
+      id: 'kb-workflow-7-复盘总结',
+      content: ['回顾目标达成', '记录问题和解决方案', '更新知识库'],
+    },
+  ]
+
   function renderWorkflowHub() {
     const cat = getCat('workflow')
     if (!cat) return null
@@ -87,14 +126,6 @@
         meta: 'template',
         kind: 'template',
       },
-      {
-        id: 'retro',
-        href: '#/module/workflow/retro',
-        title: t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
-        desc: t('kbMod.workflowRetroDesc', null, '周复盘节奏、8 步流程与复盘表字段'),
-        meta: 'SOP',
-        kind: 'sop',
-      },
     ]
     const secondary = [
       {
@@ -110,7 +141,7 @@
     ]
 
     const body = `
-      <div class="kb-module-grid kb-module-grid-3">
+      <div class="kb-module-grid kb-module-grid-2">
         ${modules
           .map(
             (m) => `
@@ -143,42 +174,30 @@
         { label: catTitle(cat) },
       ]),
       catTitle(cat),
-      t('kbMod.workflowHubDesc', null, '按文档架构分成步骤、模板与复盘三大模块'),
+      t('kbMod.workflowHubDesc', null, '按文档架构查看需求步骤与 PRD 模板'),
       body,
       'kb-workflow-hub',
     )
   }
 
   function renderWorkflowDemand() {
-    const steps = bySection(itemsOf('workflow'), /需求处理/)
-      .filter((i) => i.kind === 'workflow-step')
-      .sort((a, b) => String(a.title).localeCompare(String(b.title), 'zh'))
-
-    // sort by leading number in id/title
-    steps.sort((a, b) => {
-      const na = parseInt((a.id.match(/-(\d)-/) || [])[1] || '99', 10)
-      const nb = parseInt((b.id.match(/-(\d)-/) || [])[1] || '99', 10)
-      return na - nb
-    })
-
+    // 完全固定顺序与文案，不读 data.js / shared，避免任何排序或合并污染
     const body = `
-      <ol class="kb-stepper">
-        ${steps
-          .map(
-            (s, idx) => `
-          <li class="kb-stepper-item">
-            <div class="kb-stepper-index">${String(idx + 1).padStart(2, '0')}</div>
-            <div class="kb-stepper-body">
-              <h2>${escapeHtml(s.title.replace(/^\d+\.\s*/, ''))}</h2>
-              <ul class="kb-stepper-list">
-                ${(s.content || []).map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
+      <div class="sec-hub-grid kb-path-stage-grid workflow-demand-list">
+        ${WORKFLOW_DEMAND_STEPS.map(
+          (s, idx) => `
+          <article class="sec-hub-card kb-path-stage-card">
+            <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
+            <div class="sec-hub-card-body">
+              <h2>${escapeHtml(s.key)}</h2>
+              <ul class="kb-path-stage-tasks">
+                ${s.content.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
               </ul>
               <a class="kb-stepper-detail" href="#/article/workflow/${s.id}">${escapeHtml(t('kbMod.viewDetail', null, '查看详情'))}</a>
             </div>
-          </li>`,
-          )
-          .join('')}
-      </ol>`
+          </article>`,
+        ).join('')}
+      </div>`
 
     return pageShell(
       crumb([
@@ -225,59 +244,6 @@
       ]),
       t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
       t('kbMod.workflowPrdDesc', null, '7 章节标准结构 + 写作原则'),
-      body,
-    )
-  }
-
-  function renderWorkflowRetro() {
-    const items = bySection(itemsOf('workflow'), /复盘/)
-    const ordered = [...items].sort((a, b) => {
-      const rank = (x) => {
-        if (/默认节奏/.test(x.title)) return 1
-        if (/8\s*步/.test(x.title)) return 2
-        if (/11\s*字段|字段/.test(x.title)) return 3
-        if (/产物/.test(x.title)) return 4
-        if (/关联/.test(x.title)) return 5
-        return 9
-      }
-      return rank(a) - rank(b)
-    })
-
-    const body = `
-      <div class="kb-sop-stack">
-        ${ordered
-          .map((item) => {
-            const isSteps = /8\s*步/.test(item.title)
-            const isTable = /字段/.test(item.title)
-            return `
-            <section class="kb-sop-block">
-              <h2>${escapeHtml(item.title)}</h2>
-              ${
-                isSteps
-                  ? `<ol class="kb-sop-steps">${(item.content || []).map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ol>`
-                  : isTable
-                    ? `<div class="kb-sop-table">${(item.content || [])
-                        .map((l) => {
-                          const [k, ...rest] = String(l).split(/[：:=]/)
-                          const v = rest.join('：') || ''
-                          return `<div class="kb-sop-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`
-                        })
-                        .join('')}</div>`
-                    : renderLines(item.content)
-              }
-            </section>`
-          })
-          .join('')}
-      </div>`
-
-    return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/workflow', label: t('categories.workflow.title', null, '工作流程') },
-        { label: t('kbMod.workflowRetroTitle', null, '复盘 SOP') },
-      ]),
-      t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
-      t('kbMod.workflowRetroDesc', null, '周复盘节奏、8 步流程与复盘表字段'),
       body,
     )
   }
@@ -486,55 +452,86 @@
     )
   }
 
-  function renderLearningPath() {
-    const stages = itemsOf('reference')
-      .filter((i) => i.kind === 'path-stage' || i.sourceId === 'learning-path')
-      .filter((i) => /阶段|进阶/.test(i.title))
-    const extras = itemsOf('reference').filter(
-      (i) => (i.kind === 'path-stage' || i.sourceId === 'learning-path') && !/阶段|进阶/.test(i.title),
-    )
+  function getKbPathStages() {
+    return [
+      {
+        stage: '阶段 1',
+        title: '入门',
+        outcome: '能讲清楚 AARRR / MVP / RICE 是什么',
+        tasks: [
+          { text: '通读《产品经理八股》', href: '#/doc/methodology/pm-bagu' },
+          { text: '每天看《每日学习》5 个方法论', href: '#/daily-learn' },
+        ],
+      },
+      {
+        stage: '阶段 2',
+        title: '基础',
+        outcome: '能独立写一份简单 PRD',
+        tasks: [
+          { text: '读《产品策划方法论》6 大体系', href: '#/doc/methodology/product-methodology' },
+          { text: '读《工作流程》7 步流程', href: '#/category/workflow' },
+        ],
+      },
+      {
+        stage: '阶段 3',
+        title: '进阶',
+        outcome: '能听懂研发的技术方案，不被术语唬住',
+        tasks: [
+          { text: '读《系统架构》（重点 10 个架构问题）', href: '#/doc/architecture/system-architecture' },
+          { text: '读《行业通用词语》全部章节', href: '#/doc/architecture/industry-terms' },
+        ],
+      },
+      {
+        stage: '阶段 4',
+        title: '实战',
+        outcome: '能独立 own 一个中型需求，跨 3 个部门',
+        tasks: [
+          { text: '把协作层（RACI / 4 原则）用到实际跨部门', href: '#/doc/methodology/product-methodology' },
+          { text: '从每日学习中挑 5 个方法论写进自己的需求', href: '#/daily-learn' },
+        ],
+      },
+    ]
+  }
 
+  function renderLearningPath() {
+    const stages = getKbPathStages()
     const body = `
-      <div class="kb-path">
-        <ol class="kb-path-track">
-          ${stages
-            .map(
-              (s, idx) => `
-            <li class="kb-path-node">
-              <div class="kb-path-dot">${idx + 1}</div>
-              <div class="kb-path-card">
-                <h2>${escapeHtml(stripLeadingIndex(s.title))}</h2>
-                ${renderLines(s.content)}
-              </div>
-            </li>`,
-            )
-            .join('')}
-        </ol>
-        ${
-          extras.length
-            ? `<section class="kb-path-extras">
-                ${extras
+      <div class="sec-hub-grid kb-path-stage-grid">
+        ${stages
+          .map(
+            (s, idx) => `
+          <article class="sec-hub-card kb-path-stage-card">
+            <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
+            <div class="sec-hub-card-body">
+              <h2>${escapeHtml(s.title)}</h2>
+              <p class="kb-path-stage-meta">${escapeHtml(s.stage)}</p>
+              <ul class="kb-path-stage-tasks">
+                ${s.tasks
                   .map(
-                    (e) => `
-                  <article class="kb-sop-block">
-                    <h2>${escapeHtml(stripLeadingIndex(e.title))}</h2>
-                    ${renderLines(e.content)}
-                  </article>`,
+                    (task) => `
+                  <li>
+                    ${task.href
+                      ? `<a href="${task.href}">${escapeHtml(task.text)}</a>`
+                      : `<span>${escapeHtml(task.text)}</span>`}
+                  </li>`,
                   )
                   .join('')}
-              </section>`
-            : ''
-        }
+              </ul>
+              <p class="kb-path-stage-out"><span>输出</span>${escapeHtml(s.outcome)}</p>
+            </div>
+          </article>`,
+          )
+          .join('')}
       </div>`
 
     return pageShell(
       crumb([
         { href: '#/', label: t('common.home') },
-        { href: '#/category/reference', label: t('categories.reference.title', null, '快速参考') },
+        { href: '#/kb', label: t('nav.sectionKnowledge') },
         { label: t('kbMod.refPathTitle', null, '学习路径') },
       ]),
-      t('kbMod.refPathTitle', null, '学习路径'),
-      t('kbMod.refPathDesc', null, '4 阶段 8 周路径'),
+      t('kbMod.refPathTitle', null, '4 阶段学习路径'),
+      t('kbMod.refPathDesc', null, '入门 → 基础 → 进阶 → 实战'),
       body,
       'kb-path-page',
     )
@@ -823,7 +820,6 @@
     if (catId === 'workflow') {
       if (moduleId === 'demand') return renderWorkflowDemand()
       if (moduleId === 'prd') return renderWorkflowPrd()
-      if (moduleId === 'retro') return renderWorkflowRetro()
       if (moduleId === 'collab') return renderWorkflowCollab()
       if (moduleId === 'kb') return renderWorkflowKb()
     }
@@ -904,5 +900,6 @@
     getChapterLabel,
     bindModulePage,
     stripLeadingIndex,
+    getKbPathStages,
   }
 })()

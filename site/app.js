@@ -230,7 +230,6 @@ function buildCrumbsFromRoute(parts) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
       prd: t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
-      retro: t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
       collab: t('kbMod.workflowCollabTitle', null, '跨部门协作'),
       kb: t('kbMod.workflowKbTitle', null, '知识库管理'),
       glossary: t('kbMod.refGlossaryTitle', null, '关键词速查'),
@@ -285,6 +284,96 @@ function buildCrumbsFromRoute(parts) {
 }
 
 let topbarSearchDocBound = false
+/** 全站检索：知识库 / 行业认知 / 学习路径 / 工具 / 站点页面 */
+function searchSiteContent(query, limit = 10) {
+  const q = String(query || '').trim()
+  if (!q) return []
+  const ql = q.toLowerCase()
+  const buckets = [[], [], [], []]
+
+  const pushBucket = (i, hit) => {
+    if (buckets[i].some((x) => x.href === hit.href && x.title === hit.title)) return
+    buckets[i].push(hit)
+  }
+
+  for (const { category, item, source } of K.searchKnowledgeMerged(q)) {
+    const catLabel = source === 'my'
+      ? category.title
+      : t(`categories.${category.id}.title`, null, category.title)
+    pushBucket(0, {
+      title: item.title,
+      meta: `${catLabel}${source === 'my' ? t('nav.searchSourceMy') : ''}`,
+      href: source === 'my' ? `#/my-knowledge/view/${item.id}` : `#/article/${category.id}/${item.id}`,
+    })
+  }
+
+  const industry = window.PDMIndustry
+  if (industry?.searchAll) {
+    for (const { section, item } of industry.searchAll(q)) {
+      pushBucket(1, {
+        title: item.title,
+        meta: `${t('nav.industry')} · ${section.title}`,
+        href: `#/industry/${section.id}/${item.id}`,
+      })
+    }
+  }
+  if (industry?.getLearningPaths) {
+    for (const p of industry.getLearningPaths()) {
+      const hay = `${p.title} ${p.summary} ${(p.outcomes || []).join(' ')}`.toLowerCase()
+      if (hay.includes(ql)) {
+        pushBucket(1, {
+          title: p.title,
+          meta: `${t('nav.industry')} · ${t('content.industryUi.pathBreadcrumb', null, '学习路径')}`,
+          href: `#/industry/learning-path/${p.id}`,
+        })
+      }
+    }
+  }
+
+  const tools = window.PDMTools
+  if (tools?.searchTools) {
+    for (const tool of tools.searchTools(q)) {
+      pushBucket(2, {
+        title: tool.name,
+        meta: `${t('nav.tools')} · ${tool.categoryTitle}`,
+        href: `#/tools/${tool.categoryId}`,
+      })
+    }
+  }
+
+  const pages = [
+    { title: t('nav.home'), meta: t('nav.home'), href: '#/', keys: '首页 home' },
+    { title: t('nav.industry'), meta: t('nav.industry'), href: '#/industry', keys: '行业认知 industry pm 岗位' },
+    { title: t('nav.sectionKnowledge'), meta: t('nav.sectionKnowledge'), href: '#/kb', keys: '知识库 knowledge kb 学习' },
+    { title: t('nav.tools'), meta: t('nav.tools'), href: '#/tools', keys: '工具库 tools figma' },
+    { title: t('nav.forum'), meta: t('nav.forum'), href: '#/forum', keys: '论坛 forum 讨论' },
+    { title: t('nav.dailyLearn'), meta: t('nav.sectionPersonal'), href: '#/daily-learn', keys: '每日学习 daily' },
+    { title: t('nav.favorites'), meta: t('nav.sectionPersonal'), href: '#/favorites', keys: '收藏 favorites' },
+    { title: t('nav.reviews'), meta: t('nav.sectionPersonal'), href: '#/reviews', keys: '复盘 reviews' },
+    { title: t('kbMod.refPathTitle', null, '4 阶段学习路径'), meta: t('nav.sectionKnowledge'), href: '#/module/reference/path', keys: '学习路径 4阶段 path' },
+  ]
+  for (const p of pages) {
+    if (`${p.title} ${p.keys}`.toLowerCase().includes(ql)) {
+      pushBucket(3, { title: p.title, meta: p.meta, href: p.href })
+    }
+  }
+
+  const out = []
+  let guard = 0
+  while (out.length < limit && guard < limit * 4) {
+    let added = false
+    for (const bucket of buckets) {
+      if (out.length >= limit) break
+      if (!bucket.length) continue
+      out.push(bucket.shift())
+      added = true
+    }
+    if (!added) break
+    guard += 1
+  }
+  return out
+}
+
 function bindTopbarSearch() {
   const input = document.getElementById('topbar-search-input')
   const results = document.getElementById('topbar-search-results')
@@ -300,24 +389,21 @@ function bindTopbarSearch() {
   input.oninput = () => {
     const q = input.value.trim()
     if (!q) { hide(); return }
-    const found = K.searchKnowledgeMerged(q).slice(0, 8)
+    const found = searchSiteContent(q, 10)
     if (!found.length) {
       show(`<div class="topbar-search-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`)
       return
     }
-    show(found.map(({ category, item, source }) => {
-      const catLabel = source === 'my'
-        ? category.title
-        : t(`categories.${category.id}.title`, null, category.title)
-      return `<button type="button" class="topbar-search-item" data-src="${source || 'public'}" data-cat="${category.id}" data-item="${item.id}">
-        <span class="result-title">${escapeHtml(item.title)}</span>
-        <span class="result-meta">${escapeHtml(catLabel)}${source === 'my' ? escapeHtml(t('nav.searchSourceMy')) : ''}</span>
-      </button>`
-    }).join(''))
+    show(found.map((hit) => `
+      <button type="button" class="topbar-search-item" data-href="${escapeHtml(hit.href)}">
+        <span class="result-title">${escapeHtml(hit.title)}</span>
+        <span class="result-meta">${escapeHtml(hit.meta)}</span>
+      </button>`).join(''))
     results.querySelectorAll('.topbar-search-item').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.src === 'my') navigate(`/my-knowledge/view/${btn.dataset.item}`)
-        else navigate(`/article/${btn.dataset.cat}/${btn.dataset.item}`)
+        const href = btn.dataset.href || ''
+        const path = href.startsWith('#') ? href.slice(1) : href
+        navigate(path || '/')
         input.value = ''
         hide()
       })
@@ -718,7 +804,6 @@ function getMobilePageMeta(parts) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
       prd: t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
-      retro: t('kbMod.workflowRetroTitle', null, '复盘 SOP'),
       collab: t('kbMod.workflowCollabTitle', null, '跨部门协作'),
       kb: t('kbMod.workflowKbTitle', null, '知识库管理'),
       glossary: t('kbMod.refGlossaryTitle', null, '关键词速查'),
@@ -908,38 +993,29 @@ function getAdminHubCards() {
 }
 
 function renderKnowledgeHubPage() {
-  const stages = (K.getCategoryByIdMerged?.('reference')?.items || [])
-    .filter((i) => i.kind === 'path-stage' || i.sourceId === 'learning-path')
-    .filter((i) => /阶段\s*[1-4]/.test(i.title))
-    .sort((a, b) => {
-      const na = Number((a.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
-      const nb = Number((b.title.match(/阶段\s*(\d+)/) || [])[1] || 99)
-      return na - nb
-    })
-
+  const stages = window.PDMKnowledgeViews?.getKbPathStages?.() || []
   const pathStrip = stages.length
     ? `<section class="sec-hub-path">
         <div class="sec-hub-path-head">
           <h2>${escapeHtml(t('kbMod.refPathTitle', null, '4 阶段学习路径'))}</h2>
           <a href="#/module/reference/path" class="sec-hub-path-link">${escapeHtml(t('kbMod.viewDetail', null, '查看详情'))}</a>
         </div>
-        <ol class="sec-hub-path-steps">
+        <div class="sec-hub-grid">
           ${stages
-            .map((s, idx) => {
-              const label = String(s.title || '')
-                .replace(/^阶段\s*\d+[：:.]?\s*/, '')
-                .replace(/\(.*?\)/g, '')
-                .trim()
-              return `<li>
-                <a href="#/module/reference/path">
-                  <span class="sec-hub-path-num">${idx + 1}</span>
-                  <span class="sec-hub-path-label">${escapeHtml(label || s.title)}</span>
-                  <span class="sec-hub-path-goal">${escapeHtml(s.summary || '')}</span>
-                </a>
-              </li>`
-            })
+            .map(
+              (s, idx) => `
+            <a href="#/module/reference/path" class="sec-hub-card">
+              <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
+              <div class="sec-hub-card-body">
+                <h2>${escapeHtml(s.title)}</h2>
+                <p>${escapeHtml(s.outcome)}</p>
+                <span class="sec-hub-card-meta">${escapeHtml(s.stage)}</span>
+              </div>
+              <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+            </a>`,
+            )
             .join('')}
-        </ol>
+        </div>
       </section>`
     : ''
 
@@ -1034,7 +1110,16 @@ function getMobilePersonalItems() {
 }
 
 function renderMobileLearnHub() {
-  return renderMobileHubPage(t('nav.sectionLearning'), t('mobile.learnHubDesc'), getMobileLearnItems())
+  return renderSectionCardHub({
+    eyebrow: t('nav.sectionLearning'),
+    title: t('nav.sectionLearning'),
+    desc: t('mobile.learnHubDesc'),
+    cards: getMobileLearnItems().map((x) => ({
+      href: x.href,
+      title: x.title,
+      desc: x.desc,
+    })),
+  })
 }
 
 function renderMobileKnowledgeHub() {
@@ -1574,24 +1659,20 @@ function bindHomeEvents() {
   }
 
   const paintResults = (q) => {
-    const found = K.searchKnowledgeMerged(q).slice(0, 8)
+    const found = searchSiteContent(q, 8)
     if (!found.length) {
       showResults(`<div class="home-composer-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`)
       return
     }
-    showResults(found.map(({ category, item, source }) => {
-      const catLabel = source === 'my'
-        ? category.title
-        : t(`categories.${category.id}.title`, null, category.title)
-      return `<button type="button" class="home-composer-item" data-src="${source || 'public'}" data-cat="${category.id}" data-item="${item.id}">
-        <strong>${escapeHtml(item.title)}</strong>
-        <span>${escapeHtml(catLabel)}</span>
-      </button>`
-    }).join(''))
+    showResults(found.map((hit) => `
+      <button type="button" class="home-composer-item" data-href="${escapeHtml(hit.href)}">
+        <strong>${escapeHtml(hit.title)}</strong>
+        <span>${escapeHtml(hit.meta)}</span>
+      </button>`).join(''))
     results.querySelectorAll('.home-composer-item').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.src === 'my') navigate(`/my-knowledge/view/${btn.dataset.item}`)
-        else navigate(`/article/${btn.dataset.cat}/${btn.dataset.item}`)
+        const href = btn.dataset.href || ''
+        navigate(href.startsWith('#') ? href.slice(1) : href || '/')
       })
     })
   }
@@ -3640,15 +3721,24 @@ function render() {
   } else if (parts[0] === 'admin' && !parts[1]) {
     main.innerHTML = renderAdminHubPage()
     Analytics()?.track('page_view', { page: 'admin-hub' })
+  } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2] === 'path-overview') {
+    navigate('/industry/learning-path')
+    return
   } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2]) {
-    main.innerHTML = Sections().renderLearningPathDetail(parts[2])
-    Analytics()?.track('page_view', { page: 'learning-path', id: parts[2] })
-  } else if (parts[0] === 'industry' && parts[1] === 'learning-path') {
-    main.innerHTML = Sections().renderLearningPathDetail('newcomer-8w')
-    Analytics()?.track('page_view', { page: 'learning-path', id: 'newcomer-8w' })
+    const path = window.PDMIndustry?.getLearningPath?.(parts[2])
+    if (path) {
+      main.innerHTML = Sections().renderLearningPathDetail(parts[2])
+      Analytics()?.track('page_view', { page: 'learning-path', id: parts[2] })
+    } else {
+      main.innerHTML = Sections().renderIndustryArticle(parts[1], parts[2])
+      Analytics()?.track('page_view', { page: 'industry', id: parts[2] })
+    }
   } else if (parts[0] === 'industry' && parts[1] && parts[2]) {
     main.innerHTML = Sections().renderIndustryArticle(parts[1], parts[2])
     Analytics()?.track('page_view', { page: 'industry', id: parts[2] })
+  } else if (parts[0] === 'industry' && parts[1]) {
+    main.innerHTML = Sections().renderIndustrySection(parts[1])
+    Analytics()?.track('page_view', { page: 'industry-section', id: parts[1] })
   } else if (parts[0] === 'industry') {
     main.innerHTML = Sections().renderIndustryHub()
     Analytics()?.track('page_view', { page: 'industry' })
@@ -3699,6 +3789,9 @@ function render() {
     const html = window.PDMKnowledgeViews?.renderChapter?.(parts[1], docId, decodeURIComponent(parts[3]))
     main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
     Analytics()?.track('page_view', { page: 'kb-chapter', id: `${parts[1]}/${docId}/${parts[3]}` })
+  } else if (parts[0] === 'module' && parts[1] === 'workflow' && parts[2] === 'retro') {
+    navigate('/category/workflow')
+    return
   } else if (parts[0] === 'module' && parts[1] && parts[2]) {
     const html = window.PDMKnowledgeViews?.renderModule?.(parts[1], parts[2])
     if (!html) {

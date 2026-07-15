@@ -879,19 +879,17 @@ window.PDMSkillsCatalog = [
     "sourceKey": "workflow:7-复盘总结",
     "skillId": "workflow",
     "skillLabel": "工作流程",
-    "section": "普渡通用默认上线规则（4 集群分时发布）",
+    "section": "需求处理 7 步流程",
     "categoryId": "methodology",
     "title": "7. 复盘总结",
-    "summary": "记录问题和解决方案",
+    "summary": "回顾目标达成",
     "tags": [
       "工作流程"
     ],
     "content": [
       "回顾目标达成",
       "记录问题和解决方案",
-      "更新知识库",
-      "---",
-      "## 普渡通用默认上线规则（4 集群分时发布）"
+      "更新知识库"
     ]
   },
   {
