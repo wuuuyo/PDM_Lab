@@ -5941,7 +5941,7 @@ html.sidebar-collapsed .nav-icon {
 
 /* Home — onboarding & primary path */
 .home-stage-sub {
-  margin: 10px auto 0;
+  margin: 12px auto 32px;
   width: max-content;
   max-width: min(100%, 56rem);
   padding: 0 12px;
@@ -5952,10 +5952,17 @@ html.sidebar-collapsed .nav-icon {
   text-align: center;
 }
 
+@media (max-width: 900px) {
+  .home-stage-sub {
+    margin: 10px auto 28px;
+  }
+}
+
 @media (max-width: 720px) {
   .home-stage-sub {
     width: auto;
     max-width: 100%;
+    margin: 8px auto 24px;
     white-space: normal;
     font-size: 0.875rem;
   }

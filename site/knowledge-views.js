@@ -183,18 +183,9 @@
       const item = trail.item || findArticleItem(catId, itemId)
       const title = stripLeadingIndex(item?.title) || itemId
 
+      // 知识点详情：顶栏仅「知识库 › 文档 › 标题」，页内不再重复面包屑
       if (trail.doc) {
-        const doc = trail.doc
-        crumbs.push({ href: `#/doc/${catId}/${doc.id}`, label: kbDocLabel(catId, doc.id) })
-        if (trail.chapter && !trail.chapter.isArticle) {
-          const chapterHref = isGroupedDoc(catId, doc.id)
-            ? `#/doc/${catId}/${doc.id}?group=${encodeURIComponent(trail.chapter.id)}`
-            : `#/chapter/${catId}/${doc.id}/${encodeURIComponent(trail.chapter.id)}`
-          crumbs.push({
-            href: chapterHref,
-            label: trail.chapter.title,
-          })
-        }
+        crumbs.push({ href: `#/doc/${catId}/${trail.doc.id}`, label: kbDocLabel(catId, trail.doc.id) })
         crumbs.push({ label: title })
         return crumbs
       }
@@ -316,10 +307,7 @@
       </section>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { label: catTitle(cat) },
-      ]),
+      '',
       catTitle(cat),
       t('kbMod.workflowHubDesc', null, '按文档架构查看需求步骤与 PRD 模板'),
       body,
@@ -382,11 +370,7 @@
       </div>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/workflow', label: t('categories.workflow.title', null, '工作流程') },
-        { label: t('kbMod.workflowPrdTitle', null, 'PRD 模板') },
-      ]),
+      '',
       t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
       t('kbMod.workflowPrdDesc', null, '7 章节标准结构 + 写作原则'),
       body,
@@ -416,11 +400,7 @@
           .join('')}
       </div>`
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/workflow', label: t('categories.workflow.title', null, '工作流程') },
-        { label: t('kbMod.workflowCollabTitle', null, '跨部门协作') },
-      ]),
+      '',
       t('kbMod.workflowCollabTitle', null, '跨部门协作'),
       t('kbMod.workflowCollabDesc', null, '与研发 / 设计 / 测试 / 业务方的对接节奏'),
       body,
@@ -442,11 +422,7 @@
           .join('')}
       </div>`
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/workflow', label: t('categories.workflow.title', null, '工作流程') },
-        { label: t('kbMod.workflowKbTitle', null, '知识库管理') },
-      ]),
+      '',
       t('kbMod.workflowKbTitle', null, '知识库管理'),
       t('kbMod.workflowKbDesc', null, '日常积累、月度整理与检索习惯'),
       body,
@@ -606,8 +582,21 @@
         title: '行业通用词语',
         desc: '技术架构与机器人行业术语速查',
         sourceId: 'industry-terms',
+        layout: 'grouped',
         chapterMode: 'section',
         sectionInclude: /第一部分|第三部分/,
+        chapterMeta: {
+          技术架构: {
+            title: '技术架构',
+            tagline: '云服务、SaaS 与产品标准化',
+            tags: 'IaaS / PaaS / SaaS / 多租户 / SPU / SKU',
+          },
+          '机器人/配送行业': {
+            title: '机器人',
+            tagline: '配送与机器人行业常用词',
+            tags: 'AMR / SLAM / ROS / OTA',
+          },
+        },
       },
     ],
     business: [
@@ -873,10 +862,7 @@
       </div>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { label: catTitle(cat) },
-      ]),
+      '',
       catTitle(cat),
       t('kbMod.docHubDesc', null, '先选文档，再进入章节'),
       body,
@@ -912,15 +898,7 @@
       </div>`
       : `<p class="kb-empty">${escapeHtml(t('kbMod.emptyDoc', null, '该文档暂无章节内容'))}</p>`
 
-    const crumbs = [
-      { href: '#/', label: t('common.home') },
-      { href: `#/category/${catId}`, label: catTitle(cat) },
-    ]
-    if ((KB_DOCS[catId] || []).length > 1) {
-      crumbs.push({ label: doc.title })
-    }
-
-    return pageShell(crumb(crumbs), doc.title, doc.desc, body, 'kb-doc-chapters sec-hub-page')
+    return pageShell('', doc.title, doc.desc, body, 'kb-doc-chapters sec-hub-page')
   }
 
   function renderChapterTopics(catId, docId, chapterId) {
@@ -939,17 +917,8 @@
 
     const body = renderTopicCardGrid(catId, items)
 
-    const crumbs = [
-      { href: '#/', label: t('common.home') },
-      { href: `#/category/${catId}`, label: catTitle(cat) },
-    ]
-    if ((KB_DOCS[catId] || []).length > 1) {
-      crumbs.push({ href: `#/doc/${catId}/${docId}`, label: doc.title })
-    }
-    crumbs.push({ label: ch.title })
-
     return pageShell(
-      crumb(crumbs),
+      '',
       ch.title,
       ch.tagline || `${items.length} ${t('kbMod.topics', null, '个知识点')}`,
       body,

@@ -101,11 +101,21 @@ function getUserInitials(email, displayName) {
 }
 
 function getSidebarCollapsed() {
-  try { return localStorage.getItem('pm-lab-sidebar-collapsed') === '1' } catch (_) { return false }
+  // Desktop preference only; default expanded. Mobile never writes this key.
+  try {
+    return localStorage.getItem('pm-lab-sidebar-desktop-collapsed') === '1'
+  } catch (_) {
+    return false
+  }
 }
 
 function setSidebarCollapsed(collapsed) {
-  try { localStorage.setItem('pm-lab-sidebar-collapsed', collapsed ? '1' : '0') } catch (_) {}
+  const isMobile = window.matchMedia('(max-width: 900px)').matches
+  if (!isMobile) {
+    try {
+      localStorage.setItem('pm-lab-sidebar-desktop-collapsed', collapsed ? '1' : '0')
+    } catch (_) {}
+  }
   document.documentElement.classList.toggle('sidebar-collapsed', collapsed)
   const btn = document.getElementById('sidebar-collapse-btn')
   if (btn) {
@@ -114,7 +124,6 @@ function setSidebarCollapsed(collapsed) {
     btn.setAttribute('aria-label', collapsed ? t('nav.sidebarExpand') : t('nav.sidebarCollapse'))
   }
   // 手机端展开时显示遮罩
-  const isMobile = window.matchMedia('(max-width: 900px)').matches
   document.documentElement.classList.toggle('sidebar-mobile-open', isMobile && !collapsed)
   const backdrop = document.getElementById('sidebar-backdrop')
   if (backdrop) {
@@ -864,13 +873,38 @@ function getMobilePageMeta(parts) {
   if (!parts.length) return null
   if (parts[0] === 'm') return null
 
-  const backHref = getMobileBackHref(parts)
+  const tabRoot = getMobileBackHref(parts)
   const p0 = parts[0]
-  if (p0 === 'industry') return { title: t('nav.sectionLearning'), backHref }
-  if (p0 === 'tools') return { title: t('nav.tools'), backHref }
-  if (p0 === 'forum') return { title: t('nav.forum'), backHref }
-  if (p0 === 'glossary') return { title: t('home.ctaKb'), backHref: '#/' }
-  if (p0 === 'mindmap') return { title: t('home.ctaMindmap'), backHref: '#/' }
+
+  // 底部 Tab 第一层：不插返回条（页面自带 hero）
+  if (p0 === 'industry' && !parts[1]) return null
+  if (p0 === 'tools') return null
+  if (p0 === 'forum' && !parts[1]) return null
+  if (p0 === 'personal' && !parts[1]) return null
+  if (p0 === 'kb') return null
+
+  if (p0 === 'industry') {
+    let title = t('nav.sectionLearning')
+    if (parts[1] === 'overview') title = t('content.industryUi.sectionOverview', null, '行业认知')
+    else if (parts[1] === 'learning-path' && !parts[2]) title = t('content.industryUi.pathBreadcrumb', null, '学习路径')
+    else if (parts[1] === 'learning-path' && parts[2]) {
+      const path = window.PDMIndustry?.getLearningPath?.(parts[2])
+      title = path?.title || parts[2]
+    } else if (parts[2]) {
+      const item = window.PDMIndustry?.getItem?.(parts[1], parts[2])
+      title = item?.title || parts[2]
+    }
+    return { title, backHref: '#/industry' }
+  }
+  if (p0 === 'forum') {
+    const title =
+      parts[1] === 'new'
+        ? t('content.forumUi.newTitle', null, '发布帖子')
+        : t('content.forumUi.postBreadcrumb', null, '帖子')
+    return { title, backHref: '#/forum' }
+  }
+  if (p0 === 'glossary') return { title: t('home.ctaKb'), backHref: '#/kb' }
+  if (p0 === 'mindmap') return { title: t('home.ctaMindmap'), backHref: '#/kb' }
   if (p0 === 'module' && parts[1] && parts[2]) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
@@ -889,18 +923,12 @@ function getMobilePageMeta(parts) {
       window.PDMKnowledgeViews?.isFlatKbDoc?.(parts[1])
         ? t('nav.sectionKnowledge')
         : (catTitle(cat) || parts[1])
-    return { title: label, backHref: '#/kb' }
-  }
-  if (p0 === 'kb') {
-    return { title: t('nav.sectionKnowledge'), backHref: '#/' }
-  }
-  if (p0 === 'personal') {
-    return { title: t('nav.sectionPersonal'), backHref }
+    return { title: label, backHref: '#/m/knowledge' }
   }
   if (p0 === 'doc' && parts[1] && parts[2]) {
     return {
       title: window.PDMKnowledgeViews?.kbDocLabel?.(parts[1], parts[2]) || parts[2],
-      backHref: '#/kb',
+      backHref: '#/m/knowledge',
     }
   }
   if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
@@ -915,22 +943,20 @@ function getMobilePageMeta(parts) {
     const item = K.getItemByIdMerged?.(parts[1], parts[2])
     const title = window.PDMKnowledgeViews?.stripLeadingIndex?.(item?.title) || item?.title || t('nav.sectionKnowledge')
     const trail = window.PDMKnowledgeViews?.resolveArticleTrail?.(parts[1], parts[2])
-    let backHref = '#/kb'
-    if (trail?.doc && trail?.chapter && !trail.chapter.isArticle) {
-      backHref = `#/chapter/${parts[1]}/${trail.doc.id}/${encodeURIComponent(trail.chapter.id)}`
-    } else if (trail?.doc) {
+    let backHref = '#/m/knowledge'
+    if (trail?.doc) {
       backHref = `#/doc/${parts[1]}/${trail.doc.id}`
     } else if (parts[1] === 'workflow' || parts[1] === 'reference') {
       backHref = `#/category/${parts[1]}`
     }
     return { title, backHref }
   }
-  if (p0 === 'favorites') return { title: t('nav.favorites'), backHref }
-  if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref }
-  if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref }
-  if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref }
-  if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref }
-  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref }
+  if (p0 === 'favorites') return { title: t('nav.favorites'), backHref: tabRoot }
+  if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref: tabRoot }
+  if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref: tabRoot }
+  if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref: tabRoot }
+  if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref: tabRoot }
+  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: tabRoot }
   if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
   if (p0 === 'account') return { title: t('account.profileTitle'), backHref: '#/m/account' }
   if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: '#/m/account' }
@@ -941,16 +967,19 @@ function getMobilePageMeta(parts) {
     if (parts[1] === 'feedback') return { title: t('nav.adminFeedback'), backHref: '#/m/account' }
     return { title: t('nav.adminStats'), backHref: '#/m/account' }
   }
-  return { title: t('nav.home'), backHref: '#/' }
+  return null
 }
 
 function renderMobilePageHead(title, backHref) {
-  return `
-    <header class="mobile-page-head">
-      <a href="${backHref || '#/'}" class="mobile-back-btn" aria-label="${escapeHtml(t('common.back'))}">
+  const back = backHref
+    ? `<a href="${backHref}" class="mobile-back-btn" aria-label="${escapeHtml(t('common.back'))}">
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>${escapeHtml(t('common.back'))}</span>
-      </a>
+      </a>`
+    : ''
+  return `
+    <header class="mobile-page-head">
+      ${back}
       <h1 class="mobile-page-title">${escapeHtml(title || '')}</h1>
     </header>`
 }
@@ -1003,7 +1032,7 @@ function renderMobileHubPage(title, desc, items) {
 }
 
 /** 一级入口页：二级功能卡片（知识库 / 个人空间 / 管理后台） */
-function renderSectionCardHub({ title, desc, eyebrow, cards, extraHtml = '' }) {
+function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', extraHtml = '' }) {
   const grid = cards.length
     ? `<div class="sec-hub-grid">
         ${cards
@@ -1029,6 +1058,7 @@ function renderSectionCardHub({ title, desc, eyebrow, cards, extraHtml = '' }) {
         ${eyebrow ? `<p class="sec-hub-eyebrow">${escapeHtml(eyebrow)}</p>` : ''}
         <h1>${escapeHtml(title)}</h1>
         ${desc ? `<p class="sec-hub-desc">${escapeHtml(desc)}</p>` : ''}
+        ${actionsHtml ? `<div class="hero-actions" style="margin-top:16px">${actionsHtml}</div>` : ''}
       </header>
       ${grid}
       ${extraHtml}
@@ -1125,14 +1155,18 @@ function renderKnowledgeHubPage() {
 }
 
 function renderPersonalHubPage() {
-  if (!Auth().isLoggedIn()) {
-    return renderPersonalLoginGate()
-  }
+  const loggedIn = Auth().isLoggedIn()
+  // 未登录：与移动端一致，用个人空间卡片枢纽 + 登录 CTA（不再用居中 login-gate 卡）
   return renderSectionCardHub({
     eyebrow: t('nav.sectionPersonal'),
     title: t('kbMod.personalHubTitle', null, '个人空间'),
-    desc: t('mobile.personalHubDesc'),
+    desc: loggedIn
+      ? t('mobile.personalHubDescLoggedIn', null, '收藏、笔记、个人知识库与复盘，都在这里。')
+      : t('auth.personalGateDesc'),
     cards: getPersonalHubCards(),
+    actionsHtml: loggedIn
+      ? ''
+      : `<a href="#/login" class="btn-primary">${escapeHtml(t('auth.personalGateCta'))}</a>`,
   })
 }
 
@@ -1555,14 +1589,6 @@ function renderSidebar(activePath) {
           ${navIcon('industry')}
           <span class="nav-title">${escapeHtml(t('nav.sectionLearning'))}</span>
         </a>` : ''}
-        ${can('tools') ? `<a href="#/tools" class="nav-item nav-item-l1 ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
-          ${navIcon('tools')}
-          <span class="nav-title">${escapeHtml(t('nav.tools'))}</span>
-        </a>` : ''}
-        ${can('forum') ? `<a href="#/forum" class="nav-item nav-item-l1 ${activePath.includes('/forum') ? 'active' : ''}" title="${escapeHtml(t('nav.forum'))}">
-          ${navIcon('forum')}
-          <span class="nav-title">${escapeHtml(t('nav.forum'))}</span>
-        </a>` : ''}
 
         <div class="nav-l1-group ${kbOpen ? 'is-open' : ''} ${kbActive ? 'is-active' : ''}" data-nav-toggle="kb">
           <div class="nav-item nav-item-l1 nav-row ${kbActive ? 'active' : ''}">
@@ -1574,6 +1600,15 @@ function renderSidebar(activePath) {
           </div>
           <div class="nav-tree">${knowledgeTree}</div>
         </div>
+
+        ${can('tools') ? `<a href="#/tools" class="nav-item nav-item-l1 ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
+          ${navIcon('tools')}
+          <span class="nav-title">${escapeHtml(t('nav.tools'))}</span>
+        </a>` : ''}
+        ${can('forum') ? `<a href="#/forum" class="nav-item nav-item-l1 ${activePath.includes('/forum') ? 'active' : ''}" title="${escapeHtml(t('nav.forum'))}">
+          ${navIcon('forum')}
+          <span class="nav-title">${escapeHtml(t('nav.forum'))}</span>
+        </a>` : ''}
 
         <div class="nav-l1-group ${personalOpen ? 'is-open' : ''} ${personalActive ? 'is-active' : ''}" data-nav-toggle="personal">
           <div class="nav-item nav-item-l1 nav-row ${personalActive ? 'active' : ''}">
@@ -1884,10 +1919,6 @@ function renderCategory(categoryId) {
   const desc = catDesc(cat)
   return `
     <div class="page category-page">
-      <header class="page-header">
-        <a href="#/" class="breadcrumb">${escapeHtml(t('common.home'))}</a><span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${escapeHtml(title)}</span>
-      </header>
       <div class="category-hero">
         <span class="category-hero-icon">${cat.icon}</span>
         <h1>${escapeHtml(title)}</h1><p>${escapeHtml(desc)}</p>
@@ -2376,10 +2407,6 @@ function renderMyKnowledgeView(itemId) {
   const favorited = isFavorited(favRef)
   return `
     <div class="page article-page">
-      <header class="page-header">
-        <a href="#/my-knowledge" class="breadcrumb">我的知识库</a><span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${escapeHtml(item.title)}</span>
-      </header>
       <article class="article-content">
         <div class="article-meta">
           <span class="custom-badge">${escapeHtml(item.groupName)}</span>
@@ -2430,10 +2457,6 @@ function renderKnowledgeForm(editItemId) {
 
   return `
     <div class="page knowledge-form-page">
-      <header class="page-header">
-        <a href="#/my-knowledge" class="breadcrumb">我的知识库</a><span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${isEdit ? '编辑知识' : '新增知识'}</span>
-      </header>
       <div class="knowledge-form-header">
         <h1>${isEdit ? '编辑知识点' : '新增知识点'}</h1>
         <p>保存后存入「我的知识库」，登录后自动云端同步。</p>
@@ -3898,10 +3921,6 @@ function syncSiteWatermark() {
 function render() {
   const { parts } = parseRoute()
   const path = '/' + parts.join('/')
-
-  if (window.matchMedia('(max-width: 900px)').matches) {
-    if (localStorage.getItem('pm-lab-sidebar-collapsed') == null) setSidebarCollapsed(true)
-  }
 
   rememberCurrentMobileTabRoute()
 
