@@ -3942,6 +3942,12 @@ function render() {
   const main = document.getElementById('main')
   const routePerm = Perm().routeFeature(parts)
   if (routePerm?.feature && routePerm.feature !== 'admin' && !Perm().can(routePerm.feature, routePerm.action)) {
+    const personalFeatures = ['favorites', 'notes', 'myKnowledge', 'reviews', 'dailyLearn', 'feedback']
+    // 未登录访问个人能力：引导登录，而不是「无权访问」
+    if (!Auth().isLoggedIn() && personalFeatures.includes(routePerm.feature)) {
+      main.innerHTML = renderPersonalLoginGate()
+      return
+    }
     main.innerHTML = renderPermissionDenied()
     return
   }

@@ -180,7 +180,7 @@
       }
       return { feature: 'methodology', action: 'view' }
     }
-    if (p0 === 'personal') return { feature: 'favorites', action: 'view' }
+    if (p0 === 'personal') return null
     if (p0 === 'favorites') return { feature: 'favorites', action: 'view' }
     if (p0 === 'notes') return { feature: 'notes', action: 'view' }
     if (p0 === 'my-knowledge') {
