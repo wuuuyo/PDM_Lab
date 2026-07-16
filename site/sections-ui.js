@@ -130,33 +130,62 @@
     return OVERVIEW_SECTION_IDS.reduce((n, sid) => n + (Industry().getSection(sid)?.items?.length || 0), 0)
   }
 
-  function renderOverviewToc() {
-    const groups = [
-      { sectionId: 'basics', titleKey: 'sectionBasics' },
-      { sectionId: 'sub-roles', titleKey: 'sectionRoles' },
+  function resolveOverviewTab(preferred) {
+    if (preferred && OVERVIEW_SECTION_IDS.includes(preferred)) return preferred
+    try {
+      const q = new URLSearchParams((location.hash.split('?')[1] || '').replace(/#.*$/, ''))
+      const tab = q.get('tab')
+      if (tab && OVERVIEW_SECTION_IDS.includes(tab)) return tab
+    } catch (_) {}
+    return 'basics'
+  }
+
+  function renderOverviewTabs(activeId) {
+    const tabs = [
+      { id: 'basics', titleKey: 'sectionBasics' },
+      { id: 'sub-roles', titleKey: 'sectionRoles' },
     ]
     return `
-      <p class="industry-overview-toc-label">${window.escapeHtml(ui('industryUi', 'tocLabel'))}</p>
-      <nav class="industry-overview-toc-nav" aria-label="${window.escapeHtml(ui('industryUi', 'tocLabel'))}">
-        ${groups
-          .map((group) => {
-            const sec = Industry().getSection(group.sectionId)
-            if (!sec?.items?.length) return ''
+      <div class="industry-overview-tabs" role="tablist" aria-label="${window.escapeHtml(ui('industryUi', 'sectionOverview'))}">
+        ${tabs
+          .map((tab) => {
+            const on = tab.id === activeId
             return `
-            <div class="industry-overview-toc-group">
-              <a href="#overview-group-${window.escapeHtml(group.sectionId)}" class="industry-overview-toc-section">${window.escapeHtml(ui('industryUi', group.titleKey))}</a>
-              <ul class="industry-overview-toc-list">
-                ${sec.items
-                  .map(
-                    (item) =>
-                      `<li><a href="#overview-${window.escapeHtml(item.id)}">${window.escapeHtml(item.title)}</a></li>`,
-                  )
-                  .join('')}
-              </ul>
-            </div>`
+            <button type="button"
+              class="industry-overview-tab${on ? ' is-active' : ''}"
+              role="tab"
+              id="overview-tab-${window.escapeHtml(tab.id)}"
+              data-overview-tab="${window.escapeHtml(tab.id)}"
+              aria-selected="${on ? 'true' : 'false'}"
+              aria-controls="overview-panel-${window.escapeHtml(tab.id)}">
+              ${window.escapeHtml(ui('industryUi', tab.titleKey))}
+            </button>`
           })
           .join('')}
-      </nav>`
+      </div>`
+  }
+
+  function renderOverviewPanel(sectionId) {
+    const meta = {
+      basics: { titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
+      'sub-roles': { titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
+    }[sectionId]
+    const sec = Industry().getSection(sectionId)
+    if (!meta || !sec?.items?.length) {
+      return `<p class="empty-hint">${window.escapeHtml(ui('industryUi', 'notFound'))}</p>`
+    }
+    return `
+      <section class="industry-overview-group" id="overview-panel-${window.escapeHtml(sectionId)}" role="tabpanel" aria-labelledby="overview-tab-${window.escapeHtml(sectionId)}">
+        <header class="industry-overview-head">
+          <div>
+            <h2>${window.escapeHtml(ui('industryUi', meta.titleKey))}</h2>
+            <p>${window.escapeHtml(ui('industryUi', meta.descKey))}</p>
+          </div>
+        </header>
+        <div class="industry-overview-articles">
+          ${sec.items.map((item) => renderOverviewArticle(item)).join('')}
+        </div>
+      </section>`
   }
 
   function renderOverviewArticle(item) {
@@ -177,30 +206,36 @@
       </article>`
   }
 
-  function renderOverviewGroups() {
-    const groups = [
-      { sectionId: 'basics', titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
-      { sectionId: 'sub-roles', titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
-    ]
-    return groups
-      .map((group, index) => {
-        const sec = Industry().getSection(group.sectionId)
-        if (!sec?.items?.length) return ''
-        return `
-        <section class="industry-overview-group" id="overview-group-${window.escapeHtml(group.sectionId)}">
-          <header class="industry-overview-head">
-            <span class="industry-overview-group-num">${String(index + 1).padStart(2, '0')}</span>
-            <div>
-              <h2>${window.escapeHtml(ui('industryUi', group.titleKey))}</h2>
-              <p>${window.escapeHtml(ui('industryUi', group.descKey))}</p>
-            </div>
-          </header>
-          <div class="industry-overview-articles">
-            ${sec.items.map((item) => renderOverviewArticle(item)).join('')}
-          </div>
-        </section>`
+  function bindOverviewTabs(initialTab) {
+    const root = document.querySelector('.industry-overview-page')
+    if (!root) return
+    const tabs = root.querySelectorAll('[data-overview-tab]')
+    const panel = root.querySelector('#industry-overview-panel')
+    if (!tabs.length || !panel) return
+
+    let activeId = resolveOverviewTab(initialTab)
+
+    const paint = (id) => {
+      activeId = id
+      tabs.forEach((tab) => {
+        const on = tab.dataset.overviewTab === activeId
+        tab.classList.toggle('is-active', on)
+        tab.setAttribute('aria-selected', on ? 'true' : 'false')
       })
-      .join('')
+      panel.innerHTML = renderOverviewPanel(activeId)
+      const next = `#/industry/overview?tab=${encodeURIComponent(activeId)}`
+      if (location.hash !== next) history.replaceState(null, '', next)
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const id = tab.dataset.overviewTab
+        if (!id || id === activeId) return
+        paint(id)
+      })
+    })
+
+    paint(activeId)
   }
 
   function renderIndustryHub() {
@@ -277,17 +312,16 @@
     }
 
     if (sectionId === 'overview' || OVERVIEW_SECTION_IDS.includes(sectionId)) {
+      const activeTab = resolveOverviewTab(OVERVIEW_SECTION_IDS.includes(sectionId) ? sectionId : null)
       return `
         <div class="page sec-hub-page industry-page industry-overview-page">
           <header class="sec-hub-hero industry-overview-hero">
             <h1>${window.escapeHtml(title)}</h1>
             <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
           </header>
-          <div class="industry-overview-layout">
-            <aside class="industry-overview-toc" aria-label="${window.escapeHtml(ui('industryUi', 'tocLabel'))}">
-              ${renderOverviewToc()}
-            </aside>
-            <div class="industry-overview-stack">${renderOverviewGroups()}</div>
+          ${renderOverviewTabs(activeTab)}
+          <div class="industry-overview-stack" id="industry-overview-panel">
+            ${renderOverviewPanel(activeTab)}
           </div>
         </div>`
     }
@@ -407,7 +441,13 @@
 
   function resolveToolsActiveCategory(activeCategoryId) {
     const cats = Tools().getCategories()
-    if (activeCategoryId && cats.some((c) => c.id === activeCategoryId)) return activeCategoryId
+    const ids = cats.map((c) => c.id)
+    if (activeCategoryId && ids.includes(activeCategoryId)) return activeCategoryId
+    try {
+      const q = new URLSearchParams((location.hash.split('?')[1] || '').replace(/#.*$/, ''))
+      const tab = q.get('tab')
+      if (tab && ids.includes(tab)) return tab
+    } catch (_) {}
     return cats[0]?.id || ''
   }
 
@@ -416,11 +456,11 @@
     const activeId = resolveToolsActiveCategory(activeCategoryId)
     const activeCat = Tools().getCategory(activeId)
     return `
-      <div class="page tools-page">
-        <header class="page-hero-block">
-          <span class="hero-badge">${window.escapeHtml(ui('toolsUi', 'badge'))}</span>
+      <div class="page tools-page sec-hub-page">
+        <header class="sec-hub-hero">
+          <p class="sec-hub-eyebrow">${window.escapeHtml(ui('toolsUi', 'badge'))}</p>
           <h1>${window.escapeHtml(ui('toolsUi', 'hubTitle'))}</h1>
-          <p>${window.escapeHtml(ui('toolsUi', 'hubDesc'))}</p>
+          <p class="sec-hub-desc">${window.escapeHtml(ui('toolsUi', 'hubDesc'))}</p>
         </header>
         <div class="tools-toolbar">
           <div class="tools-search-wrap">
@@ -430,13 +470,13 @@
             </svg>
             <input type="search" id="tools-search" placeholder="${window.escapeHtml(ui('toolsUi', 'searchPlaceholder'))}" autocomplete="off" />
           </div>
-          <div class="tools-tabs" role="tablist" aria-label="${window.escapeHtml(ui('toolsUi', 'tabsAria'))}">
+          <div class="industry-overview-tabs tools-category-tabs" role="tablist" aria-label="${window.escapeHtml(ui('toolsUi', 'tabsAria'))}">
             ${cats
               .map(
                 (c) => `
               <button
                 type="button"
-                class="tools-tab ${c.id === activeId ? 'is-active' : ''}"
+                class="industry-overview-tab ${c.id === activeId ? 'is-active' : ''}"
                 role="tab"
                 aria-selected="${c.id === activeId}"
                 data-tools-tab="${window.escapeHtml(c.id)}"
@@ -474,7 +514,7 @@
     }
 
     const syncToolsRoute = () => {
-      const next = `#/tools/${activeId}`
+      const next = `#/tools?tab=${encodeURIComponent(activeId)}`
       if (location.hash !== next) history.replaceState(null, '', next)
     }
 
@@ -693,6 +733,7 @@
     renderIndustryArticle,
     renderLearningPathDetail,
     bindLearningPathDetail,
+    bindOverviewTabs,
     renderToolsHub,
     renderToolsCategory,
     bindToolsHub,

@@ -201,12 +201,7 @@ function buildCrumbsFromRoute(parts) {
     return c
   }
   if (p0 === 'tools') {
-    const c = [{ href: '#/tools', label: t('nav.tools') }]
-    if (parts[1]) {
-      const tabLabel = t(`content.toolsUi.tabs.${parts[1]}`, null, parts[1])
-      c.push({ label: tabLabel })
-    }
-    return c
+    return [{ label: t('nav.tools') }]
   }
   if (p0 === 'forum') {
     const c = [{ href: '#/forum', label: t('nav.forum') }]
@@ -326,7 +321,7 @@ function searchSiteContent(query, limit = 10) {
       pushBucket(2, {
         title: tool.name,
         meta: `${t('nav.tools')} · ${tool.categoryTitle}`,
-        href: `#/tools/${tool.categoryId}`,
+        href: `#/tools?tab=${encodeURIComponent(tool.categoryId)}`,
       })
     }
   }
@@ -1688,6 +1683,8 @@ function renderHome() {
         </div>
 
         <div class="home-stage-meta">
+          <span>${escapeHtml(t('home.metaKbHubs'))}</span>
+          <span class="dot">·</span>
           <span>${escapeHtml(t('home.metaTopics', { n: total }))}</span>
           <span class="dot">·</span>
           <button type="button" class="home-inline-link" id="home-open-guide">${escapeHtml(t('home.openGuide'))}</button>
@@ -1743,12 +1740,15 @@ function renderHome() {
           <p class="home-about-eyebrow">${escapeHtml(t('home.aboutEyebrow'))}</p>
           <h2>${escapeHtml(t('home.aboutTitle'))}</h2>
           <p>${escapeHtml(t('home.aboutDesc'))}</p>
-          <p class="home-about-maintainer">
-            ${escapeHtml(t('home.aboutDeveloperPrefix'))}
-            <strong>${escapeHtml(t('home.aboutDeveloperName'))}</strong>,
-            ${escapeHtml(t('home.aboutContactLabel'))}
-            <a href="mailto:${escapeHtml(t('home.aboutContactEmail'))}" class="home-about-contact">${escapeHtml(t('home.aboutContactEmail'))}</a>
-          </p>
+          <p class="home-about-maintainer">${(() => {
+            const email = t('home.aboutContactEmail')
+            const line = t('home.aboutMaintainer')
+            const safe = escapeHtml(line)
+            const safeEmail = escapeHtml(email)
+            return safe.includes(safeEmail)
+              ? safe.replace(safeEmail, `<a href="mailto:${safeEmail}" class="home-about-contact">${safeEmail}</a>`)
+              : safe
+          })()}</p>
         </div>
       </section>
 
@@ -2833,15 +2833,6 @@ function renderPersonalLoginGate() {
     eyebrow: t('nav.sectionPersonal'),
     title: t('auth.personalGateTitle'),
     desc: t('auth.personalGateDesc'),
-    featuresTitle: t('auth.personalGateFeaturesTitle'),
-    features: [
-      { title: t('nav.favorites'), desc: t('auth.personalGateFav') },
-      { title: t('nav.articleNotes'), desc: t('auth.personalGateNotes') },
-      { title: t('nav.myKnowledge'), desc: t('auth.personalGateMyKb') },
-      { title: t('nav.reviews'), desc: t('auth.personalGateReviews') },
-      { title: t('nav.dailyLearn'), desc: t('auth.personalGateDaily') },
-      { title: t('nav.feedback'), desc: t('auth.personalGateFeedback') },
-    ],
     footnote: t('auth.personalGateFootnote'),
     ctaLabel: t('auth.personalGateCta'),
   })
@@ -3898,6 +3889,12 @@ async function renderAdminRolesRoute() {
   document.getElementById('main').innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
 }
 
+function syncSiteWatermark() {
+  const el = document.getElementById('site-watermark')
+  if (!el) return
+  el.textContent = t('home.siteWatermark', null, 'Developed by Justine WU, contact: wuuuyo0527@gmail.com')
+}
+
 function render() {
   const { parts } = parseRoute()
   const path = '/' + parts.join('/')
@@ -3913,6 +3910,7 @@ function render() {
   renderSidebar(path)
   renderMobileChrome(path)
   renderTopbarCrumbs(buildCrumbsFromRoute(parts))
+  syncSiteWatermark()
   bindLocaleEvents()
   bindTopAccountEvents()
   bindMobileNavChrome()
@@ -4016,7 +4014,7 @@ function render() {
     main.innerHTML = renderAdminHubPage()
     Analytics()?.track('page_view', { page: 'admin-hub' })
   } else if (parts[0] === 'industry' && parts[1] && ['basics', 'sub-roles'].includes(parts[1]) && !parts[2]) {
-    navigate('/industry/overview')
+    navigate(`/industry/overview?tab=${parts[1]}`)
     return
   } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2] === 'path-overview') {
     navigate('/industry/learning-path')
@@ -4036,6 +4034,7 @@ function render() {
     Analytics()?.track('page_view', { page: 'industry', id: parts[2] })
   } else if (parts[0] === 'industry' && parts[1]) {
     main.innerHTML = Sections().renderIndustrySection(parts[1])
+    if (parts[1] === 'overview') Sections().bindOverviewTabs?.()
     Analytics()?.track('page_view', { page: 'industry-section', id: parts[1] })
   } else if (parts[0] === 'industry') {
     main.innerHTML = Sections().renderIndustryHub()

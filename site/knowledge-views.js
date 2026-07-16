@@ -330,28 +330,26 @@
   function renderWorkflowDemand() {
     // 完全固定顺序与文案，不读 data.js / shared，避免任何排序或合并污染
     const body = `
-      <div class="sec-hub-grid kb-path-stage-grid workflow-demand-list">
+      <ol class="kb-demand-steps">
         ${WORKFLOW_DEMAND_STEPS.map(
           (s, idx) => `
-          <article class="sec-hub-card kb-path-stage-card">
-            <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
-            <div class="sec-hub-card-body">
+          <li class="kb-demand-step" id="step-${idx + 1}">
+            <div class="kb-demand-step-rail" aria-hidden="true">
+              <span class="kb-demand-step-num">${String(idx + 1).padStart(2, '0')}</span>
+              ${idx < WORKFLOW_DEMAND_STEPS.length - 1 ? '<span class="kb-demand-step-line"></span>' : ''}
+            </div>
+            <div class="kb-demand-step-body">
               <h2>${escapeHtml(s.key)}</h2>
-              <ul class="kb-path-stage-tasks">
+              <ul>
                 ${s.content.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
               </ul>
-              <a class="kb-stepper-detail" href="#/article/workflow/${s.id}">${escapeHtml(t('kbMod.viewDetail', null, '查看详情'))}</a>
             </div>
-          </article>`,
+          </li>`,
         ).join('')}
-      </div>`
+      </ol>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/workflow', label: t('categories.workflow.title', null, '工作流程') },
-        { label: t('kbMod.workflowDemandTitle', null, '需求处理 7 步') },
-      ]),
+      '',
       t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
       t('kbMod.workflowDemandDesc', null, '从接收到复盘的完整需求闭环'),
       body,
