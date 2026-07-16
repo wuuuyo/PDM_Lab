@@ -5,6 +5,7 @@
   const categories = [
     {
       id: 'prototype',
+      tabLabel: '原型',
       title: '原型与交互',
       description: '把想法可视化，让团队对齐「长什么样」',
       icon: '◇',
@@ -17,6 +18,7 @@
     },
     {
       id: 'doc',
+      tabLabel: '文档',
       title: '文档与协作',
       description: 'PRD、会议纪要、团队知识沉淀',
       icon: '▤',
@@ -29,6 +31,7 @@
     },
     {
       id: 'data',
+      tabLabel: '数据',
       title: '数据分析',
       description: '看数、埋点、增长与行为分析',
       icon: '◆',
@@ -41,6 +44,7 @@
     },
     {
       id: 'project',
+      tabLabel: '项目',
       title: '项目管理',
       description: '需求排期、迭代跟踪、缺陷管理',
       icon: '▣',
@@ -53,6 +57,7 @@
     },
     {
       id: 'research',
+      tabLabel: '用户',
       title: '用户研究',
       description: '问卷、访谈、可用性测试',
       icon: '○',
@@ -65,6 +70,7 @@
     },
     {
       id: 'diagram',
+      tabLabel: '流程',
       title: '流程与思维导图',
       description: '业务流程、架构图、脑图梳理',
       icon: '◎',
@@ -77,6 +83,7 @@
     },
     {
       id: 'ai',
+      tabLabel: 'AI',
       title: 'AI 辅助',
       description: '提效写作、分析、原型与代码理解',
       icon: '✦',
@@ -89,6 +96,7 @@
     },
     {
       id: 'presentation',
+      tabLabel: '演示',
       title: '演示与汇报',
       description: '评审汇报、路演、方案展示',
       icon: '★',
@@ -114,13 +122,17 @@
   }
 
   function searchTools(query) {
-    const q = query.toLowerCase().trim()
+    const q = String(query || '').toLowerCase().trim()
     if (!q) return getAllTools()
-    return getAllTools().filter((t) =>
-      t.name.toLowerCase().includes(q) ||
-      t.desc.toLowerCase().includes(q) ||
-      t.categoryTitle.toLowerCase().includes(q)
-    )
+    return getAllTools().filter((t) => {
+      const name = String(t.name || '').toLowerCase()
+      const desc = String(t.desc || '').toLowerCase()
+      const cat = String(t.categoryTitle || '').toLowerCase()
+      // 优先名称；短词不匹配分类/描述，避免「随便输入」扫到整库
+      if (name.includes(q)) return true
+      if (q.length < 2) return false
+      return desc.includes(q) || cat.includes(q)
+    })
   }
 
   window.PDMTools = { getCategories, getCategory, getAllTools, searchTools }

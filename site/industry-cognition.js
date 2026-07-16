@@ -131,13 +131,76 @@
 
   const learningPaths = [
     {
+      id: 'kb-4stage',
+      title: '快速上手',
+      badge: '主推',
+      duration: '6-8 周',
+      weeklyHours: '每阶段 1-2 周',
+      cardDesc: '入门 → 基础 → 进阶 → 实战，系统走完 PM 核心知识',
+      summary: '按知识库体系推进：读什么、做什么、验什么，每阶段有明确输出。',
+      layout: 'stages',
+      outcomes: [
+        '讲清 AARRR / MVP / RICE',
+        '独立写出简单 PRD',
+        '听懂常见技术方案',
+        '跨部门 own 中型需求',
+      ],
+      phases: [
+        {
+          week: '阶段 1 · 1–2 周',
+          title: '入门',
+          goal: '建立产品词汇表，能口头讲清核心概念',
+          visual: 'seed',
+          tasks: [
+            { text: '通读《产品经理八股》', link: { href: '#/doc/methodology/pm-bagu', label: '八股' } },
+            { text: '每日学习 · 方法论短读', link: { href: '#/daily-learn', label: '每日' } },
+          ],
+          milestone: '能讲清 AARRR / MVP / RICE 是什么',
+        },
+        {
+          week: '阶段 2 · 1–2 周',
+          title: '基础',
+          goal: '掌握从问题到方案的完整链路',
+          visual: 'book',
+          tasks: [
+            { text: '读《产品策划方法论》六大体系', link: { href: '#/doc/methodology/product-methodology', label: '方法论' } },
+            { text: '读《工作流程》需求 7 步', link: { href: '#/category/workflow', label: '流程' } },
+          ],
+          milestone: '独立写出一份简单 PRD',
+        },
+        {
+          week: '阶段 3 · 1–2 周',
+          title: '进阶',
+          goal: '补齐技术与行业语境，沟通不被术语卡住',
+          visual: 'layers',
+          tasks: [
+            { text: '读《系统架构》必会问题', link: { href: '#/doc/architecture/system-architecture', label: '架构' } },
+            { text: '读《行业通用词语》', link: { href: '#/doc/architecture/industry-terms', label: '术语' } },
+          ],
+          milestone: '能听懂研发的技术方案要点',
+        },
+        {
+          week: '阶段 4 · 1–2 周',
+          title: '实战',
+          goal: '把方法用到真实协作与需求推进',
+          visual: 'rocket',
+          tasks: [
+            { text: '协作层：RACI / 跨部门原则落地', link: { href: '#/doc/methodology/product-methodology', label: '协作' } },
+            { text: '挑 5 个方法论写进真实需求', link: { href: '#/daily-learn', label: '应用' } },
+          ],
+          milestone: '独立 own 一个中型需求（跨 3 个部门）',
+        },
+      ],
+    },
+    {
       id: 'newcomer-8w',
       title: '通用新人路径',
       badge: '推荐',
       duration: '6-8 周',
       weeklyHours: '10-15 小时/周',
-      summary: '适合零基础、在校生与转行新人，从认知到求职的完整闭环',
-      outcomes: ['能清晰介绍 PM 职责与协作关系', '掌握基础方法论并能举例', '产出 PRD + 低保真原型', '具备初级产品面试应答能力'],
+      cardDesc: '认知 → 作品 → 求职，零基础闭环',
+      summary: '适合零基础、在校生与转行新人：从岗位认知到可展示作品。',
+      outcomes: ['讲清 PM 职责与协作', '掌握基础方法论', '产出 PRD + 低保真原型', '具备初级面试应答'],
       phases: [
         {
           week: '第 1-2 周',
@@ -223,8 +286,9 @@
       badge: '短期',
       duration: '2-3 周',
       weeklyHours: '15-20 小时/周',
-      summary: '已有一定基础，临近面试季需要快速强化',
-      outcomes: ['面试八股题框架清晰', '2-3 个 STAR 故事脱口而出', '竞品/估算题有答题结构'],
+      cardDesc: '面试框架 + STAR + 开放题',
+      summary: '已有基础、临近面试：快速强化表达与答题结构。',
+      outcomes: ['八股答题有框架', '2–3 个 STAR 脱口而出', '竞品/估算有结构'],
       phases: [
         {
           week: '第 1 周',
@@ -269,8 +333,9 @@
       badge: '学生',
       duration: '4-6 周',
       weeklyHours: '8-12 小时/周',
-      summary: '在校生争取第一份产品实习，重作品与可讲述的项目',
-      outcomes: ['完成 1 个可展示的作品', '简历有产品相关描述', '理解实习中 PM 的实际工作'],
+      cardDesc: '作品优先，冲第一份产品实习',
+      summary: '在校生争取实习：重可讲述的作品与简历表达。',
+      outcomes: ['完成 1 个可展示作品', '简历有产品相关描述', '理解实习中 PM 工作'],
       phases: [
         {
           week: '第 1 周',
@@ -323,8 +388,9 @@
       badge: '转行',
       duration: '8-12 周',
       weeklyHours: '12-18 小时/周',
-      summary: '从运营、设计、开发等岗位转向产品经理',
-      outcomes: ['将过往经验翻译为产品能力', '补齐方法论短板', '准备转行叙事'],
+      cardDesc: '经验迁移 + 方法论补课 + 叙事',
+      summary: '从运营/设计/开发等转向产品：翻译旧经验、补齐短板。',
+      outcomes: ['过往经验译为产品能力', '补齐方法论短板', '转行叙事清晰'],
       phases: [
         {
           week: '第 1-2 周',
@@ -383,7 +449,21 @@
   }
 
   function getRecommendedPath() {
-    return learningPaths[0]
+    return getLearningPath('kb-4stage') || learningPaths[0]
+  }
+
+  function getKbPathStages() {
+    const path = getLearningPath('kb-4stage')
+    if (!path) return []
+    return path.phases.map((ph, i) => ({
+      stage: `阶段 ${i + 1}`,
+      title: ph.title,
+      outcome: ph.milestone,
+      tasks: (ph.tasks || []).map((t) => ({
+        text: t.text,
+        href: t.link?.href || null,
+      })),
+    }))
   }
 
   function getSections() {
@@ -400,17 +480,34 @@
   }
 
   function searchAll(query) {
-    const q = query.toLowerCase().trim()
+    const q = String(query || '').toLowerCase().trim()
     if (!q) return []
     const results = []
     for (const sec of sections) {
       for (const item of sec.items) {
-        const hay = `${item.title} ${item.summary} ${item.content.join(' ')}`.toLowerCase()
-        if (hay.includes(q)) results.push({ section: sec, item })
+        const title = String(item.title || '').toLowerCase()
+        const summary = String(item.summary || '').toLowerCase()
+        const tags = (item.tags || []).join(' ').toLowerCase()
+        // 短词只匹配标题/摘要/标签；较长词才扫正文，减少误命中
+        let hit = title.includes(q) || summary.includes(q) || tags.includes(q)
+        if (!hit && q.length >= 2) {
+          const body = (item.content || []).join(' ').toLowerCase()
+          hit = body.includes(q)
+        }
+        if (hit) results.push({ section: sec, item })
       }
     }
     return results
   }
 
-  window.PDMIndustry = { getSections, getSection, getItem, searchAll, getLearningPaths, getLearningPath, getRecommendedPath }
+  window.PDMIndustry = {
+    getSections,
+    getSection,
+    getItem,
+    searchAll,
+    getLearningPaths,
+    getLearningPath,
+    getRecommendedPath,
+    getKbPathStages,
+  }
 })()

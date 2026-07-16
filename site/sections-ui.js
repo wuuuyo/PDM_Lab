@@ -8,36 +8,69 @@
   const tr = (key, params, fallback) => window.PMLabI18n?.t(key, params, fallback) ?? fallback ?? key
   const ui = (group, key, params) => tr(`content.${group}.${key}`, params)
 
-  function renderLearningPathCards(paths) {
-    return paths.map((p, i) => `
-      <a href="#/industry/learning-path/${p.id}" class="sec-hub-card">
-        <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
-        <div class="sec-hub-card-body">
-          <h2>${window.escapeHtml(p.title)}${p.badge ? ` · ${window.escapeHtml(p.badge)}` : ''}</h2>
-          <p>${window.escapeHtml(p.summary)}</p>
-          <span class="sec-hub-card-meta">${window.escapeHtml(p.duration)} · ${window.escapeHtml(p.weeklyHours)}</span>
-        </div>
-        <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
-      </a>`).join('')
+  function pathStageVisual(kind) {
+    const visuals = {
+      seed: `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="40" r="14" fill="rgba(45,90,74,0.12)"/><path d="M32 48V22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M32 28c8-10 16-8 18-2-8 2-14 8-18 14z" fill="rgba(45,90,74,0.35)"/><path d="M32 28c-8-10-16-8-18-2 8 2 14 8 18 14z" fill="rgba(45,90,74,0.22)"/></svg>`,
+      book: `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><rect x="14" y="16" width="36" height="34" rx="4" fill="rgba(45,90,74,0.1)" stroke="currentColor" stroke-width="2"/><path d="M20 24h24M20 32h18M20 40h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+      layers: `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 12l22 12-22 12L10 24 32 12z" fill="rgba(45,90,74,0.18)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 32l22 12 22-12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 40l22 12 22-12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      rocket: `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M34 10c10 8 14 20 12 30L34 52 22 40C12 38 10 26 18 16L34 10z" fill="rgba(45,90,74,0.14)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="36" cy="28" r="4" fill="currentColor"/><path d="M22 40l-8 14 14-8M42 20l8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    }
+    return visuals[kind] || visuals.book
   }
 
-  function renderLearningPathPhase(phase, index) {
+  function renderLearningPathCards(paths) {
+    return paths
+      .map((p, i) => {
+        const desc = p.cardDesc || p.summary || ''
+        const featured = p.layout === 'stages'
+        return `
+      <a href="#/industry/learning-path/${p.id}" class="sec-hub-card path-pick-card ${featured ? 'path-pick-card-featured' : ''}">
+        <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
+        <div class="sec-hub-card-body">
+          <div class="path-pick-title-row">
+            <h2>${window.escapeHtml(p.title)}</h2>
+            ${p.badge ? `<span class="path-pick-badge">${window.escapeHtml(p.badge)}</span>` : ''}
+          </div>
+          <p>${window.escapeHtml(desc)}</p>
+          <span class="sec-hub-card-meta">${window.escapeHtml(p.duration)}${p.weeklyHours ? ` · ${window.escapeHtml(p.weeklyHours)}` : ''}</span>
+        </div>
+        <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+      </a>`
+      })
+      .join('')
+  }
+
+  function renderLearningPathPhase(pathId, phase, index, progress) {
+    const visual = phase.visual
+      ? `<div class="path-phase-visual" aria-hidden="true">${pathStageVisual(phase.visual)}</div>`
+      : `<span class="path-phase-num">${String(index + 1).padStart(2, '0')}</span>`
     return `
-      <div class="learning-path-phase">
+      <div class="learning-path-phase ${phase.visual ? 'learning-path-phase-visual' : ''}">
         <div class="learning-path-phase-head">
-          <span class="path-phase-num">${String(index + 1).padStart(2, '0')}</span>
+          ${visual}
           <div>
             <span class="path-phase-week">${window.escapeHtml(phase.week)}</span>
             <h3>${window.escapeHtml(phase.title)}</h3>
-            <p class="path-phase-goal">${window.escapeHtml(ui('industryUi', 'phaseGoalPrefix'))}${window.escapeHtml(phase.goal)}</p>
+            <p class="path-phase-goal">${window.escapeHtml(phase.goal)}</p>
           </div>
         </div>
         <ul class="path-task-list">
-          ${phase.tasks.map((task) => `
-            <li>
-              <span>${window.escapeHtml(task.text)}</span>
-              ${task.link ? `<a href="${window.escapeHtml(task.link.href)}" class="path-link-chip">${window.escapeHtml(task.link.label)}</a>` : ''}
-            </li>`).join('')}
+          ${phase.tasks
+            .map(
+              (task, taskIdx) => {
+                const done = Boolean(progress?.[`${index}:${taskIdx}`])
+                return `
+            <li class="path-task-row ${done ? 'is-done' : ''}">
+              <label class="path-task-check">
+                <input type="checkbox" class="path-task-checkbox" data-path-id="${window.escapeHtml(pathId)}" data-phase="${index}" data-task="${taskIdx}" ${done ? 'checked' : ''} />
+                <span class="path-task-check-ui" aria-hidden="true"></span>
+                <span class="path-task-text">${window.escapeHtml(task.text)}</span>
+              </label>
+              ${task.link ? `<a href="${window.escapeHtml(task.link.href)}" class="path-task-btn">${window.escapeHtml(task.link.label)}</a>` : ''}
+            </li>`
+              },
+            )
+            .join('')}
         </ul>
         <div class="path-milestone">
           <strong>${window.escapeHtml(ui('industryUi', 'milestoneLabel'))}</strong>
@@ -46,23 +79,137 @@
       </div>`
   }
 
+  function renderPathProgressBar(path) {
+    const { done, total } = window.PDMStorage?.countPathProgress?.(path) || { done: 0, total: 0 }
+    const pct = total ? Math.round((done / total) * 100) : 0
+    return `
+      <div class="path-progress-panel" aria-label="${window.escapeHtml(ui('industryUi', 'progressLabel'))}">
+        <div class="path-progress-head">
+          <span>${window.escapeHtml(ui('industryUi', 'progressLabel'))}</span>
+          <strong>${window.escapeHtml(ui('industryUi', 'progressCount', { done, total }))}</strong>
+        </div>
+        <div class="path-progress-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+          <div class="path-progress-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`
+  }
+
+  function bindLearningPathDetail(pathId) {
+    document.querySelectorAll('.path-task-checkbox').forEach((input) => {
+      input.addEventListener('change', async () => {
+        const pid = input.dataset.pathId
+        const pi = Number(input.dataset.phase)
+        const ti = Number(input.dataset.task)
+        if (!pid || Number.isNaN(pi) || Number.isNaN(ti)) return
+        await window.PDMStorage?.togglePathTask?.(pid, pi, ti)
+        const path = Industry().getLearningPath(pid)
+        const panel = document.querySelector('.path-progress-panel')
+        if (panel && path) {
+          panel.outerHTML = renderPathProgressBar(path)
+        }
+        input.closest('.path-task-row')?.classList.toggle('is-done', input.checked)
+      })
+    })
+  }
+
   const INDUSTRY_HUB_ORDER = [
-    { id: 'basics', titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
-    { id: 'sub-roles', titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
+    { id: 'overview', titleKey: 'sectionOverview', descKey: 'sectionOverviewDesc' },
     { id: 'learning-path', titleKey: 'sectionPaths', descKey: 'sectionPathsDesc' },
   ]
 
+  const OVERVIEW_SECTION_IDS = ['basics', 'sub-roles']
+
   function industrySectionMeta(id) {
-    return INDUSTRY_HUB_ORDER.find((s) => s.id === id)
+    if (id === 'overview' || OVERVIEW_SECTION_IDS.includes(id)) {
+      return INDUSTRY_HUB_ORDER[0]
+    }
+    return INDUSTRY_HUB_ORDER.find((s) => s.id === id) || null
+  }
+
+  function overviewItemCount() {
+    return OVERVIEW_SECTION_IDS.reduce((n, sid) => n + (Industry().getSection(sid)?.items?.length || 0), 0)
+  }
+
+  function renderOverviewToc() {
+    const groups = [
+      { sectionId: 'basics', titleKey: 'sectionBasics' },
+      { sectionId: 'sub-roles', titleKey: 'sectionRoles' },
+    ]
+    return `
+      <p class="industry-overview-toc-label">${window.escapeHtml(ui('industryUi', 'tocLabel'))}</p>
+      <nav class="industry-overview-toc-nav" aria-label="${window.escapeHtml(ui('industryUi', 'tocLabel'))}">
+        ${groups
+          .map((group) => {
+            const sec = Industry().getSection(group.sectionId)
+            if (!sec?.items?.length) return ''
+            return `
+            <div class="industry-overview-toc-group">
+              <a href="#overview-group-${window.escapeHtml(group.sectionId)}" class="industry-overview-toc-section">${window.escapeHtml(ui('industryUi', group.titleKey))}</a>
+              <ul class="industry-overview-toc-list">
+                ${sec.items
+                  .map(
+                    (item) =>
+                      `<li><a href="#overview-${window.escapeHtml(item.id)}">${window.escapeHtml(item.title)}</a></li>`,
+                  )
+                  .join('')}
+              </ul>
+            </div>`
+          })
+          .join('')}
+      </nav>`
+  }
+
+  function renderOverviewArticle(item) {
+    const paragraphs = item.content || []
+    return `
+      <article class="industry-overview-article" id="overview-${window.escapeHtml(item.id)}">
+        <h3 class="industry-overview-article-title">${window.escapeHtml(item.title)}</h3>
+        ${item.summary ? `<p class="industry-overview-article-lead">${window.escapeHtml(item.summary)}</p>` : ''}
+        ${
+          paragraphs.length
+            ? `<div class="industry-overview-article-body">
+          ${paragraphs
+            .map((p, i) => `<p class="${i === 0 && !item.summary ? 'industry-overview-article-lead' : ''}">${window.escapeHtml(p)}</p>`)
+            .join('')}
+        </div>`
+            : ''
+        }
+      </article>`
+  }
+
+  function renderOverviewGroups() {
+    const groups = [
+      { sectionId: 'basics', titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
+      { sectionId: 'sub-roles', titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
+    ]
+    return groups
+      .map((group, index) => {
+        const sec = Industry().getSection(group.sectionId)
+        if (!sec?.items?.length) return ''
+        return `
+        <section class="industry-overview-group" id="overview-group-${window.escapeHtml(group.sectionId)}">
+          <header class="industry-overview-head">
+            <span class="industry-overview-group-num">${String(index + 1).padStart(2, '0')}</span>
+            <div>
+              <h2>${window.escapeHtml(ui('industryUi', group.titleKey))}</h2>
+              <p>${window.escapeHtml(ui('industryUi', group.descKey))}</p>
+            </div>
+          </header>
+          <div class="industry-overview-articles">
+            ${sec.items.map((item) => renderOverviewArticle(item)).join('')}
+          </div>
+        </section>`
+      })
+      .join('')
   }
 
   function renderIndustryHub() {
     const pathCount = Industry().getLearningPaths().length
     const cards = INDUSTRY_HUB_ORDER.map((plate, index) => {
-      const sec = Industry().getSection(plate.id)
-      const meta = plate.id === 'learning-path'
-        ? ui('industryUi', 'pathCount', { n: pathCount })
-        : ui('industryUi', 'itemCount', { n: sec?.items?.length || 0 })
+      const meta =
+        plate.id === 'learning-path'
+          ? ui('industryUi', 'pathCount', { n: pathCount })
+          : ui('industryUi', 'itemCount', { n: overviewItemCount() })
       return `
         <a href="#/industry/${plate.id}" class="sec-hub-card">
           <span class="sec-hub-card-index">${String(index + 1).padStart(2, '0')}</span>
@@ -87,8 +234,7 @@
 
   function renderIndustrySection(sectionId) {
     const meta = industrySectionMeta(sectionId)
-    const sec = Industry().getSection(sectionId)
-    if (!meta || !sec) {
+    if (!meta) {
       return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
     }
 
@@ -97,28 +243,62 @@
 
     if (sectionId === 'learning-path') {
       const paths = Industry().getLearningPaths()
+      const primary = paths.filter((p) => p.layout === 'stages')
+      const scenarios = paths.filter((p) => p.layout !== 'stages')
       return `
         <div class="page sec-hub-page industry-page">
-          <header class="page-header">
-            <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a>
-            <span class="breadcrumb-sep">/</span>
-            <span class="breadcrumb-current">${window.escapeHtml(title)}</span>
-          </header>
           <header class="sec-hub-hero">
             <h1>${window.escapeHtml(title)}</h1>
             <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
           </header>
-          <div class="sec-hub-grid">${renderLearningPathCards(paths)}</div>
+          ${
+            primary.length
+              ? `<section class="path-hub-block">
+            <div class="path-hub-block-head">
+              <h2>${window.escapeHtml(ui('industryUi', 'kbPathGroupTitle'))}</h2>
+              <p>${window.escapeHtml(ui('industryUi', 'kbPathGroupDesc'))}</p>
+            </div>
+            <div class="sec-hub-grid path-pick-grid">${renderLearningPathCards(primary)}</div>
+          </section>`
+              : ''
+          }
+          ${
+            scenarios.length
+              ? `<section class="path-hub-block">
+            <div class="path-hub-block-head">
+              <h2>${window.escapeHtml(ui('industryUi', 'scenarioPathGroupTitle'))}</h2>
+              <p>${window.escapeHtml(ui('industryUi', 'scenarioPathGroupDesc'))}</p>
+            </div>
+            <div class="sec-hub-grid path-pick-grid">${renderLearningPathCards(scenarios)}</div>
+          </section>`
+              : ''
+          }
         </div>`
+    }
+
+    if (sectionId === 'overview' || OVERVIEW_SECTION_IDS.includes(sectionId)) {
+      return `
+        <div class="page sec-hub-page industry-page industry-overview-page">
+          <header class="sec-hub-hero industry-overview-hero">
+            <h1>${window.escapeHtml(title)}</h1>
+            <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
+          </header>
+          <div class="industry-overview-layout">
+            <aside class="industry-overview-toc" aria-label="${window.escapeHtml(ui('industryUi', 'tocLabel'))}">
+              ${renderOverviewToc()}
+            </aside>
+            <div class="industry-overview-stack">${renderOverviewGroups()}</div>
+          </div>
+        </div>`
+    }
+
+    const sec = Industry().getSection(sectionId)
+    if (!sec) {
+      return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
     }
 
     return `
       <div class="page sec-hub-page industry-page">
-        <header class="page-header">
-          <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a>
-          <span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current">${window.escapeHtml(title)}</span>
-        </header>
         <header class="sec-hub-hero">
           <h1>${window.escapeHtml(title)}</h1>
           <p class="sec-hub-desc">${window.escapeHtml(desc)}</p>
@@ -140,34 +320,33 @@
   function renderLearningPathDetail(pathId) {
     const path = Industry().getLearningPath(pathId)
     if (!path) return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
+    const isStages = path.layout === 'stages'
+    const progress = window.PDMStorage?.loadPathProgress?.(pathId) || {}
     return `
-      <div class="page learning-path-page">
-        <header class="page-header">
-          <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a><span class="breadcrumb-sep">/</span>
-          <a href="#/industry/learning-path" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'pathBreadcrumb'))}</a><span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current">${window.escapeHtml(path.title)}</span>
-        </header>
+      <div class="page learning-path-page industry-page ${isStages ? 'learning-path-stages' : ''}" data-path-id="${window.escapeHtml(pathId)}">
         <header class="page-hero-block">
           ${path.badge ? `<span class="hero-badge">${window.escapeHtml(path.badge)}</span>` : ''}
           <h1>${window.escapeHtml(path.title)}</h1>
-          <p>${window.escapeHtml(path.summary)}</p>
+          <p>${window.escapeHtml(path.summary || path.cardDesc || '')}</p>
           <div class="learning-path-meta learning-path-meta-hero">
             <span>${window.escapeHtml(ui('industryUi', 'durationPrefix'))}${window.escapeHtml(path.duration)}</span>
             <span>${window.escapeHtml(path.weeklyHours)}</span>
           </div>
         </header>
 
+        ${renderPathProgressBar(path)}
+
         <section class="section">
           <h2 class="section-title">${window.escapeHtml(ui('industryUi', 'outcomesTitle'))}</h2>
-          <ul class="path-outcomes">
+          <ul class="path-outcomes ${isStages ? 'path-outcomes-compact' : ''}">
             ${path.outcomes.map((o) => `<li>${window.escapeHtml(o)}</li>`).join('')}
           </ul>
         </section>
 
         <section class="section">
           <h2 class="section-title">${window.escapeHtml(ui('industryUi', 'phasesTitle'))}</h2>
-          <div class="learning-path-timeline">
-            ${path.phases.map((ph, i) => renderLearningPathPhase(ph, i)).join('')}
+          <div class="learning-path-timeline ${isStages ? 'learning-path-timeline-stages' : ''}">
+            ${path.phases.map((ph, i) => renderLearningPathPhase(pathId, ph, i, progress)).join('')}
           </div>
         </section>
 
@@ -175,7 +354,7 @@
           <div class="sec-hub-path-head">
             <h2>${window.escapeHtml(ui('industryUi', 'otherPathsTitle'))}</h2>
           </div>
-          <div class="sec-hub-grid">
+          <div class="sec-hub-grid path-pick-grid">
             ${renderLearningPathCards(Industry().getLearningPaths().filter((p) => p.id !== pathId))}
           </div>
         </section>
@@ -188,13 +367,9 @@
     if (!sec || !item) return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
     const meta = industrySectionMeta(sectionId)
     const secLabel = meta ? ui('industryUi', meta.titleKey) : sec.title
+    const secHref = OVERVIEW_SECTION_IDS.includes(sectionId) ? '#/industry/overview' : `#/industry/${sectionId}`
     return `
-      <div class="page article-page">
-        <header class="page-header">
-          <a href="#/industry" class="breadcrumb">${window.escapeHtml(ui('industryUi', 'breadcrumb'))}</a><span class="breadcrumb-sep">/</span>
-          <a href="#/industry/${sectionId}" class="breadcrumb">${window.escapeHtml(secLabel)}</a><span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current">${window.escapeHtml(item.title)}</span>
-        </header>
+      <div class="page article-page industry-page">
         <article class="article-content">
           <div class="article-meta"><span class="article-category">${window.escapeHtml(secLabel)}</span></div>
           <h1>${window.escapeHtml(item.title)}</h1>
@@ -204,8 +379,42 @@
       </div>`
   }
 
-  function renderToolsHub() {
+  function toolsTabLabel(cat) {
+    return tr(`content.toolsUi.tabs.${cat.id}`, null, cat.tabLabel || cat.title)
+  }
+
+  function renderToolCard(tool, showCategory) {
+    return `
+      <article class="tool-card">
+        <div class="tool-card-main">
+          ${showCategory ? `<span class="tool-card-tag">${window.escapeHtml(tool.categoryTitle)}</span>` : ''}
+          <h3>${window.escapeHtml(tool.name)}</h3>
+          <p>${window.escapeHtml(tool.desc)}</p>
+        </div>
+        <div class="tool-card-links">
+          <a href="${window.escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm">${window.escapeHtml(ui('toolsUi', 'official'))}</a>
+          <a href="${window.escapeHtml(tool.learn)}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-sm">${window.escapeHtml(ui('toolsUi', 'learn'))}</a>
+        </div>
+      </article>`
+  }
+
+  function renderToolsCardGrid(tools, showCategory = false) {
+    if (!tools.length) {
+      return `<p class="empty-hint">${window.escapeHtml(ui('toolsUi', 'searchEmpty'))}</p>`
+    }
+    return `<div class="tools-card-grid">${tools.map((tool) => renderToolCard(tool, showCategory)).join('')}</div>`
+  }
+
+  function resolveToolsActiveCategory(activeCategoryId) {
     const cats = Tools().getCategories()
+    if (activeCategoryId && cats.some((c) => c.id === activeCategoryId)) return activeCategoryId
+    return cats[0]?.id || ''
+  }
+
+  function renderToolsHub(activeCategoryId) {
+    const cats = Tools().getCategories()
+    const activeId = resolveToolsActiveCategory(activeCategoryId)
+    const activeCat = Tools().getCategory(activeId)
     return `
       <div class="page tools-page">
         <header class="page-hero-block">
@@ -213,92 +422,128 @@
           <h1>${window.escapeHtml(ui('toolsUi', 'hubTitle'))}</h1>
           <p>${window.escapeHtml(ui('toolsUi', 'hubDesc'))}</p>
         </header>
-        <div class="tools-search-bar">
-          <input type="search" id="tools-search" placeholder="${window.escapeHtml(ui('toolsUi', 'searchPlaceholder'))}" />
+        <div class="tools-toolbar">
+          <div class="tools-search-wrap">
+            <svg class="tools-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="search" id="tools-search" placeholder="${window.escapeHtml(ui('toolsUi', 'searchPlaceholder'))}" autocomplete="off" />
+          </div>
+          <div class="tools-tabs" role="tablist" aria-label="${window.escapeHtml(ui('toolsUi', 'tabsAria'))}">
+            ${cats
+              .map(
+                (c) => `
+              <button
+                type="button"
+                class="tools-tab ${c.id === activeId ? 'is-active' : ''}"
+                role="tab"
+                aria-selected="${c.id === activeId}"
+                data-tools-tab="${window.escapeHtml(c.id)}"
+              >${window.escapeHtml(toolsTabLabel(c))}</button>`,
+              )
+              .join('')}
+          </div>
         </div>
-        <div class="category-grid" id="tools-category-grid">
-          ${cats.map((c) => `
-            <a href="#/tools/${c.id}" class="category-card">
-              <div class="category-card-icon">${c.icon}</div>
-              <h3>${window.escapeHtml(c.title)}</h3>
-              <p>${window.escapeHtml(c.description)}</p>
-              <div class="category-card-footer"><span>${window.escapeHtml(ui('toolsUi', 'itemCount', { n: c.tools.length }))}</span></div>
-            </a>`).join('')}
+        <div class="tools-panel" id="tools-panel" role="tabpanel">
+          ${renderToolsCardGrid(activeCat?.tools || [])}
         </div>
-        <div id="tools-search-results" class="tools-search-results" style="display:none"></div>
+        <div id="tools-search-results" class="tools-search-results" hidden></div>
       </div>`
   }
 
   function renderToolsCategory(categoryId) {
-    const cat = Tools().getCategory(categoryId)
-    if (!cat) return `<div class="page"><p>${window.escapeHtml(ui('toolsUi', 'categoryNotFound'))}</p><a href="#/tools">${window.escapeHtml(tr('common.back'))}</a></div>`
-    return `
-      <div class="page tools-page">
-        <header class="page-header">
-          <a href="#/tools" class="breadcrumb">${window.escapeHtml(ui('toolsUi', 'badge'))}</a><span class="breadcrumb-sep">/</span>
-          <span class="breadcrumb-current">${window.escapeHtml(cat.title)}</span>
-        </header>
-        <div class="tools-list">
-          ${cat.tools.map((tool) => `
-            <div class="tool-card">
-              <div class="tool-card-main">
-                <h3>${window.escapeHtml(tool.name)}</h3>
-                <p>${window.escapeHtml(tool.desc)}</p>
-              </div>
-              <div class="tool-card-links">
-                <a href="${window.escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm">${window.escapeHtml(ui('toolsUi', 'official'))}</a>
-                <a href="${window.escapeHtml(tool.learn)}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-sm">${window.escapeHtml(ui('toolsUi', 'learn'))}</a>
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>`
+    return renderToolsHub(categoryId)
   }
 
-  function bindToolsSearch() {
+  function bindToolsHub(initialCategoryId) {
     const input = document.getElementById('tools-search')
-    const grid = document.getElementById('tools-category-grid')
+    const panel = document.getElementById('tools-panel')
     const results = document.getElementById('tools-search-results')
-    if (!input || !grid || !results) return
+    const tabs = document.querySelectorAll('[data-tools-tab]')
+    if (!input || !panel || !results || !tabs.length) return
+
+    let activeId = resolveToolsActiveCategory(initialCategoryId)
+
+    const syncTabUi = () => {
+      tabs.forEach((tab) => {
+        const on = tab.dataset.toolsTab === activeId
+        tab.classList.toggle('is-active', on)
+        tab.setAttribute('aria-selected', on ? 'true' : 'false')
+      })
+    }
+
+    const syncToolsRoute = () => {
+      const next = `#/tools/${activeId}`
+      if (location.hash !== next) history.replaceState(null, '', next)
+    }
+
+    const showCategoryTools = () => {
+      const cat = Tools().getCategory(activeId)
+      panel.innerHTML = renderToolsCardGrid(cat?.tools || [])
+      panel.hidden = false
+      results.hidden = true
+      syncTabUi()
+      syncToolsRoute()
+    }
+
+    const showSearchResults = (found) => {
+      panel.hidden = true
+      results.hidden = false
+      results.innerHTML = found.length
+        ? renderToolsCardGrid(found, true)
+        : `<p class="empty-hint">${window.escapeHtml(ui('toolsUi', 'searchEmpty'))}</p>`
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activeId = tab.dataset.toolsTab || activeId
+        input.value = ''
+        showCategoryTools()
+      })
+    })
+
     input.addEventListener('input', () => {
       const q = input.value.trim()
       if (!q) {
-        grid.style.display = ''
-        results.style.display = 'none'
+        showCategoryTools()
         return
       }
-      const found = Tools().searchTools(q)
-      grid.style.display = 'none'
-      results.style.display = 'block'
-      results.innerHTML = found.length ? found.map((tool) => `
-        <div class="tool-card">
-          <div class="tool-card-main">
-            <span class="tag">${window.escapeHtml(tool.categoryTitle)}</span>
-            <h3>${window.escapeHtml(tool.name)}</h3>
-            <p>${window.escapeHtml(tool.desc)}</p>
-          </div>
-          <div class="tool-card-links">
-            <a href="${window.escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm">${window.escapeHtml(ui('toolsUi', 'official'))}</a>
-            <a href="${window.escapeHtml(tool.learn)}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-sm">${window.escapeHtml(ui('toolsUi', 'learn'))}</a>
-          </div>
-        </div>`).join('') : `<p class="empty-hint">${window.escapeHtml(ui('toolsUi', 'searchEmpty'))}</p>`
+      showSearchResults(Tools().searchTools(q))
     })
+
+    showCategoryTools()
+  }
+
+  function bindToolsSearch() {
+    bindToolsHub()
   }
 
   function renderForumList(posts) {
+    const loggedIn = window.Auth().isLoggedIn()
     return `
-      <div class="page forum-page">
-        <header class="page-hero-block">
-          <span class="hero-badge">${window.escapeHtml(ui('forumUi', 'badge'))}</span>
+      <div class="page forum-page sec-hub-page">
+        <header class="sec-hub-hero">
+          <p class="sec-hub-eyebrow">${window.escapeHtml(ui('forumUi', 'badge'))}</p>
           <h1>${window.escapeHtml(ui('forumUi', 'listTitle'))}</h1>
-          <p>${window.escapeHtml(ui('forumUi', 'listDesc'))}</p>
-          <div class="hero-actions">
-            ${window.Auth().isLoggedIn()
-              ? `<a href="#/forum/new" class="btn-primary">${window.escapeHtml(ui('forumUi', 'newPost'))}</a>`
-              : `<a href="#/login" class="btn-primary">${window.escapeHtml(ui('forumUi', 'loginToPost'))}</a>`}
+          <p class="sec-hub-desc">${window.escapeHtml(
+            loggedIn ? ui('forumUi', 'listDescLoggedIn') : ui('forumUi', 'listDescGuest'),
+          )}</p>
+          <div class="hero-actions" style="margin-top:16px">
+            ${
+              loggedIn
+                ? `<a href="#/forum/new" class="btn-primary">${window.escapeHtml(ui('forumUi', 'newPost'))}</a>`
+                : `<a href="#/login" class="btn-primary">${window.escapeHtml(ui('forumUi', 'loginToPost'))}</a>
+                   <span class="hero-actions-hint">${window.escapeHtml(ui('forumUi', 'guestBrowseTip'))}</span>`
+            }
           </div>
         </header>
         <div class="forum-post-list">
-          ${posts.length ? posts.map((p) => `
+          ${
+            posts.length
+              ? posts
+                  .map(
+                    (p) => `
             <a href="#/forum/post/${p.id}" class="forum-post-card">
               <h3>${window.escapeHtml(p.title)}</h3>
               <p class="forum-post-preview">${window.escapeHtml(p.body.slice(0, 120))}${p.body.length > 120 ? '…' : ''}</p>
@@ -307,7 +552,11 @@
                 <span>${window.formatDate(p.createdAt)}</span>
                 <span>${window.escapeHtml(ui('forumUi', 'commentCount', { n: p.commentCount }))}</span>
               </div>
-            </a>`).join('') : `<p class="empty-hint">${window.escapeHtml(ui('forumUi', 'empty'))}</p>`}
+            </a>`,
+                  )
+                  .join('')
+              : `<p class="empty-hint">${window.escapeHtml(ui('forumUi', 'empty'))}</p>`
+          }
         </div>
       </div>`
   }
@@ -366,7 +615,7 @@
           <div class="form-card forum-comment-form">
             <textarea id="forum-comment-body" rows="3" placeholder="${window.escapeHtml(ui('forumUi', 'commentPlaceholder'))}"></textarea>
             <button type="button" class="btn-primary" id="forum-comment-submit">${window.escapeHtml(ui('forumUi', 'commentSubmit'))}</button>
-          </div>` : `<p class="form-hint"><a href="#/login">${window.escapeHtml(tr('auth.login'))}</a> ${window.escapeHtml(ui('forumUi', 'loginHint'))}</p>`}
+          </div>` : `<p class="form-hint forum-login-hint">${window.escapeHtml(ui('forumUi', 'commentLoginHint'))} <a href="#/login">${window.escapeHtml(tr('auth.login'))}</a></p>`}
         </section>
       </div>`
   }
@@ -443,8 +692,10 @@
     renderIndustrySection,
     renderIndustryArticle,
     renderLearningPathDetail,
+    bindLearningPathDetail,
     renderToolsHub,
     renderToolsCategory,
+    bindToolsHub,
     bindToolsSearch,
     renderForumList,
     renderForumNew,

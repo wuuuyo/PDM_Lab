@@ -41,12 +41,9 @@
       .join('')
   }
 
-  function pageShell(crumbs, title, desc, body, extraClass = '') {
+  function pageShell(_crumbs, title, desc, body, extraClass = '') {
     return `
       <div class="page kb-module-page ${extraClass}">
-        <header class="page-header">
-          ${crumbs}
-        </header>
         <div class="kb-module-hero">
           <h1>${escapeHtml(title)}</h1>
           ${desc ? `<p>${escapeHtml(desc)}</p>` : ''}
@@ -63,6 +60,156 @@
         return `<a href="${c.href}" class="breadcrumb">${escapeHtml(c.label)}</a><span class="breadcrumb-sep">/</span>`
       })
       .join('')
+  }
+
+  function kbSectionLabel() {
+    return t('nav.sectionKnowledge')
+  }
+
+  function kbDocLabel(catId, docId) {
+    const doc = getDoc(catId, docId)
+    if (!doc) return docId
+    if (isFlatKbDoc(catId)) return doc.title
+    if (catId === 'business' || catId === 'security') return catTitle(getCat(catId))
+    return doc.title
+  }
+
+  const KB_MODULE_LABELS = {
+    demand: () => t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
+    prd: () => t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
+    collab: () => t('kbMod.workflowCollabTitle', null, '跨部门协作'),
+    kb: () => t('kbMod.workflowKbTitle', null, '知识库管理'),
+    glossary: () => t('kbMod.refGlossaryTitle', null, '关键词速查'),
+    mindmap: () => t('kbMod.refMindmapTitle', null, '知识图谱'),
+    path: () => t('kbMod.refPathTitle', null, '学习路径'),
+  }
+
+  function findArticleItem(catId, itemId) {
+    const raw = String(itemId || '')
+    let decoded = raw
+    try {
+      decoded = decodeURIComponent(raw)
+    } catch (_) {}
+    const all = itemsOf(catId)
+    return (
+      all.find((i) => i.id === raw) ||
+      all.find((i) => i.id === decoded) ||
+      all.find((i) => decodeURIComponent(String(i.id)) === decoded)
+    )
+  }
+
+  function resolveArticleTrail(catId, itemId) {
+    const docs = KB_DOCS[catId] || []
+    for (const doc of docs) {
+      const items = docItems(catId, doc)
+      const item = items.find((i) => {
+        const raw = String(itemId || '')
+        let decoded = raw
+        try {
+          decoded = decodeURIComponent(raw)
+        } catch (_) {}
+        return i.id === raw || i.id === decoded || decodeURIComponent(String(i.id)) === decoded
+      })
+      if (!item) continue
+      if (doc.chapterMode === 'flat-items') {
+        return { doc, chapter: null, item }
+      }
+      const key = chapterKeyFromSection(item.section || '', doc.chapterMode)
+      const chapter = listChapters(catId, doc).find((c) => String(c.id) === String(key)) || null
+      return { doc, chapter, item }
+    }
+    return { doc: null, chapter: null, item: findArticleItem(catId, itemId) }
+  }
+
+  /** 知识库顶栏面包屑：统一从「知识库」起，不含首页 */
+  function buildKbCrumbs(parts) {
+    const p0 = parts[0]
+    if (!['kb', 'category', 'doc', 'chapter', 'module', 'article'].includes(p0)) return null
+
+    if (p0 === 'kb') {
+      return [{ label: kbSectionLabel() }]
+    }
+
+    const crumbs = [{ href: '#/kb', label: kbSectionLabel() }]
+
+    if (p0 === 'category' && parts[1]) {
+      const catId = parts[1]
+      if (isFlatKbDoc(catId)) {
+        return [{ label: kbSectionLabel() }]
+      }
+      const cat = getCat(catId)
+      crumbs.push({ label: catTitle(cat) || catId })
+      return crumbs
+    }
+
+    if (p0 === 'doc' && parts[1] && parts[2]) {
+      const catId = parts[1]
+      const docId = parts[2]
+      crumbs.push({ label: kbDocLabel(catId, docId) })
+      return crumbs
+    }
+
+    if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
+      const catId = parts[1]
+      const docId = parts[2]
+      const chapterId = parts[3]
+      const chapterLabel = getChapterLabel(catId, docId, chapterId)
+      const docHref = isGroupedDoc(catId, docId)
+        ? `#/doc/${catId}/${docId}?group=${encodeURIComponent(chapterId)}`
+        : `#/doc/${catId}/${docId}`
+      crumbs.push({ href: docHref, label: kbDocLabel(catId, docId) })
+      if (!isGroupedDoc(catId, docId)) {
+        crumbs.push({ label: chapterLabel })
+      }
+      return crumbs
+    }
+
+    if (p0 === 'module' && parts[1] && parts[2]) {
+      const catId = parts[1]
+      const moduleId = parts[2]
+      if (catId === 'workflow' || catId === 'reference') {
+        const cat = getCat(catId)
+        crumbs.push({ href: `#/category/${catId}`, label: catTitle(cat) || catId })
+      }
+      const labelFn = KB_MODULE_LABELS[moduleId]
+      crumbs.push({ label: labelFn ? labelFn() : moduleId })
+      return crumbs
+    }
+
+    if (p0 === 'article' && parts[1] && parts[2]) {
+      const catId = parts[1]
+      const itemId = parts[2]
+      const trail = resolveArticleTrail(catId, itemId)
+      const item = trail.item || findArticleItem(catId, itemId)
+      const title = stripLeadingIndex(item?.title) || itemId
+
+      if (trail.doc) {
+        const doc = trail.doc
+        crumbs.push({ href: `#/doc/${catId}/${doc.id}`, label: kbDocLabel(catId, doc.id) })
+        if (trail.chapter && !trail.chapter.isArticle) {
+          const chapterHref = isGroupedDoc(catId, doc.id)
+            ? `#/doc/${catId}/${doc.id}?group=${encodeURIComponent(trail.chapter.id)}`
+            : `#/chapter/${catId}/${doc.id}/${encodeURIComponent(trail.chapter.id)}`
+          crumbs.push({
+            href: chapterHref,
+            label: trail.chapter.title,
+          })
+        }
+        crumbs.push({ label: title })
+        return crumbs
+      }
+
+      const cat = getCat(catId)
+      if (catId === 'workflow' || catId === 'reference') {
+        crumbs.push({ href: `#/category/${catId}`, label: catTitle(cat) || catId })
+      } else if (cat) {
+        crumbs.push({ href: `#/category/${catId}`, label: catTitle(cat) })
+      }
+      crumbs.push({ label: title })
+      return crumbs
+    }
+
+    return crumbs
   }
 
   /* ---------- 工作流程 ---------- */
@@ -308,58 +455,11 @@
     )
   }
 
-  /* ---------- 快速参考 ---------- */
+  /* ---------- 速查知识库 / 知识图谱（已从知识库「快速参考」迁出） ---------- */
 
   function renderReferenceHub() {
-    const cat = getCat('reference')
-    if (!cat) return null
-    const modules = [
-      {
-        href: '#/module/reference/glossary',
-        title: t('kbMod.refGlossaryTitle', null, '关键词速查'),
-        desc: t('kbMod.refGlossaryDesc', null, '按字母速查 30+ 术语定义与出处'),
-        meta: 'A–Z',
-        kind: 'glossary',
-      },
-      {
-        href: '#/module/reference/mindmap',
-        title: t('kbMod.refMindmapTitle', null, '知识图谱'),
-        desc: t('kbMod.refMindmapDesc', null, '六大主题与学习路径、需求流程全景图'),
-        meta: 'map',
-        kind: 'map',
-      },
-      {
-        href: '#/module/reference/path',
-        title: t('kbMod.refPathTitle', null, '学习路径'),
-        desc: t('kbMod.refPathDesc', null, '4 阶段 8 周路径：必读、输出与检验'),
-        meta: 'path',
-        kind: 'path',
-      },
-    ]
-    const body = `
-      <div class="kb-module-grid kb-module-grid-3">
-        ${modules
-          .map(
-            (m) => `
-          <a href="${m.href}" class="kb-module-tile kb-module-tile-${m.kind}">
-            <span class="kb-module-tile-meta">${escapeHtml(m.meta)}</span>
-            <h2>${escapeHtml(m.title)}</h2>
-            <p>${escapeHtml(m.desc)}</p>
-          </a>`,
-          )
-          .join('')}
-      </div>`
-
-    return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { label: catTitle(cat) },
-      ]),
-      catTitle(cat),
-      t('kbMod.refHubDesc', null, '关键词 · 图谱 · 路径，按用途进入对应板块'),
-      body,
-      'kb-reference-hub',
-    )
+    // 旧入口已下线，统一跳到速查
+    return null
   }
 
   function renderGlossary() {
@@ -374,7 +474,7 @@
           ${letterKeys
             .map(
               (L) =>
-                `<a href="#letter-${encodeURIComponent(L)}" class="kb-glossary-chip">${escapeHtml(L)}</a>`,
+                `<button type="button" class="kb-glossary-chip" data-letter="${escapeHtml(L)}" aria-label="${escapeHtml(L)}">${escapeHtml(L)}</button>`,
             )
             .join('')}
         </nav>
@@ -411,13 +511,9 @@
       </div>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/reference', label: t('categories.reference.title', null, '快速参考') },
-        { label: t('kbMod.refGlossaryTitle', null, '关键词速查') },
-      ]),
-      t('kbMod.refGlossaryTitle', null, '关键词速查'),
-      t('kbMod.refGlossaryDesc', null, '按字母速查术语'),
+      '',
+      t('home.ctaKb', null, '速查知识库'),
+      t('kbMod.refGlossaryDesc', null, '按字母速查术语定义与出处'),
       body,
       'kb-glossary-page',
     )
@@ -440,12 +536,8 @@
       </div>`
 
     return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/category/reference', label: t('categories.reference.title', null, '快速参考') },
-        { label: t('kbMod.refMindmapTitle', null, '知识图谱') },
-      ]),
-      t('kbMod.refMindmapTitle', null, '知识图谱'),
+      '',
+      t('home.ctaMindmap', null, '知识图谱'),
       t('kbMod.refMindmapDesc', null, '六大主题全景'),
       body,
       'kb-mindmap-page',
@@ -453,88 +545,12 @@
   }
 
   function getKbPathStages() {
-    return [
-      {
-        stage: '阶段 1',
-        title: '入门',
-        outcome: '能讲清楚 AARRR / MVP / RICE 是什么',
-        tasks: [
-          { text: '通读《产品经理八股》', href: '#/doc/methodology/pm-bagu' },
-          { text: '每天看《每日学习》5 个方法论', href: '#/daily-learn' },
-        ],
-      },
-      {
-        stage: '阶段 2',
-        title: '基础',
-        outcome: '能独立写一份简单 PRD',
-        tasks: [
-          { text: '读《产品策划方法论》6 大体系', href: '#/doc/methodology/product-methodology' },
-          { text: '读《工作流程》7 步流程', href: '#/category/workflow' },
-        ],
-      },
-      {
-        stage: '阶段 3',
-        title: '进阶',
-        outcome: '能听懂研发的技术方案，不被术语唬住',
-        tasks: [
-          { text: '读《系统架构》（重点 10 个架构问题）', href: '#/doc/architecture/system-architecture' },
-          { text: '读《行业通用词语》全部章节', href: '#/doc/architecture/industry-terms' },
-        ],
-      },
-      {
-        stage: '阶段 4',
-        title: '实战',
-        outcome: '能独立 own 一个中型需求，跨 3 个部门',
-        tasks: [
-          { text: '把协作层（RACI / 4 原则）用到实际跨部门', href: '#/doc/methodology/product-methodology' },
-          { text: '从每日学习中挑 5 个方法论写进自己的需求', href: '#/daily-learn' },
-        ],
-      },
-    ]
+    return window.PDMIndustry?.getKbPathStages?.() || []
   }
 
   function renderLearningPath() {
-    const stages = getKbPathStages()
-    const body = `
-      <div class="sec-hub-grid kb-path-stage-grid">
-        ${stages
-          .map(
-            (s, idx) => `
-          <article class="sec-hub-card kb-path-stage-card">
-            <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
-            <div class="sec-hub-card-body">
-              <h2>${escapeHtml(s.title)}</h2>
-              <p class="kb-path-stage-meta">${escapeHtml(s.stage)}</p>
-              <ul class="kb-path-stage-tasks">
-                ${s.tasks
-                  .map(
-                    (task) => `
-                  <li>
-                    ${task.href
-                      ? `<a href="${task.href}">${escapeHtml(task.text)}</a>`
-                      : `<span>${escapeHtml(task.text)}</span>`}
-                  </li>`,
-                  )
-                  .join('')}
-              </ul>
-              <p class="kb-path-stage-out"><span>输出</span>${escapeHtml(s.outcome)}</p>
-            </div>
-          </article>`,
-          )
-          .join('')}
-      </div>`
-
-    return pageShell(
-      crumb([
-        { href: '#/', label: t('common.home') },
-        { href: '#/kb', label: t('nav.sectionKnowledge') },
-        { label: t('kbMod.refPathTitle', null, '学习路径') },
-      ]),
-      t('kbMod.refPathTitle', null, '4 阶段学习路径'),
-      t('kbMod.refPathDesc', null, '入门 → 基础 → 进阶 → 实战'),
-      body,
-      'kb-path-page',
-    )
+    // 4 阶段已迁至学习导航
+    return null
   }
 
   /* ---------- 三级结构：文档 → 章节卡片 → 知识点 ---------- */
@@ -554,6 +570,7 @@
         title: '产品方法论',
         desc: '6 大体系：战略 / 用户 / 需求 / 设计 / 数据 / 协作',
         sourceId: 'product-methodology',
+        layout: 'grouped',
         chapterMode: 'h1-num',
         maxChapter: 6,
         chapterMeta: {
@@ -570,6 +587,7 @@
         title: '产品经理八股',
         desc: '面试高频考点与答题框架速查',
         sourceId: 'pm-bagu',
+        layout: 'grouped',
         chapterMode: 'section',
         skipSection: /待补充|相关词条/,
       },
@@ -580,6 +598,7 @@
         title: '系统架构',
         desc: 'PM 视角技术深度（必会架构问题）',
         sourceId: 'system-architecture',
+        layout: 'grouped',
         chapterMode: 'h1-num',
         maxChapter: 10,
         skipSection: /关联文件|推荐阅读/,
@@ -619,10 +638,124 @@
     return (KB_DOCS[catId] || []).find((d) => d.id === docId) || null
   }
 
+  function isGroupedDoc(catId, docId) {
+    return getDoc(catId, docId)?.layout === 'grouped'
+  }
+
+  function getDocChapters(catId, docId) {
+    const doc = getDoc(catId, docId)
+    if (!doc) return []
+    return listChapters(catId, doc)
+  }
+
+  function renderTopicCardGrid(catId, items) {
+    if (!items?.length) {
+      return `<p class="kb-empty kb-doc-group-empty">${escapeHtml(t('kbMod.emptyDoc', null, '该文档暂无章节内容'))}</p>`
+    }
+    return `
+      <div class="sec-hub-grid kb-topic-card-grid">
+        ${items
+          .map(
+            (item, i) => `
+          <a href="#/article/${catId}/${encodeURIComponent(item.id)}" class="sec-hub-card kb-topic-sec-card">
+            <span class="sec-hub-card-index">${String(i + 1).padStart(2, '0')}</span>
+            <div class="sec-hub-card-body">
+              <h2>${escapeHtml(stripLeadingIndex(item.title))}</h2>
+              ${item.summary ? `<p>${escapeHtml(cardTaglineOf(item) || item.summary)}</p>` : ''}
+            </div>
+            <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+          </a>`,
+          )
+          .join('')}
+      </div>`
+  }
+
+  function renderDocGrouped(catId, docId) {
+    const cat = getCat(catId)
+    const doc = getDoc(catId, docId)
+    if (!cat || !doc) return null
+    const chapters = listChapters(catId, doc)
+
+    const body = chapters.length
+      ? chapters
+          .map(
+            (ch) => `
+        <section class="kb-doc-group" id="group-${escapeHtml(String(ch.id))}">
+          <header class="kb-doc-group-head">
+            <span class="kb-doc-group-num">${String(ch.index).padStart(2, '0')}</span>
+            <div class="kb-doc-group-copy">
+              <h2>${escapeHtml(ch.title)}</h2>
+              ${ch.tagline ? `<p class="kb-doc-group-tagline">${escapeHtml(ch.tagline)}</p>` : ''}
+              ${ch.tags ? `<p class="kb-doc-group-tags">${escapeHtml(ch.tags)}</p>` : ''}
+              <p class="kb-doc-group-count">${(ch.items || []).length} ${escapeHtml(t('kbMod.topics', null, '个知识点'))}</p>
+            </div>
+          </header>
+          ${renderTopicCardGrid(catId, ch.items || [])}
+        </section>`,
+          )
+          .join('')
+      : `<p class="kb-empty">${escapeHtml(t('kbMod.emptyDoc', null, '该文档暂无章节内容'))}</p>`
+
+    return pageShell('', doc.title, doc.desc, body, 'kb-doc-grouped-page')
+  }
+
+  /** 侧栏 / 知识库首页：扁平导航（方法论、架构子文档上移一级） */
+  const KB_FLAT_DOC_CATS = new Set(['methodology', 'architecture'])
+
+  function isFlatKbDoc(catId) {
+    return KB_FLAT_DOC_CATS.has(catId)
+  }
+
+  function getKbNavLabel(catId, doc) {
+    if (doc && isFlatKbDoc(catId)) return doc.title
+    const cat = getCat(catId)
+    return cat ? catTitle(cat) : doc?.title || catId
+  }
+
+  function getFlatKbNavEntries() {
+    const entries = []
+    for (const [catId, docs] of Object.entries(KB_DOCS)) {
+      if (!docs?.length) continue
+      if (isFlatKbDoc(catId)) {
+        for (const d of docs) {
+          entries.push({
+            catId,
+            docId: d.id,
+            title: d.title,
+            desc: d.desc || '',
+            href: `#/doc/${catId}/${d.id}`,
+            flat: true,
+          })
+        }
+      } else {
+        const d = docs[0]
+        const cat = getCat(catId)
+        entries.push({
+          catId,
+          docId: d.id,
+          title: cat ? catTitle(cat) : d.title,
+          desc: cat ? (cat.description || d.desc || '') : (d.desc || ''),
+          href: docs.length === 1 ? `#/doc/${catId}/${d.id}` : `#/category/${catId}`,
+          flat: false,
+        })
+      }
+    }
+    return entries
+  }
+
   function docItems(catId, doc) {
-    let items = itemsOf(catId).filter((i) => i.sourceId === doc.sourceId)
+    const docs = KB_DOCS[catId] || []
+    const isPrimaryDoc = docs[0]?.id === doc.id
+    let items = itemsOf(catId).filter((i) => {
+      if (i.sourceId) return i.sourceId === doc.sourceId
+      // 无 sourceId 的共享/补充条目挂到该类目首个文档，避免浏览时「消失」
+      return isPrimaryDoc
+    })
     if (doc.sectionInclude) {
-      items = items.filter((i) => doc.sectionInclude.test(i.section || i.title || ''))
+      items = items.filter((i) => {
+        if (!i.sourceId && !(i.section || '').trim()) return true
+        return doc.sectionInclude.test(i.section || i.title || '')
+      })
     }
     return items
   }
@@ -676,22 +809,30 @@
     const map = new Map()
     for (const item of items) {
       const raw = item.section || ''
-      if (doc.skipSection && doc.skipSection.test(raw)) continue
-      const key = chapterKeyFromSection(raw, doc.chapterMode)
-      if (!key) continue
-      if (doc.chapterMode === 'h1-num') {
+      if (raw && doc.skipSection && doc.skipSection.test(raw)) continue
+      let key = chapterKeyFromSection(raw, doc.chapterMode)
+      if (!key) {
+        key = '__ungrouped__'
+      } else if (doc.chapterMode === 'h1-num') {
         const n = Number(key)
         if (doc.maxChapter && n > doc.maxChapter) continue
       }
       if (!map.has(key)) {
         const meta = doc.chapterMeta?.[key]
+        const isUngrouped = key === '__ungrouped__'
         map.set(key, {
           id: key,
-          title: meta?.title || stripLeadingIndex(raw),
-          tagline: meta?.tagline || '',
-          tags: meta?.tags || '',
+          title: isUngrouped
+            ? t('kbMod.ungrouped', null, '未分组')
+            : meta?.title || stripLeadingIndex(raw) || key,
+          tagline: isUngrouped ? '' : meta?.tagline || '',
+          tags: isUngrouped ? '' : meta?.tags || '',
           items: [],
-          sort: doc.chapterMode === 'h1-num' ? Number(key) : map.size + 1,
+          sort: isUngrouped
+            ? 9999
+            : doc.chapterMode === 'h1-num'
+              ? Number(key)
+              : map.size + 1,
         })
       }
       map.get(key).items.push(item)
@@ -748,6 +889,7 @@
     const cat = getCat(catId)
     const doc = getDoc(catId, docId)
     if (!cat || !doc) return null
+    if (isGroupedDoc(catId, docId)) return renderDocGrouped(catId, docId)
     const chapters = listChapters(catId, doc)
 
     const body = chapters.length
@@ -797,21 +939,7 @@
       return String(key) === String(chapterId)
     })
 
-    const body = `
-      <div class="kb-topic-list">
-        ${items
-          .map(
-            (item, i) => `
-          <a href="#/article/${catId}/${encodeURIComponent(item.id)}" class="kb-topic-card">
-            <span class="kb-topic-index">${String(i + 1).padStart(2, '0')}</span>
-            <div>
-              <h3>${escapeHtml(stripLeadingIndex(item.title))}</h3>
-              <p>${escapeHtml(item.summary || '')}</p>
-            </div>
-          </a>`,
-          )
-          .join('')}
-      </div>`
+    const body = renderTopicCardGrid(catId, items)
 
     const crumbs = [
       { href: '#/', label: t('common.home') },
@@ -833,7 +961,7 @@
 
   function renderCategorySmart(categoryId) {
     if (categoryId === 'workflow') return renderWorkflowHub()
-    if (categoryId === 'reference') return renderReferenceHub()
+    if (categoryId === 'reference') return null
     if (KB_DOCS[categoryId]) return renderDocHub(categoryId)
     const cat = getCat(categoryId)
     if (!cat) return null
@@ -895,7 +1023,24 @@
     return window.mermaid
   }
 
+  function bindGlossaryAlphaNav() {
+    const nav = document.querySelector('.kb-glossary-alpha')
+    if (!nav) return
+    nav.addEventListener('click', (e) => {
+      const chip = e.target.closest('.kb-glossary-chip[data-letter]')
+      if (!chip) return
+      const letter = chip.getAttribute('data-letter')
+      if (!letter) return
+      const panel = document.getElementById(`letter-${letter}`)
+      if (!panel) return
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      nav.querySelectorAll('.kb-glossary-chip.is-active').forEach((el) => el.classList.remove('is-active'))
+      chip.classList.add('is-active')
+    })
+  }
+
   async function bindModulePage() {
+    bindGlossaryAlphaNav()
     const nodes = document.querySelectorAll('.kb-mermaid')
     if (!nodes.length) return
     try {
@@ -920,7 +1065,18 @@
     renderModule,
     renderDoc,
     renderChapter,
+    renderGlossary,
+    renderMindmap,
     getSidebarDocs,
+    getDoc,
+    getDocChapters,
+    isGroupedDoc,
+    getFlatKbNavEntries,
+    getKbNavLabel,
+    isFlatKbDoc,
+    buildKbCrumbs,
+    resolveArticleTrail,
+    kbDocLabel,
     getChapterLabel,
     bindModulePage,
     stripLeadingIndex,

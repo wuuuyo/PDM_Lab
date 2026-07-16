@@ -149,7 +149,7 @@ function renderTopbarCrumbs(crumbs) {
   const el = document.getElementById('topbar-crumbs')
   if (!el) return
   if (!crumbs?.length) {
-    el.innerHTML = `<span class="topbar-crumb-current">${escapeHtml(t('nav.home'))}</span>`
+    el.innerHTML = ''
     return
   }
   el.innerHTML = crumbs.map((c, i) => {
@@ -162,100 +162,76 @@ function renderTopbarCrumbs(crumbs) {
 }
 
 function buildCrumbsFromRoute(parts) {
-  const home = { href: '#/', label: t('common.home') }
-  if (!parts.length) return [{ label: t('nav.home') }]
+  if (!parts.length) return []
+  const kbCrumbs = window.PDMKnowledgeViews?.buildKbCrumbs?.(parts)
+  if (kbCrumbs) return kbCrumbs
+
   const p0 = parts[0]
-  if (p0 === 'login') return [home, { label: t('auth.pageTitle') }]
-  if (p0 === 'account') return [home, { label: t('account.profileTitle') }]
-  if (p0 === 'reset-password') return [home, { label: t('auth.resetTitle') }]
+  if (p0 === 'login') return [{ label: t('auth.pageTitle') }]
+  if (p0 === 'account') return [{ label: t('account.profileTitle') }]
+  if (p0 === 'reset-password') return [{ label: t('auth.resetTitle') }]
   if (p0 === 'industry') {
-    const c = [home, { href: '#/industry', label: t('nav.industry') }]
-    if (parts[1] === 'learning-path') c.push({ label: t('home.pathTeaserCta') })
-    else if (parts[2]) c.push({ label: t('common.loading') })
+    const c = [{ href: '#/industry', label: t('nav.sectionLearning') }]
+    const industry = window.PDMIndustry
+    const iu = (key, fb) => t(`content.industryUi.${key}`, null, fb)
+    if (!parts[1]) return c
+    if (parts[1] === 'learning-path') {
+      c.push({ href: '#/industry/learning-path', label: iu('sectionPaths', '学习路径') })
+      if (parts[2]) {
+        const path = industry?.getLearningPath?.(parts[2])
+        c.push({ label: path?.title || parts[2] })
+      }
+      return c
+    }
+    if (parts[1] === 'overview' || parts[1] === 'basics' || parts[1] === 'sub-roles') {
+      const overviewLabel = iu('sectionOverview', '行业概览')
+      if (parts[1] === 'overview' && !parts[2]) {
+        c.push({ label: overviewLabel })
+        return c
+      }
+      const secId = parts[1] === 'overview' ? parts[2] : parts[1]
+      const itemId = parts[1] === 'overview' ? parts[3] : parts[2]
+      c.push({ href: '#/industry/overview', label: overviewLabel })
+      if (secId && itemId && industry?.getItem) {
+        const item = industry.getItem(secId, itemId)
+        c.push({ label: item?.title || itemId })
+      }
+      return c
+    }
     return c
   }
   if (p0 === 'tools') {
-    const c = [home, { href: '#/tools', label: t('nav.tools') }]
-    if (parts[1]) c.push({ label: parts[1] })
+    const c = [{ href: '#/tools', label: t('nav.tools') }]
+    if (parts[1]) {
+      const tabLabel = t(`content.toolsUi.tabs.${parts[1]}`, null, parts[1])
+      c.push({ label: tabLabel })
+    }
     return c
   }
   if (p0 === 'forum') {
-    const c = [home, { href: '#/forum', label: t('nav.forum') }]
-    if (parts[1] === 'new') c.push({ label: t('auth.pageTitle') })
-    else if (parts[1] === 'post') c.push({ label: '…' })
+    const c = [{ href: '#/forum', label: t('nav.forum') }]
+    if (parts[1] === 'new') c.push({ label: ui('forumUi', 'newTitle') })
+    else if (parts[1] === 'post') c.push({ label: ui('forumUi', 'postBreadcrumb') })
     return c
   }
-  if (p0 === 'category' && parts[1]) {
-    const cat = K.getCategoryByIdMerged(parts[1])
-    return [home, { href: '#/kb', label: t('nav.sectionKnowledge') }, { label: catTitle(cat) || parts[1] }]
-  }
-  if (p0 === 'kb') {
-    return [home, { label: t('nav.sectionKnowledge') }]
-  }
+  if (p0 === 'glossary') return [{ label: t('home.ctaKb') }]
+  if (p0 === 'mindmap') return [{ label: t('home.ctaMindmap') }]
   if (p0 === 'personal') {
-    return [home, { label: t('nav.sectionPersonal') }]
+    return [{ label: t('nav.sectionPersonal') }]
   }
   if (p0 === 'admin' && !parts[1]) {
-    return [home, { label: t('nav.sectionAdmin') }]
+    return [{ label: t('nav.sectionAdmin') }]
   }
   if (p0 === 'admin' && parts[1] === 'stats') {
     return [
-      home,
       { href: '#/admin', label: t('nav.sectionAdmin') },
       { label: t('nav.adminStats') },
     ]
   }
-  if (p0 === 'doc' && parts[1] && parts[2]) {
-    const cat = K.getCategoryByIdMerged(parts[1])
-    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
-    const doc = docs.find((d) => d.id === parts[2])
-    const crumbs = [home, { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] }]
-    if (docs.length > 1) crumbs.push({ label: doc?.title || parts[2] })
-    return crumbs
-  }
-  if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
-    const cat = K.getCategoryByIdMerged(parts[1])
-    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
-    const doc = docs.find((d) => d.id === parts[2])
-    const chapterLabel =
-      window.PDMKnowledgeViews?.getChapterLabel?.(parts[1], parts[2], parts[3]) ||
-      decodeURIComponent(parts[3])
-    const crumbs = [home, { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] }]
-    if (docs.length > 1) crumbs.push({ href: `#/doc/${parts[1]}/${parts[2]}`, label: doc?.title || parts[2] })
-    crumbs.push({ label: chapterLabel })
-    return crumbs
-  }
-  if (p0 === 'module' && parts[1] && parts[2]) {
-    const cat = K.getCategoryByIdMerged(parts[1])
-    const labels = {
-      demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
-      prd: t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
-      collab: t('kbMod.workflowCollabTitle', null, '跨部门协作'),
-      kb: t('kbMod.workflowKbTitle', null, '知识库管理'),
-      glossary: t('kbMod.refGlossaryTitle', null, '关键词速查'),
-      mindmap: t('kbMod.refMindmapTitle', null, '知识图谱'),
-      path: t('kbMod.refPathTitle', null, '学习路径'),
-    }
-    return [
-      home,
-      { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] },
-      { label: labels[parts[2]] || parts[2] },
-    ]
-  }
-  if (p0 === 'article' && parts[1] && parts[2]) {
-    const cat = K.getCategoryByIdMerged(parts[1])
-    const item = K.getItemByIdMerged(parts[1], parts[2])
-    const title = window.PDMKnowledgeViews?.stripLeadingIndex?.(item?.title) || item?.title || parts[2]
-    return [
-      home,
-      { href: `#/category/${parts[1]}`, label: catTitle(cat) || parts[1] },
-      { label: title },
-    ]
-  }
-  if (p0 === 'favorites') return [home, { label: t('nav.favorites') }]
-  if (p0 === 'notes') return [home, { label: t('nav.articleNotes') }]
+  if (p0 === 'favorites') return [{ label: t('nav.favorites') }]
+  if (p0 === 'notes') return [{ label: t('nav.articleNotes') }]
   if (p0 === 'my-knowledge') {
-    const c = [home, { href: '#/my-knowledge', label: t('nav.myKnowledge') }]
+    const c = [{ href: '#/my-knowledge', label: t('nav.myKnowledge') }]
     if (parts[1] === 'add') c.push({ label: t('common.add') })
     else if (parts[1] === 'edit') c.push({ label: t('common.edit') })
     else if (parts[1] === 'view' && parts[2]) {
@@ -266,11 +242,11 @@ function buildCrumbsFromRoute(parts) {
     }
     return c
   }
-  if (p0 === 'reviews' || p0 === 'memory') return [home, { label: t('nav.reviews') }]
-  if (p0 === 'daily-learn') return [home, { label: t('nav.dailyLearn') }]
-  if (p0 === 'feedback') return [home, { label: t('nav.feedback') }]
+  if (p0 === 'reviews' || p0 === 'memory') return [{ label: t('nav.reviews') }]
+  if (p0 === 'daily-learn') return [{ label: t('nav.dailyLearn') }]
+  if (p0 === 'feedback') return [{ label: t('nav.feedback') }]
   if (p0 === 'm') {
-    const c = [home]
+    const c = []
     if (parts[1] === 'learn') c.push({ label: t('nav.sectionLearning') })
     else if (parts[1] === 'knowledge') c.push({ label: t('nav.sectionKnowledge') })
     else if (parts[1] === 'personal') c.push({ label: t('nav.sectionPersonal') })
@@ -280,7 +256,7 @@ function buildCrumbsFromRoute(parts) {
   if (p0 === 'admin') {
     return []
   }
-  return [home]
+  return []
 }
 
 let topbarSearchDocBound = false
@@ -289,6 +265,9 @@ function searchSiteContent(query, limit = 10) {
   const q = String(query || '').trim()
   if (!q) return []
   const ql = q.toLowerCase()
+  // 过短查询（1 个英文字母）几乎必误匹配，直接要求更明确输入
+  if (/^[a-z0-9]$/i.test(q)) return []
+
   const buckets = [[], [], [], []]
 
   const pushBucket = (i, hit) => {
@@ -296,14 +275,24 @@ function searchSiteContent(query, limit = 10) {
     buckets[i].push(hit)
   }
 
-  for (const { category, item, source } of K.searchKnowledgeMerged(q)) {
+  for (const { category, item, source, score } of K.searchKnowledgeMerged(q)) {
+    // 丢弃弱相关正文命中
+    if ((score || 0) < 200) continue
     const catLabel = source === 'my'
       ? category.title
       : t(`categories.${category.id}.title`, null, category.title)
     pushBucket(0, {
       title: item.title,
       meta: `${catLabel}${source === 'my' ? t('nav.searchSourceMy') : ''}`,
-      href: source === 'my' ? `#/my-knowledge/view/${item.id}` : `#/article/${category.id}/${item.id}`,
+      href:
+        source === 'my'
+          ? `#/my-knowledge/view/${item.id}`
+          : category.id === 'reference'
+            ? item.kind === 'mermaid' || item.sourceId === 'mindmap'
+              ? '#/mindmap'
+              : '#/glossary'
+            : `#/article/${category.id}/${item.id}`,
+      score: score || 0,
     })
   }
 
@@ -312,18 +301,19 @@ function searchSiteContent(query, limit = 10) {
     for (const { section, item } of industry.searchAll(q)) {
       pushBucket(1, {
         title: item.title,
-        meta: `${t('nav.industry')} · ${section.title}`,
+        meta: `${t('nav.sectionLearning')} · ${section.title}`,
         href: `#/industry/${section.id}/${item.id}`,
       })
     }
   }
   if (industry?.getLearningPaths) {
     for (const p of industry.getLearningPaths()) {
-      const hay = `${p.title} ${p.summary} ${(p.outcomes || []).join(' ')}`.toLowerCase()
-      if (hay.includes(ql)) {
+      const title = String(p.title || '').toLowerCase()
+      const summary = String(p.summary || '').toLowerCase()
+      if (title.includes(ql) || (ql.length >= 2 && summary.includes(ql))) {
         pushBucket(1, {
           title: p.title,
-          meta: `${t('nav.industry')} · ${t('content.industryUi.pathBreadcrumb', null, '学习路径')}`,
+          meta: `${t('nav.sectionLearning')} · ${t('content.industryUi.pathBreadcrumb', null, '学习路径')}`,
           href: `#/industry/learning-path/${p.id}`,
         })
       }
@@ -342,18 +332,24 @@ function searchSiteContent(query, limit = 10) {
   }
 
   const pages = [
-    { title: t('nav.home'), meta: t('nav.home'), href: '#/', keys: '首页 home' },
-    { title: t('nav.industry'), meta: t('nav.industry'), href: '#/industry', keys: '行业认知 industry pm 岗位' },
-    { title: t('nav.sectionKnowledge'), meta: t('nav.sectionKnowledge'), href: '#/kb', keys: '知识库 knowledge kb 学习' },
-    { title: t('nav.tools'), meta: t('nav.tools'), href: '#/tools', keys: '工具库 tools figma' },
-    { title: t('nav.forum'), meta: t('nav.forum'), href: '#/forum', keys: '论坛 forum 讨论' },
-    { title: t('nav.dailyLearn'), meta: t('nav.sectionPersonal'), href: '#/daily-learn', keys: '每日学习 daily' },
-    { title: t('nav.favorites'), meta: t('nav.sectionPersonal'), href: '#/favorites', keys: '收藏 favorites' },
-    { title: t('nav.reviews'), meta: t('nav.sectionPersonal'), href: '#/reviews', keys: '复盘 reviews' },
-    { title: t('kbMod.refPathTitle', null, '4 阶段学习路径'), meta: t('nav.sectionKnowledge'), href: '#/module/reference/path', keys: '学习路径 4阶段 path' },
+    { title: t('nav.home'), meta: t('nav.home'), href: '#/', keys: ['首页', 'home'] },
+    { title: t('nav.sectionLearning'), meta: t('nav.sectionLearning'), href: '#/industry', keys: ['学习导航', '行业认知', 'industry'] },
+    { title: t('nav.sectionKnowledge'), meta: t('nav.sectionKnowledge'), href: '#/kb', keys: ['知识库', 'knowledge'] },
+    { title: t('nav.tools'), meta: t('nav.tools'), href: '#/tools', keys: ['工具库', 'tools'] },
+    { title: t('nav.forum'), meta: t('nav.forum'), href: '#/forum', keys: ['论坛', 'forum'] },
+    { title: t('nav.dailyLearn'), meta: t('nav.sectionPersonal'), href: '#/daily-learn', keys: ['每日学习', 'daily'] },
+    { title: t('nav.favorites'), meta: t('nav.sectionPersonal'), href: '#/favorites', keys: ['收藏', 'favorites'] },
+    { title: t('nav.reviews'), meta: t('nav.sectionPersonal'), href: '#/reviews', keys: ['复盘', 'reviews'] },
+    { title: t('kbMod.refPathTitle', null, '4 阶段学习路径'), meta: t('nav.sectionLearning'), href: '#/industry/learning-path/kb-4stage', keys: ['学习路径', '4阶段'] },
   ]
   for (const p of pages) {
-    if (`${p.title} ${p.keys}`.toLowerCase().includes(ql)) {
+    const title = String(p.title || '').toLowerCase()
+    // 页面入口：标题包含，或关键字完全相等（避免「学」命中「学习」类过多误报时仍可控）
+    const keyHit = (p.keys || []).some((k) => {
+      const kk = String(k).toLowerCase()
+      return kk === ql || (ql.length >= 2 && kk.includes(ql))
+    })
+    if (title.includes(ql) || keyHit) {
       pushBucket(3, { title: p.title, meta: p.meta, href: p.href })
     }
   }
@@ -434,11 +430,34 @@ function bindMobileNavChrome() {
   document.getElementById('sidebar-backdrop')?.addEventListener('click', () => {
     setSidebarCollapsed(true)
   })
+  document.getElementById('mobile-bottom-nav')?.addEventListener('click', (e) => {
+    const a = e.target.closest('a.mobile-tab[data-tab]')
+    if (!a || !isMobileViewport()) return
+    const tabId = a.dataset.tab
+    const root = MOBILE_TAB_ROOTS[tabId]
+    if (!tabId || !root) return
+    const { parts } = parseRoute()
+    const currentTab = getMobileTab(parts)
+    const cur = location.hash || '#/'
+    // 已在当前 tab 的深层页：再点一次该 tab → 回到该 tab 根页
+    if (tabId === currentTab && cur !== root) {
+      e.preventDefault()
+      saveMobileTabRoute(tabId, root)
+      navigate(root.slice(1) || '/')
+    }
+  })
 }
 
 function renderTopAccount(activePath) {
   const el = document.getElementById('topbar-account')
   if (!el) return
+
+  const mobile = isMobileViewport()
+  const guestHref = mobile ? '#/m/account' : '#/login'
+  const guestActive =
+    activePath === '/login' ||
+    activePath === '/m/account' ||
+    activePath === '/account'
 
   if (Auth().isLoggedIn()) {
     const session = Auth().getSession()
@@ -446,6 +465,14 @@ function renderTopAccount(activePath) {
     const email = session?.user?.email || ''
     const displayName = profile?.display_name?.trim()
     const initials = getUserInitials(email, displayName)
+    // 移动端：点头像进账号页；桌面端保留下拉菜单
+    if (mobile) {
+      el.innerHTML = `
+    <a href="#/m/account" class="topbar-account topbar-account-logged-in topbar-account-icon-only ${guestActive ? 'active' : ''}" title="${escapeHtml(email || t('mobile.accountTitle'))}" aria-label="${escapeHtml(t('nav.accountMenuAria'))}">
+      <span class="topbar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
+    </a>`
+      return
+    }
     el.innerHTML = `
     <div class="topbar-account topbar-account-logged-in">
       <button type="button" class="topbar-account-trigger topbar-account-icon-only" id="topbar-account-menu-btn" aria-label="${escapeHtml(t('nav.accountMenuAria'))}" title="${escapeHtml(email)}">
@@ -464,7 +491,7 @@ function renderTopAccount(activePath) {
   }
 
   el.innerHTML = `
-    <a href="#/login" class="topbar-account topbar-account-guest topbar-account-icon-only ${activePath === '/login' ? 'active' : ''}" title="${escapeHtml(t('nav.loginRegister'))}" aria-label="${escapeHtml(t('nav.loginRegister'))}">
+    <a href="${guestHref}" class="topbar-account topbar-account-guest topbar-account-icon-only ${guestActive ? 'active' : ''}" title="${escapeHtml(t('nav.loginRegister'))}" aria-label="${escapeHtml(t('nav.loginRegister'))}">
       <span class="topbar-account-avatar topbar-account-avatar-guest" aria-hidden="true">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c.8-2.2 2.4-3.3 4.5-3.3s3.7 1.1 4.5 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       </span>
@@ -757,10 +784,54 @@ function isMobileViewport() {
   return window.matchMedia('(max-width: 900px)').matches
 }
 
+const MOBILE_TAB_ROUTES_KEY = 'pm-lab-mobile-tab-routes'
+const MOBILE_TAB_ROOTS = {
+  home: '#/',
+  learnNav: '#/industry',
+  knowledge: '#/m/knowledge',
+  tools: '#/tools',
+  forum: '#/forum',
+  personal: '#/m/personal',
+}
+
+function loadMobileTabRoutes() {
+  try {
+    return JSON.parse(sessionStorage.getItem(MOBILE_TAB_ROUTES_KEY) || '{}') || {}
+  } catch {
+    return {}
+  }
+}
+
+function saveMobileTabRoute(tab, hash) {
+  if (!tab || !hash) return
+  const state = loadMobileTabRoutes()
+  const next = hash.startsWith('#') ? hash : `#${hash}`
+  if (state[tab] === next) return
+  state[tab] = next
+  try {
+    sessionStorage.setItem(MOBILE_TAB_ROUTES_KEY, JSON.stringify(state))
+  } catch (_) {}
+}
+
+function getMobileTabHref(tabId) {
+  const root = MOBILE_TAB_ROOTS[tabId] || '#/'
+  const remembered = loadMobileTabRoutes()[tabId]
+  return remembered || root
+}
+
+function rememberCurrentMobileTabRoute() {
+  if (!isMobileViewport()) return
+  const { parts } = parseRoute()
+  const tab = getMobileTab(parts)
+  saveMobileTabRoute(tab, location.hash || '#/')
+}
+
 const MOBILE_TAB_ICONS = {
   home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-5.6H10.2V21H5a1 1 0 0 1-1-1v-9.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
-  learn: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  learnNav: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
   knowledge: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  tools: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 14.5V8.2L10 4.5l5 3.7v6.3H5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.2 14.5v-3.2h3.6v3.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  forum: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="7" cy="9" r="2.2" stroke="currentColor" stroke-width="1.6"/><circle cx="13" cy="9" r="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M3.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7M9.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
   personal: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 14.4 7.8 16.5l.8-4.7-3.4-3.3 4.7-.7L12 3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
   account: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 19c1.2-3.2 3.5-4.8 6.5-4.8s5.3 1.6 6.5 4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
 }
@@ -769,13 +840,15 @@ function getMobileTab(parts) {
   const p0 = parts[0] || ''
   if (!p0) return 'home'
   if (p0 === 'm') {
-    if (parts[1] === 'learn') return 'learn'
+    if (parts[1] === 'learn') return 'learnNav'
     if (parts[1] === 'knowledge') return 'knowledge'
     if (parts[1] === 'personal') return 'personal'
     if (parts[1] === 'account') return 'account'
   }
-  if (['industry', 'tools', 'forum'].includes(p0)) return 'learn'
-  if (p0 === 'category' || p0 === 'article' || p0 === 'module' || p0 === 'doc' || p0 === 'chapter' || p0 === 'kb') return 'knowledge'
+  if (p0 === 'industry') return 'learnNav'
+  if (p0 === 'tools') return 'tools'
+  if (p0 === 'forum') return 'forum'
+  if (p0 === 'category' || p0 === 'article' || p0 === 'module' || p0 === 'doc' || p0 === 'chapter' || p0 === 'kb' || p0 === 'glossary' || p0 === 'mindmap') return 'knowledge'
   if (p0 === 'personal' || ['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn', 'feedback'].includes(p0)) return 'personal'
   if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin' || p0 === 'account') return 'account'
   return 'home'
@@ -783,10 +856,11 @@ function getMobileTab(parts) {
 
 function getMobileBackHref(parts) {
   const tab = getMobileTab(parts)
-  if (tab === 'learn') return '#/m/learn'
+  if (tab === 'learnNav') return '#/industry'
   if (tab === 'knowledge') return '#/m/knowledge'
+  if (tab === 'tools') return '#/tools'
+  if (tab === 'forum') return '#/forum'
   if (tab === 'personal') return '#/m/personal'
-  if (tab === 'account') return '#/m/account'
   return '#/'
 }
 
@@ -797,9 +871,11 @@ function getMobilePageMeta(parts) {
 
   const backHref = getMobileBackHref(parts)
   const p0 = parts[0]
-  if (p0 === 'industry') return { title: t('nav.industry'), backHref }
+  if (p0 === 'industry') return { title: t('nav.sectionLearning'), backHref }
   if (p0 === 'tools') return { title: t('nav.tools'), backHref }
   if (p0 === 'forum') return { title: t('nav.forum'), backHref }
+  if (p0 === 'glossary') return { title: t('home.ctaKb'), backHref: '#/' }
+  if (p0 === 'mindmap') return { title: t('home.ctaMindmap'), backHref: '#/' }
   if (p0 === 'module' && parts[1] && parts[2]) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
@@ -814,7 +890,11 @@ function getMobilePageMeta(parts) {
   }
   if (p0 === 'category' && parts[1]) {
     const cat = K.getCategoryByIdMerged?.(parts[1])
-    return { title: catTitle(cat) || parts[1], backHref: '#/kb' }
+    const label =
+      window.PDMKnowledgeViews?.isFlatKbDoc?.(parts[1])
+        ? t('nav.sectionKnowledge')
+        : (catTitle(cat) || parts[1])
+    return { title: label, backHref: '#/kb' }
   }
   if (p0 === 'kb') {
     return { title: t('nav.sectionKnowledge'), backHref: '#/' }
@@ -823,11 +903,9 @@ function getMobilePageMeta(parts) {
     return { title: t('nav.sectionPersonal'), backHref }
   }
   if (p0 === 'doc' && parts[1] && parts[2]) {
-    const docs = window.PDMKnowledgeViews?.getSidebarDocs?.()?.[parts[1]] || []
-    const doc = docs.find((d) => d.id === parts[2])
     return {
-      title: doc?.title || parts[2],
-      backHref: docs.length > 1 ? `#/category/${parts[1]}` : backHref,
+      title: window.PDMKnowledgeViews?.kbDocLabel?.(parts[1], parts[2]) || parts[2],
+      backHref: '#/kb',
     }
   }
   if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
@@ -838,10 +916,19 @@ function getMobilePageMeta(parts) {
       backHref: `#/doc/${parts[1]}/${parts[2]}`,
     }
   }
-  if (p0 === 'article' && parts[2]) {
+  if (p0 === 'article' && parts[1] && parts[2]) {
     const item = K.getItemByIdMerged?.(parts[1], parts[2])
     const title = window.PDMKnowledgeViews?.stripLeadingIndex?.(item?.title) || item?.title || t('nav.sectionKnowledge')
-    return { title, backHref: `#/category/${parts[1]}` }
+    const trail = window.PDMKnowledgeViews?.resolveArticleTrail?.(parts[1], parts[2])
+    let backHref = '#/kb'
+    if (trail?.doc && trail?.chapter && !trail.chapter.isArticle) {
+      backHref = `#/chapter/${parts[1]}/${trail.doc.id}/${encodeURIComponent(trail.chapter.id)}`
+    } else if (trail?.doc) {
+      backHref = `#/doc/${parts[1]}/${trail.doc.id}`
+    } else if (parts[1] === 'workflow' || parts[1] === 'reference') {
+      backHref = `#/category/${parts[1]}`
+    }
+    return { title, backHref }
   }
   if (p0 === 'favorites') return { title: t('nav.favorites'), backHref }
   if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref }
@@ -953,24 +1040,65 @@ function renderSectionCardHub({ title, desc, eyebrow, cards, extraHtml = '' }) {
     </div>`
 }
 
-function getKnowledgeHubCards() {
+function buildKnowledgeNavItems() {
   const can = (id) => Perm().can(id)
-  const docsMap = getSidebarKbDocs()
-  const cards = []
-  for (const c of K.getMergedCategories?.() || []) {
-    if (!can(c.id)) continue
-    const docs = docsMap[c.id]
-    let href = `#/category/${c.id}`
-    if (docs?.length === 1) href = `#/doc/${c.id}/${docs[0].id}`
-    else if (docs?.length > 1) href = `#/category/${c.id}`
-    cards.push({
-      href,
-      title: catTitle(c),
-      desc: catDesc(c),
-      meta: docs?.length > 1 ? `${docs.length} 个子文档` : `${c.items?.length || 0} 个知识点`,
+  const items = []
+  const flat = window.PDMKnowledgeViews?.getFlatKbNavEntries?.() || []
+  for (const entry of flat) {
+    if (!can(entry.catId)) continue
+    items.push({
+      href: entry.href,
+      title: entry.title,
+      catId: entry.catId,
+      docId: entry.docId,
     })
   }
-  return cards
+  for (const c of K.getMergedCategories?.() || []) {
+    if (!can(c.id)) continue
+    if (c.id === 'workflow') {
+      items.push({ href: `#/category/${c.id}`, title: catTitle(c), catId: c.id, docId: null })
+    }
+  }
+  return items
+}
+
+function isKnowledgeNavItemActive(activePath, item) {
+  const hrefPath = (item.href || '').replace(/^#/, '')
+  if (activePath === hrefPath || activePath.startsWith(`${hrefPath}/`)) return true
+  if (item.docId) {
+    return (
+      activePath.includes(`/doc/${item.catId}/${item.docId}`) ||
+      activePath.includes(`/chapter/${item.catId}/${item.docId}/`) ||
+      (activePath.includes(`/article/${item.catId}/`) && activePath.includes(`/module/${item.catId}/`) === false)
+    )
+  }
+  if (item.catId === 'workflow' || item.catId === 'reference') {
+    return activePath.includes(`/category/${item.catId}`) || activePath.includes(`/module/${item.catId}/`)
+  }
+  return false
+}
+
+function getKnowledgeHubCards() {
+  const can = (id) => Perm().can(id)
+  return buildKnowledgeNavItems()
+    .filter((item) => can(item.catId))
+    .map((item) => {
+      const cat = K.getCategoryByIdMerged(item.catId)
+      const doc = item.docId ? window.PDMKnowledgeViews?.getDoc?.(item.catId, item.docId) : null
+      let topicCount = cat?.items?.length || 0
+      if (item.docId && doc && window.PDMKnowledgeViews) {
+        const chapters = window.PDMKnowledgeViews.getDocChapters?.(item.catId, item.docId)
+          || []
+        topicCount = chapters.reduce((n, ch) => n + (ch.count || ch.items?.length || (ch.isArticle ? 1 : 0)), 0)
+        if (!topicCount && chapters.length) topicCount = chapters.length
+      }
+      return {
+        href: item.href,
+        title: item.title,
+        desc: doc?.desc || catDesc(cat),
+        meta: t('home.itemCount', { n: topicCount }),
+      }
+    })
 }
 
 function getPersonalHubCards() {
@@ -993,44 +1121,17 @@ function getAdminHubCards() {
 }
 
 function renderKnowledgeHubPage() {
-  const stages = window.PDMKnowledgeViews?.getKbPathStages?.() || []
-  const pathStrip = stages.length
-    ? `<section class="sec-hub-path">
-        <div class="sec-hub-path-head">
-          <h2>${escapeHtml(t('kbMod.refPathTitle', null, '4 阶段学习路径'))}</h2>
-          <a href="#/module/reference/path" class="sec-hub-path-link">${escapeHtml(t('kbMod.viewDetail', null, '查看详情'))}</a>
-        </div>
-        <div class="sec-hub-grid">
-          ${stages
-            .map(
-              (s, idx) => `
-            <a href="#/module/reference/path" class="sec-hub-card">
-              <span class="sec-hub-card-index">${String(idx + 1).padStart(2, '0')}</span>
-              <div class="sec-hub-card-body">
-                <h2>${escapeHtml(s.title)}</h2>
-                <p>${escapeHtml(s.outcome)}</p>
-                <span class="sec-hub-card-meta">${escapeHtml(s.stage)}</span>
-              </div>
-              <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
-            </a>`,
-            )
-            .join('')}
-        </div>
-      </section>`
-    : ''
-
   return renderSectionCardHub({
     eyebrow: t('nav.sectionKnowledge'),
-    title: t('kbMod.kbHomePickTitle', null, '选一个主题开始'),
-    desc: t('kbMod.kbHomePickDesc', null, '按类目进入文档与章节，也可跟随下方路径系统学习'),
+    title: t('kbMod.kbHomePickTitle', null, '选择学习主题'),
+    desc: t('kbMod.kbHomePickDesc', null, '单知识点卡片式阅读；系统学习请从首页「快速上手」开始'),
     cards: getKnowledgeHubCards(),
-    extraHtml: pathStrip,
   })
 }
 
 function renderPersonalHubPage() {
   if (!Auth().isLoggedIn()) {
-    return renderLoginRequired(t('auth.requiredPersonal'))
+    return renderPersonalLoginGate()
   }
   return renderSectionCardHub({
     eyebrow: t('nav.sectionPersonal'),
@@ -1060,38 +1161,17 @@ function getMobileLearnItems() {
 }
 
 function getMobileKnowledgeItems() {
-  const can = (id) => Perm().can(id)
-  const docsMap = getSidebarKbDocs()
-  const items = []
-  for (const c of K.getMergedCategories?.() || []) {
-    if (!can(c.id)) continue
-    const docs = docsMap[c.id]
-    if (docs?.length > 1) {
-      for (const d of docs) {
-        items.push({
-          href: `#/doc/${c.id}/${d.id}`,
-          title: d.title,
-          desc: d.desc || catTitle(c),
-          meta: catTitle(c),
-        })
-      }
-    } else if (docs?.length === 1) {
-      items.push({
-        href: `#/doc/${c.id}/${docs[0].id}`,
-        title: catTitle(c),
-        desc: docs[0].desc || catDesc(c),
-        meta: `${c.items.length}`,
-      })
-    } else {
-      items.push({
-        href: `#/category/${c.id}`,
-        title: catTitle(c),
-        desc: catDesc(c),
-        meta: `${c.items.length}`,
-      })
+  return buildKnowledgeNavItems().map((item) => {
+    const cat = K.getCategoryByIdMerged(item.catId)
+    return {
+      href: item.href,
+      title: item.title,
+      desc: item.docId
+        ? (window.PDMKnowledgeViews?.getDoc?.(item.catId, item.docId)?.desc || catDesc(cat))
+        : catDesc(cat),
+      meta: cat ? catTitle(cat) : '',
     }
-  }
-  return items
+  })
 }
 
 function getMobilePersonalItems() {
@@ -1259,6 +1339,18 @@ function bindMobileAccountHub() {
   })
 }
 
+function getMobileTabItems() {
+  const can = (id) => Perm().can(id)
+  return [
+    { id: 'home', label: t('nav.home'), icon: MOBILE_TAB_ICONS.home, enabled: true },
+    { id: 'learnNav', label: t('mobile.tabLearnNav'), icon: MOBILE_TAB_ICONS.learnNav, enabled: can('industry') },
+    { id: 'knowledge', label: t('mobile.tabKnowledge'), icon: MOBILE_TAB_ICONS.knowledge, enabled: true },
+    { id: 'tools', label: t('mobile.tabTools'), icon: MOBILE_TAB_ICONS.tools, enabled: can('tools') },
+    { id: 'forum', label: t('mobile.tabForum'), icon: MOBILE_TAB_ICONS.forum, enabled: can('forum') },
+    { id: 'personal', label: t('mobile.tabPersonal'), icon: MOBILE_TAB_ICONS.personal, enabled: true },
+  ].filter((item) => item.enabled)
+}
+
 function renderMobileChrome(activePath) {
   const bottomEl = document.getElementById('mobile-bottom-nav')
   if (!bottomEl) return
@@ -1277,22 +1369,21 @@ function renderMobileChrome(activePath) {
 
   const { parts } = parseRoute()
   const tab = getMobileTab(parts)
-  const tabs = [
-    { id: 'home', href: '#/', label: t('nav.home'), icon: MOBILE_TAB_ICONS.home },
-    { id: 'learn', href: '#/m/learn', label: t('nav.sectionLearning'), icon: MOBILE_TAB_ICONS.learn },
-    { id: 'knowledge', href: '#/m/knowledge', label: t('nav.sectionKnowledge'), icon: MOBILE_TAB_ICONS.knowledge },
-    { id: 'personal', href: '#/m/personal', label: t('nav.sectionPersonal'), icon: MOBILE_TAB_ICONS.personal },
-    { id: 'account', href: '#/m/account', label: t('mobile.accountTab'), icon: MOBILE_TAB_ICONS.account },
-  ]
+  const tabs = getMobileTabItems()
 
   bottomEl.innerHTML = `
-    <div class="mobile-tabbar" role="tablist">
-      ${tabs.map((item) => `
-                <a href="${item.href}" class="mobile-tab ${tab === item.id ? 'active' : ''}" role="tab" aria-selected="${tab === item.id}">
+    <div class="mobile-tabbar" role="tablist" style="--mobile-tab-count:${tabs.length}">
+      ${tabs
+        .map((item) => {
+          const href = getMobileTabHref(item.id)
+          const active = tab === item.id
+          return `
+                <a href="${href}" class="mobile-tab ${active ? 'active' : ''}" role="tab" aria-selected="${active}" data-tab="${item.id}" title="${escapeHtml(item.label)}">
           <span class="mobile-tab-icon" aria-hidden="true">${item.icon}</span>
-          <span class="mobile-tab-label">${escapeHtml(item.id === 'learn' ? t('mobile.tabLearn') : item.id === 'knowledge' ? t('mobile.tabKnowledge') : item.id === 'personal' ? t('mobile.tabPersonal') : item.label)}</span>
-        </a>
-      `).join('')}
+          <span class="mobile-tab-label">${escapeHtml(item.label)}</span>
+        </a>`
+        })
+        .join('')}
     </div>
   `
 }
@@ -1404,6 +1495,8 @@ function renderSidebar(activePath) {
     activePath.includes('/chapter/') ||
     activePath.includes('/article/') ||
     activePath.includes('/module/') ||
+    activePath === '/glossary' ||
+    activePath === '/mindmap' ||
     activePath.startsWith('/m/knowledge')
   const personalActive =
     activePath === '/personal' ||
@@ -1418,45 +1511,12 @@ function renderSidebar(activePath) {
   const personalOpen = isNavExpanded('personal', personalActive || true)
   const adminOpen = isNavExpanded('admin', adminActive || true)
 
-  const knowledgeTree = merged.map((cat) => {
-    if (!can(cat.id)) return ''
-    const docs = sidebarDocs[cat.id]
-    const catActive =
-      activePath.includes(`/category/${cat.id}`) ||
-      activePath.includes(`/doc/${cat.id}/`) ||
-      activePath.includes(`/chapter/${cat.id}/`) ||
-      activePath.includes(`/article/${cat.id}/`) ||
-      activePath.includes(`/module/${cat.id}/`)
-
-    if (docs?.length > 1) {
-      const branchId = `cat-${cat.id}`
-      const branchOpen = isNavExpanded(branchId, catActive)
-      return `<div class="nav-branch ${branchOpen ? 'is-open' : ''} ${catActive ? 'is-active' : ''}" data-nav-toggle="${branchId}">
-        <div class="nav-item nav-item-l2 nav-item-branch ${catActive ? 'active' : ''}" title="${escapeHtml(catTitle(cat))}">
-          <span class="nav-title">${escapeHtml(catTitle(cat))}</span>
-          ${navCaret(branchOpen)}
-        </div>
-        <div class="nav-sub">
-          ${docs
-            .map((d) => {
-              const href = `#/doc/${cat.id}/${d.id}`
-              const subActive =
-                activePath === `/doc/${cat.id}/${d.id}` ||
-                activePath.startsWith(`/doc/${cat.id}/${d.id}/`) ||
-                activePath.includes(`/chapter/${cat.id}/${d.id}/`)
-              return renderNavL2Link(href, d.title, subActive)
-            })
-            .join('')}
-        </div>
-      </div>`
-    }
-
-    if (docs?.length === 1) {
-      return renderNavL2Link(`#/doc/${cat.id}/${docs[0].id}`, catTitle(cat), catActive)
-    }
-
-    return renderNavL2Link(`#/category/${cat.id}`, catTitle(cat), catActive)
-  }).join('')
+  const knowledgeTree = buildKnowledgeNavItems()
+    .map((item) => {
+      const active = isKnowledgeNavItemActive(activePath, item)
+      return renderNavL2Link(item.href, item.title, active)
+    })
+    .join('')
 
   const personalLinks = [
     can('favorites') && { href: '#/favorites', title: t('nav.favorites'), active: activePath === '/favorites' },
@@ -1496,9 +1556,9 @@ function renderSidebar(activePath) {
           ${navIcon('home')}
           <span class="nav-title">${escapeHtml(t('nav.home'))}</span>
         </a>
-        ${can('industry') ? `<a href="#/industry" class="nav-item nav-item-l1 ${activePath.includes('/industry') ? 'active' : ''}" title="${escapeHtml(t('nav.industry'))}">
+        ${can('industry') ? `<a href="#/industry" class="nav-item nav-item-l1 ${activePath.includes('/industry') ? 'active' : ''}" title="${escapeHtml(t('nav.sectionLearning'))}">
           ${navIcon('industry')}
-          <span class="nav-title">${escapeHtml(t('nav.industry'))}</span>
+          <span class="nav-title">${escapeHtml(t('nav.sectionLearning'))}</span>
         </a>` : ''}
         ${can('tools') ? `<a href="#/tools" class="nav-item nav-item-l1 ${activePath.includes('/tools') ? 'active' : ''}" title="${escapeHtml(t('nav.tools'))}">
           ${navIcon('tools')}
@@ -1569,45 +1629,37 @@ function renderHomeTile(tile) {
 
 function renderHome() {
   const stats = K.getKnowledgeStats?.() || { totalCount: 0 }
-  const caps = [
-    {
-      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M4 10h12M4 14.5h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-      href: '#/industry',
-      title: t('home.featIndustryTitle'),
-      desc: t('home.featIndustryDesc'),
-    },
-    {
-      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3.5" width="12" height="13" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7.5h6M7 10.5h6M7 13.5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-      href: '#/kb',
-      title: t('home.featKnowledgeTitle'),
-      desc: t('home.featKnowledgeDesc'),
-    },
-    {
-      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 14.5V8.2L10 4.5l5 3.7v6.3H5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.2 14.5v-3.2h3.6v3.2" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
-      href: '#/tools',
-      title: t('home.featToolsTitle'),
-      desc: t('home.featToolsDesc'),
-    },
-    {
-      icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="8" r="2.2" stroke="currentColor" stroke-width="1.5"/><path d="M3.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7M9.8 14.5c.7-1.8 2-2.7 3.2-2.7s2.5.9 3.2 2.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-      href: '#/forum',
-      title: t('home.featForumTitle'),
-      desc: t('home.featForumDesc'),
-    },
-  ]
   const path = window.PDMIndustry?.getRecommendedPath?.()
   const cats = K.getMergedCategories()
   const total = stats.totalCount || cats.reduce((s, c) => s + c.items.length, 0)
+  const pathHref = path ? `#/industry/learning-path/${path.id}` : '#/industry/learning-path'
+  const pathProgress = path ? window.PDMStorage?.countPathProgress?.(path) : null
+
+  const sceneLinks = [
+    { label: t('home.sceneNewcomer'), href: '#/industry/learning-path/newcomer-8w' },
+    { label: t('home.sceneJob'), href: '#/industry/learning-path/job-hunt' },
+    { label: t('home.sceneIntern'), href: '#/industry/learning-path/intern' },
+    { label: t('home.sceneSwitch'), href: '#/industry/learning-path/career-switch' },
+  ]
+
+  const guideSteps = [
+    { num: '01', title: t('home.guideStep1Title'), desc: t('home.guideStep1Desc'), href: '#/industry/overview' },
+    { num: '02', title: t('home.guideStep2Title'), desc: t('home.guideStep2Desc'), href: pathHref },
+    { num: '03', title: t('home.guideStep3Title'), desc: t('home.guideStep3Desc'), href: '#/kb' },
+    { num: '04', title: t('home.guideStep4Title'), desc: t('home.guideStep4Desc'), href: '#/tools' },
+    { num: '05', title: t('home.guideStep5Title'), desc: t('home.guideStep5Desc'), href: '#/forum' },
+  ]
 
   return `
     <div class="page home-page home-codex">
       <section class="home-stage">
         <div class="home-stage-glow" aria-hidden="true"></div>
-        <p class="home-stage-kicker">${escapeHtml(t('nav.brandSubtitle'))}</p>
+        <p class="home-stage-kicker">${escapeHtml(t('home.audienceBadge'))}</p>
         <h1 class="home-stage-title">
           <span class="home-stage-brand">PM Lab</span>
         </h1>
         <p class="home-stage-line">${escapeHtml(t('home.heroTitle'))}</p>
+        <p class="home-stage-sub">${escapeHtml(t('home.heroSubtitle'))}</p>
 
         <div class="home-composer" id="home-composer" role="group" aria-label="${escapeHtml(t('home.composerLabel'))}">
           <span class="home-composer-prefix" aria-hidden="true">/</span>
@@ -1621,54 +1673,121 @@ function renderHome() {
           <div class="home-composer-results" id="home-composer-results" hidden></div>
         </div>
 
+        <nav class="home-scene-links" aria-label="${escapeHtml(t('home.sceneLinksLabel'))}">
+          ${sceneLinks
+            .map(
+              (s, i) =>
+                `${i ? '<span class="home-scene-sep" aria-hidden="true">|</span>' : ''}<a href="${s.href}" class="home-scene-link">${escapeHtml(s.label)}</a>`,
+            )
+            .join('')}
+        </nav>
+
+        <div class="home-stage-ctas">
+          <a href="#/glossary" class="btn-ghost">${escapeHtml(t('home.ctaKb'))}</a>
+          <a href="#/mindmap" class="btn-ghost">${escapeHtml(t('home.ctaMindmap'))}</a>
+        </div>
+
         <div class="home-stage-meta">
           <span>${escapeHtml(t('home.metaTopics', { n: total }))}</span>
           <span class="dot">·</span>
-          <a href="#/industry">${escapeHtml(t('home.ctaNewcomer'))}</a>
-          ${path ? `<span class="dot">·</span><a href="#/industry/learning-path/${path.id}">${escapeHtml(t('home.pathTeaserCta'))}</a>` : ''}
+          <button type="button" class="home-inline-link" id="home-open-guide">${escapeHtml(t('home.openGuide'))}</button>
         </div>
       </section>
 
-      <section class="home-section">
-        <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.sectionStart'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.sectionStartDesc'))}</p>
+      <section class="home-section home-quickstart-section">
+        <div class="home-quickstart">
+          <div class="home-quickstart-copy">
+            <p class="home-quickstart-kicker">${escapeHtml(t('home.primaryPathBadge'))}</p>
+            <h2>${escapeHtml(path?.title || t('home.primaryPathTitle'))}</h2>
+            <p>${escapeHtml(path?.cardDesc || t('home.primaryPathDesc'))}</p>
+            ${
+              pathProgress?.total
+                ? `<p class="home-quickstart-progress">${escapeHtml(
+                    t('home.pathProgress', { done: pathProgress.done, total: pathProgress.total }),
+                  )}</p>`
+                : ''
+            }
+          </div>
+          <div class="home-quickstart-actions">
+            <a href="${pathHref}" class="btn-primary">${escapeHtml(t('home.ctaQuickStart'))}</a>
+            <a href="#/industry/learning-path" class="btn-ghost">${escapeHtml(t('home.allPathsCta'))}</a>
+          </div>
         </div>
-        <ol class="home-flow">
-          <li>
-            <a href="#/industry" class="home-flow-item">
-              <span class="home-flow-num">01</span>
-              <span class="home-flow-title">${escapeHtml(t('home.step1Title'))}</span>
-              <span class="home-flow-desc">${escapeHtml(t('home.step1Desc'))}</span>
-            </a>
-          </li>
-          <li>
-            <a href="#/kb" class="home-flow-item">
-              <span class="home-flow-num">02</span>
-              <span class="home-flow-title">${escapeHtml(t('home.step2Title'))}</span>
-              <span class="home-flow-desc">${escapeHtml(t('home.step2Desc'))}</span>
-            </a>
-          </li>
-          <li>
-            <a href="#/tools" class="home-flow-item">
-              <span class="home-flow-num">03</span>
-              <span class="home-flow-title">${escapeHtml(t('home.step3Title'))}</span>
-              <span class="home-flow-desc">${escapeHtml(t('home.step3Desc'))}</span>
-            </a>
-          </li>
+      </section>
+
+      <section class="home-section" id="home-guide">
+        <div class="home-section-head">
+          <h2 class="home-section-title">${escapeHtml(t('home.guideTitle'))}</h2>
+          <p class="home-section-desc">${escapeHtml(t('home.guideDesc'))}</p>
+        </div>
+        <ol class="home-guide-steps">
+          ${guideSteps
+            .map(
+              (step) => `
+            <li>
+              <a href="${step.href}" class="home-guide-step">
+                <span class="home-guide-num">${step.num}</span>
+                <span class="home-guide-copy">
+                  <strong>${escapeHtml(step.title)}</strong>
+                  <span>${escapeHtml(step.desc)}</span>
+                </span>
+              </a>
+            </li>`,
+            )
+            .join('')}
         </ol>
       </section>
 
-      <section class="home-section home-caps-section home-section-last">
-        <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.sectionLearn'))}</h2>
+      <section class="home-section home-about-section home-section-last">
+        <div class="home-about-card">
+          <p class="home-about-eyebrow">${escapeHtml(t('home.aboutEyebrow'))}</p>
+          <h2>${escapeHtml(t('home.aboutTitle'))}</h2>
+          <p>${escapeHtml(t('home.aboutDesc'))}</p>
+          <p class="home-about-maintainer">
+            ${escapeHtml(t('home.aboutDeveloperPrefix'))}
+            <strong>${escapeHtml(t('home.aboutDeveloperName'))}</strong>,
+            ${escapeHtml(t('home.aboutContactLabel'))}
+            <a href="mailto:${escapeHtml(t('home.aboutContactEmail'))}" class="home-about-contact">${escapeHtml(t('home.aboutContactEmail'))}</a>
+          </p>
         </div>
-        <div class="home-cap-grid">${caps.map(renderHomeTile).join('')}</div>
       </section>
+
+      <div class="home-onboarding" id="home-onboarding" hidden>
+        <div class="home-onboarding-backdrop" id="home-onboarding-backdrop"></div>
+        <div class="home-onboarding-panel" role="dialog" aria-labelledby="home-onboarding-title">
+          <button type="button" class="home-onboarding-close" id="home-onboarding-close" aria-label="${escapeHtml(t('common.cancel'))}">×</button>
+          <p class="home-onboarding-kicker">${escapeHtml(t('home.onboardingKicker'))}</p>
+          <h2 id="home-onboarding-title">${escapeHtml(t('home.onboardingTitle'))}</h2>
+          <p>${escapeHtml(t('home.onboardingDesc'))}</p>
+          <ol class="home-onboarding-list">
+            ${guideSteps.map((step) => `<li><strong>${escapeHtml(step.title)}</strong><span>${escapeHtml(step.desc)}</span></li>`).join('')}
+          </ol>
+          <div class="home-onboarding-actions">
+            <a href="${pathHref}" class="btn-primary" id="home-onboarding-start">${escapeHtml(t('home.onboardingStart'))}</a>
+            <button type="button" class="btn-ghost" id="home-onboarding-dismiss">${escapeHtml(t('home.onboardingDismiss'))}</button>
+          </div>
+        </div>
+      </div>
     </div>`
 }
 
 let homeComposerDocBound = false
+const ONBOARDING_KEY = 'pm-lab-onboarding-done'
+
+function closeHomeOnboarding(persist = true) {
+  document.getElementById('home-onboarding')?.setAttribute('hidden', '')
+  if (persist) {
+    try { localStorage.setItem(ONBOARDING_KEY, '1') } catch (_) {}
+  }
+}
+
+function maybeOpenHomeOnboarding() {
+  try {
+    if (localStorage.getItem(ONBOARDING_KEY) === '1') return
+  } catch (_) {}
+  document.getElementById('home-onboarding')?.removeAttribute('hidden')
+}
+
 function bindHomeEvents() {
   const input = document.getElementById('home-composer-input')
   const go = document.getElementById('home-composer-go')
@@ -1745,6 +1864,15 @@ function bindHomeEvents() {
       }
     })
   }
+
+  document.getElementById('home-open-guide')?.addEventListener('click', () => {
+    document.getElementById('home-guide')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+  document.getElementById('home-onboarding-close')?.addEventListener('click', () => closeHomeOnboarding(true))
+  document.getElementById('home-onboarding-dismiss')?.addEventListener('click', () => closeHomeOnboarding(true))
+  document.getElementById('home-onboarding-backdrop')?.addEventListener('click', () => closeHomeOnboarding(true))
+  document.getElementById('home-onboarding-start')?.addEventListener('click', () => closeHomeOnboarding(true))
+  maybeOpenHomeOnboarding()
 }
 
 function renderCategory(categoryId) {
@@ -2065,6 +2193,10 @@ function renderArticle(categoryId, itemId) {
   }
   if (!cat || !item) return `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
   const catLabel = catTitle(cat)
+  const trail = window.PDMKnowledgeViews?.resolveArticleTrail?.(cat.id, item.id)
+  const topicLabel = trail?.doc
+    ? window.PDMKnowledgeViews?.kbDocLabel?.(cat.id, trail.doc.id)
+    : catLabel
   const parsed = window.PDMKnowledgeViews?.splitTitleParen?.(item.title) || { short: item.title, expansion: '' }
   const displayTitle = parsed.short || item.title
   const fullName = item.fullName || ''
@@ -2079,14 +2211,9 @@ function renderArticle(categoryId, itemId) {
   const summaryClean = String(item.summary || '').replace(/^定义[：:]\s*/, '').replace(/[（(][^）)]*[）)]/g, '').trim()
   return `
     <div class="page article-page ${isTermArticle ? 'term-article-page' : ''}">
-      <header class="page-header">
-        <a href="#/" class="breadcrumb">${escapeHtml(t('common.home'))}</a><span class="breadcrumb-sep">/</span>
-        <a href="#/category/${cat.id}" class="breadcrumb">${escapeHtml(catLabel)}</a><span class="breadcrumb-sep">/</span>
-        <span class="breadcrumb-current">${escapeHtml(displayTitle)}</span>
-      </header>
       <article class="article-content ${isTermArticle ? 'term-article' : ''}">
         <div class="article-meta">
-          <span class="article-category">${escapeHtml(catLabel)}</span>
+          <span class="article-category">${escapeHtml(topicLabel)}</span>
           ${item.isShared ? `<span class="shared-badge">${escapeHtml(t('article.sharedBadge'))}</span>` : ''}
           <div class="article-tags">${(item.tags || []).filter((tg) => tg !== displayTitle).map(tg => `<span class="tag">${escapeHtml(tg)}</span>`).join('')}</div>
           <button type="button" class="btn-favorite ${favorited ? 'active' : ''}" id="btn-favorite" data-source="public" data-cat="${cat.id}" data-item="${item.id}">
@@ -2698,12 +2825,65 @@ function bindMyKnowledgeViewEvents(itemId) {
 }
 
 function renderLoginRequired(message) {
+  return renderLoginGate({ title: t('auth.requiredTitle'), desc: message || t('auth.requiredDefault') })
+}
+
+function renderPersonalLoginGate() {
+  return renderLoginGate({
+    eyebrow: t('nav.sectionPersonal'),
+    title: t('auth.personalGateTitle'),
+    desc: t('auth.personalGateDesc'),
+    featuresTitle: t('auth.personalGateFeaturesTitle'),
+    features: [
+      { title: t('nav.favorites'), desc: t('auth.personalGateFav') },
+      { title: t('nav.articleNotes'), desc: t('auth.personalGateNotes') },
+      { title: t('nav.myKnowledge'), desc: t('auth.personalGateMyKb') },
+      { title: t('nav.reviews'), desc: t('auth.personalGateReviews') },
+      { title: t('nav.dailyLearn'), desc: t('auth.personalGateDaily') },
+      { title: t('nav.feedback'), desc: t('auth.personalGateFeedback') },
+    ],
+    footnote: t('auth.personalGateFootnote'),
+    ctaLabel: t('auth.personalGateCta'),
+  })
+}
+
+function renderLoginGate({ eyebrow, title, desc, features = [], featuresTitle, footnote, showGuestHint = true, ctaLabel }) {
+  const featureHtml = features.length
+    ? `<div class="login-gate-features-block">
+        ${featuresTitle ? `<p class="login-gate-features-title">${escapeHtml(featuresTitle)}</p>` : ''}
+        <ul class="login-gate-features">
+          ${features
+            .map((f) => {
+              if (typeof f === 'string') return `<li>${escapeHtml(f)}</li>`
+              return `<li><strong>${escapeHtml(f.title)}</strong><span>${escapeHtml(f.desc)}</span></li>`
+            })
+            .join('')}
+        </ul>
+      </div>`
+    : ''
   return `
-    <div class="page login-required-page">
-      <h1>${escapeHtml(t('auth.requiredTitle'))}</h1>
-      <p>${escapeHtml(message || t('auth.requiredDefault'))}</p>
-      <a href="#/login" class="btn-primary">${escapeHtml(t('auth.cta'))}</a>
+    <div class="page login-gate-page">
+      <div class="login-gate-card">
+        ${eyebrow ? `<p class="login-gate-eyebrow">${escapeHtml(eyebrow)}</p>` : ''}
+        <h1>${escapeHtml(title || t('auth.requiredTitle'))}</h1>
+        <p class="login-gate-desc">${escapeHtml(desc || t('auth.requiredDefault'))}</p>
+        ${featureHtml}
+        <div class="login-gate-actions">
+          <a href="#/login" class="btn-primary">${escapeHtml(ctaLabel || t('auth.cta'))}</a>
+        </div>
+        ${footnote ? `<p class="login-gate-footnote">${escapeHtml(footnote)}</p>` : ''}
+        ${showGuestHint ? `<p class="login-gate-note">${escapeHtml(t('auth.guestBrowseHint'))}</p>` : ''}
+      </div>
     </div>`
+}
+
+function scrollKbDocGroupAnchor() {
+  const { params } = parseRoute()
+  const group = params.get('group')
+  if (!group) return
+  requestAnimationFrame(() => {
+    document.getElementById(`group-${group}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 
 const AUTH_REMEMBER_KEY = 'pm-lab-auth-remember'
@@ -3726,6 +3906,8 @@ function render() {
     if (localStorage.getItem('pm-lab-sidebar-collapsed') == null) setSidebarCollapsed(true)
   }
 
+  rememberCurrentMobileTabRoute()
+
   renderLocaleSwitcher()
   renderTopAccount(path)
   renderSidebar(path)
@@ -3733,7 +3915,6 @@ function render() {
   renderTopbarCrumbs(buildCrumbsFromRoute(parts))
   bindLocaleEvents()
   bindTopAccountEvents()
-  bindTopbarSearch()
   bindMobileNavChrome()
   bindMobileViewportWatcher()
   bindSyncEvents()
@@ -3753,7 +3934,8 @@ function render() {
     bindHomeEvents()
     Analytics()?.track('page_view', { page: 'home' })
   } else if (parts[0] === 'm' && parts[1] === 'learn') {
-    main.innerHTML = renderMobileLearnHub()
+    navigate('/industry')
+    return
   } else if (parts[0] === 'm' && parts[1] === 'knowledge') {
     main.innerHTML = renderMobileKnowledgeHub()
   } else if (parts[0] === 'm' && parts[1] === 'personal') {
@@ -3833,6 +4015,9 @@ function render() {
   } else if (parts[0] === 'admin' && !parts[1]) {
     main.innerHTML = renderAdminHubPage()
     Analytics()?.track('page_view', { page: 'admin-hub' })
+  } else if (parts[0] === 'industry' && parts[1] && ['basics', 'sub-roles'].includes(parts[1]) && !parts[2]) {
+    navigate('/industry/overview')
+    return
   } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2] === 'path-overview') {
     navigate('/industry/learning-path')
     return
@@ -3840,6 +4025,7 @@ function render() {
     const path = window.PDMIndustry?.getLearningPath?.(parts[2])
     if (path) {
       main.innerHTML = Sections().renderLearningPathDetail(parts[2])
+      Sections().bindLearningPathDetail(parts[2])
       Analytics()?.track('page_view', { page: 'learning-path', id: parts[2] })
     } else {
       main.innerHTML = Sections().renderIndustryArticle(parts[1], parts[2])
@@ -3854,13 +4040,11 @@ function render() {
   } else if (parts[0] === 'industry') {
     main.innerHTML = Sections().renderIndustryHub()
     Analytics()?.track('page_view', { page: 'industry' })
-  } else if (parts[0] === 'tools' && parts[1]) {
-    main.innerHTML = Sections().renderToolsCategory(parts[1])
-    Analytics()?.track('page_view', { page: 'tools', id: parts[1] })
   } else if (parts[0] === 'tools') {
-    main.innerHTML = Sections().renderToolsHub()
-    Sections().bindToolsSearch()
-    Analytics()?.track('page_view', { page: 'tools' })
+    const catId = parts[1] || null
+    main.innerHTML = Sections().renderToolsHub(catId)
+    Sections().bindToolsHub(catId)
+    Analytics()?.track('page_view', { page: 'tools', id: catId || 'hub' })
   } else if (parts[0] === 'forum' && parts[1] === 'new') {
     if (!Auth().isLoggedIn()) main.innerHTML = renderLoginRequired(t('auth.requiredForum'))
     else if (!Perm().can('forum', 'edit')) main.innerHTML = renderPermissionDenied()
@@ -3886,6 +4070,7 @@ function render() {
     const html = window.PDMKnowledgeViews?.renderDoc?.(parts[1], docId)
     main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
     window.PDMKnowledgeViews?.bindModulePage?.()
+    scrollKbDocGroupAnchor()
     Analytics()?.track('page_view', { page: 'kb-doc', id: `${parts[1]}/${docId}` })
   } else if (parts[0] === 'chapter' && parts[1] && parts[2] && parts[3]) {
     const legacyDoc = {
@@ -3898,9 +4083,30 @@ function render() {
       navigate(`/chapter/${parts[1]}/${docId}/${parts[3]}`)
       return
     }
+    if (window.PDMKnowledgeViews?.isGroupedDoc?.(parts[1], docId)) {
+      navigate(`/doc/${parts[1]}/${docId}?group=${encodeURIComponent(parts[3])}`)
+      return
+    }
     const html = window.PDMKnowledgeViews?.renderChapter?.(parts[1], docId, decodeURIComponent(parts[3]))
     main.innerHTML = html || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
     Analytics()?.track('page_view', { page: 'kb-chapter', id: `${parts[1]}/${docId}/${parts[3]}` })
+  } else if (parts[0] === 'glossary') {
+    main.innerHTML = window.PDMKnowledgeViews?.renderGlossary?.() || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    window.PDMKnowledgeViews?.bindModulePage?.()
+    Analytics()?.track('page_view', { page: 'glossary' })
+  } else if (parts[0] === 'mindmap') {
+    main.innerHTML = window.PDMKnowledgeViews?.renderMindmap?.() || `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p></div>`
+    window.PDMKnowledgeViews?.bindModulePage?.()
+    Analytics()?.track('page_view', { page: 'mindmap' })
+  } else if (parts[0] === 'module' && parts[1] === 'reference' && parts[2] === 'path') {
+    navigate('/industry/learning-path/kb-4stage')
+    return
+  } else if (parts[0] === 'module' && parts[1] === 'reference' && parts[2] === 'glossary') {
+    navigate('/glossary')
+    return
+  } else if (parts[0] === 'module' && parts[1] === 'reference' && parts[2] === 'mindmap') {
+    navigate('/mindmap')
+    return
   } else if (parts[0] === 'module' && parts[1] === 'workflow' && parts[2] === 'retro') {
     navigate('/category/workflow')
     return
@@ -3913,6 +4119,12 @@ function render() {
       window.PDMKnowledgeViews?.bindModulePage?.()
       Analytics()?.track('page_view', { page: 'kb-module', id: `${parts[1]}/${parts[2]}` })
     }
+  } else if (parts[0] === 'category' && parts[1] && ['methodology', 'architecture'].includes(parts[1])) {
+    navigate('/kb')
+    return
+  } else if (parts[0] === 'category' && parts[1] === 'reference') {
+    navigate('/glossary')
+    return
   } else if (parts[0] === 'category' && parts[1]) {
     const catId = resolveKbCategoryId(parts[1])
     if (catId !== parts[1]) {
@@ -3934,12 +4146,18 @@ function render() {
     window.PDMKnowledgeViews?.bindModulePage?.()
     Analytics()?.track('page_view', { page: 'article', id: parts[2] })
   } else if (parts[0] === 'favorites') {
-    main.innerHTML = renderFavoritesPage()
-    Analytics()?.track('page_view', { page: 'favorites' })
+    if (!Auth().isLoggedIn()) main.innerHTML = renderPersonalLoginGate()
+    else {
+      main.innerHTML = renderFavoritesPage()
+      Analytics()?.track('page_view', { page: 'favorites' })
+    }
   } else if (parts[0] === 'notes') {
-    main.innerHTML = renderArticleNotesHub()
-    bindArticleNotesHubEvents()
-    Analytics()?.track('page_view', { page: 'notes' })
+    if (!Auth().isLoggedIn()) main.innerHTML = renderPersonalLoginGate()
+    else {
+      main.innerHTML = renderArticleNotesHub()
+      bindArticleNotesHubEvents()
+      Analytics()?.track('page_view', { page: 'notes' })
+    }
   } else if (parts[0] === 'my-knowledge' && parts[1] === 'view' && parts[2]) {
     if (!Auth().isLoggedIn()) main.innerHTML = renderLoginRequired(t('auth.requiredDefault'))
     else {
@@ -3979,15 +4197,18 @@ function render() {
     return
   } else if (parts[0] === 'daily-learn') {
     if (!Auth().isLoggedIn()) {
-      main.innerHTML = renderLoginRequired(t('auth.requiredDailyLearn'))
+      main.innerHTML = renderPersonalLoginGate()
     } else {
       main.innerHTML = renderDailyLearnPage()
       bindDailyLearnEvents()
       Analytics()?.track('page_view', { page: 'daily-learn' })
     }
   } else if (parts[0] === 'reviews' || parts[0] === 'memory') {
-    main.innerHTML = renderReviews()
-    bindReviewEvents()
+    if (!Auth().isLoggedIn()) main.innerHTML = renderPersonalLoginGate()
+    else {
+      main.innerHTML = renderReviews()
+      bindReviewEvents()
+    }
   } else {
     main.innerHTML = renderHome()
   }

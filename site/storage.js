@@ -9,6 +9,7 @@ const CUSTOM_KNOWLEDGE_KEY = 'pdm-learn-custom-knowledge'
 const FAVORITES_KEY = 'pdm-learn-favorites'
 const ARTICLE_NOTES_KEY = 'pdm-learn-article-notes'
 const KNOWLEDGE_GROUPS_KEY = 'pdm-learn-knowledge-groups'
+const PATH_PROGRESS_KEY = 'pdm-learn-path-progress'
 const DB_NAME = 'pdm-learn-db'
 const DB_VERSION = 1
 const STORE = 'kv'
@@ -20,6 +21,7 @@ let customKnowledgeCache = []
 let favoritesCache = []
 let articleNotesCache = []
 let knowledgeGroupsCache = []
+let pathProgressCache = {}
 let pushSettingsCache = { enabled: false, time: '09:00', count: 3, categories: [], lastPushDate: null, lastPushItems: [], pushHistory: [] }
 let ready = false
 let initPromise = null
@@ -103,6 +105,7 @@ async function persistAll() {
   await idbSet(db, FAVORITES_KEY, favoritesCache)
   await idbSet(db, ARTICLE_NOTES_KEY, articleNotesCache)
   await idbSet(db, KNOWLEDGE_GROUPS_KEY, knowledgeGroupsCache)
+  await idbSet(db, PATH_PROGRESS_KEY, pathProgressCache)
   await idbSet(db, 'pdm-learn-push-settings', pushSettingsCache)
   db.close()
 
@@ -113,6 +116,7 @@ async function persistAll() {
     writeLocal(FAVORITES_KEY, favoritesCache) &&
     writeLocal(ARTICLE_NOTES_KEY, articleNotesCache) &&
     writeLocal(KNOWLEDGE_GROUPS_KEY, knowledgeGroupsCache) &&
+    writeLocal(PATH_PROGRESS_KEY, pathProgressCache) &&
     writeLocal('pdm-learn-push-settings', pushSettingsCache)
 
   if (cloudPushFn) {
@@ -212,6 +216,7 @@ async function initStorage() {
     const idbFav = await idbGet(db, FAVORITES_KEY)
     const idbNotes = await idbGet(db, ARTICLE_NOTES_KEY)
     const idbGroups = await idbGet(db, KNOWLEDGE_GROUPS_KEY)
+    const idbPathProgress = await idbGet(db, PATH_PROGRESS_KEY)
     const idbPush = await idbGet(db, 'pdm-learn-push-settings')
     db.close()
 
@@ -221,6 +226,7 @@ async function initStorage() {
     const localFav = readLocal(FAVORITES_KEY)
     const localNotes = readLocal(ARTICLE_NOTES_KEY)
     const localGroups = readLocal(KNOWLEDGE_GROUPS_KEY)
+    const localPathProgress = readLocal(PATH_PROGRESS_KEY)
     const localPush = readLocal('pdm-learn-push-settings')
 
     memoryCache = pickNewer(idbMemories, localMemories)
@@ -235,6 +241,12 @@ async function initStorage() {
       Array.isArray(localNotes) ? localNotes : [],
     )
     knowledgeGroupsCache = pickNewer(idbGroups, localGroups)
+    pathProgressCache =
+      idbPathProgress && typeof idbPathProgress === 'object' && !Array.isArray(idbPathProgress)
+        ? idbPathProgress
+        : localPathProgress && typeof localPathProgress === 'object' && !Array.isArray(localPathProgress)
+          ? localPathProgress
+          : {}
     if (idbPush || localPush) {
       pushSettingsCache = { ...pushSettingsCache, ...(idbPush || localPush) }
     }
@@ -488,6 +500,47 @@ async function importBackup(file, mode = 'merge') {
   }
 }
 
+function pathTaskKey(phaseIdx, taskIdx) {
+  return `${phaseIdx}:${taskIdx}`
+}
+
+function loadPathProgress(pathId) {
+  if (!pathId) return {}
+  return pathProgressCache[pathId] || {}
+}
+
+async function savePathProgress(pathId, progress) {
+  if (!pathId) return
+  pathProgressCache = { ...pathProgressCache, [pathId]: progress || {} }
+  await persistAll()
+}
+
+function isPathTaskDone(pathId, phaseIdx, taskIdx) {
+  return Boolean(loadPathProgress(pathId)[pathTaskKey(phaseIdx, taskIdx)])
+}
+
+async function togglePathTask(pathId, phaseIdx, taskIdx) {
+  const progress = { ...loadPathProgress(pathId) }
+  const key = pathTaskKey(phaseIdx, taskIdx)
+  progress[key] = !progress[key]
+  await savePathProgress(pathId, progress)
+  return progress[key]
+}
+
+function countPathProgress(path) {
+  if (!path?.phases) return { done: 0, total: 0 }
+  const progress = loadPathProgress(path.id)
+  let done = 0
+  let total = 0
+  path.phases.forEach((ph, pi) => {
+    ;(ph.tasks || []).forEach((_, ti) => {
+      total += 1
+      if (progress[pathTaskKey(pi, ti)]) done += 1
+    })
+  })
+  return { done, total }
+}
+
 // 挂载到全局，供 app.js 使用
 window.PDMStorage = {
   initStorage,
@@ -518,6 +571,11 @@ window.PDMStorage = {
   mergeFromCloudPayload,
   getSyncPayload,
   setCloudPush,
+  loadPathProgress,
+  savePathProgress,
+  isPathTaskDone,
+  togglePathTask,
+  countPathProgress,
   isReady: () => ready,
 }
 })()

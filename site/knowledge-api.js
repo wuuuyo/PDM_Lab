@@ -124,10 +124,8 @@ function getMergedCategories() {
 
   })
 
-  // 快速参考置顶，其余保持原有顺序
-  const ref = list.find((c) => c.id === 'reference')
-  if (!ref) return list
-  return [ref, ...list.filter((c) => c.id !== 'reference')]
+  // 保持类目原有顺序（快速参考已从知识库导航移除）
+  return list
 
 }
 
@@ -228,61 +226,66 @@ function normalizeSearchText(text) {
     .trim()
 }
 
-/** 子序列模糊：needle 字符按序出现在 haystack 中 */
-function isSubsequenceMatch(haystack, needle) {
-  if (!needle) return true
-  if (!haystack) return false
-  let i = 0
-  for (let j = 0; j < haystack.length && i < needle.length; j++) {
-    if (haystack[j] === needle[i]) i++
-  }
-  return i === needle.length
-}
-
 /**
- * 模糊得分：越大越相关。0 = 不匹配。
- * 支持整句包含、分词（空格）全命中、子序列弱匹配。
+ * 精确子串得分：越大越相关。0 = 不匹配。
+ * 仅支持整句/分词子串命中，不做字符子序列模糊（避免随便输入都命中）。
  */
 function fuzzyMatchScore(text, query) {
   const hay = normalizeSearchText(text)
   const q = normalizeSearchText(query)
   if (!q || !hay) return 0
   if (hay === q) return 1000
-  if (hay.includes(q)) return 800 - Math.min(200, hay.indexOf(q))
+  if (hay.startsWith(q)) return 900
+  if (hay.includes(q)) return 750 - Math.min(150, hay.indexOf(q))
 
   const tokens = q.split(' ').filter(Boolean)
   if (tokens.length > 1) {
-    if (tokens.every((tok) => hay.includes(tok) || isSubsequenceMatch(hay, tok))) {
-      let score = 500
-      for (const tok of tokens) {
-        if (hay.includes(tok)) score += 40
-        else score += 10
-      }
-      return score
+    // 多词：每个词都必须是连续子串
+    if (tokens.every((tok) => hay.includes(tok))) {
+      return 520 + tokens.length * 30
     }
-    return 0
-  }
-
-  if (isSubsequenceMatch(hay, q) && q.length >= 2) {
-    return 120 + Math.min(80, q.length * 4)
   }
   return 0
 }
 
 function scoreKnowledgeItem(item, query, extraFields = []) {
-  const packs = [
-    [item.title, 3],
-    [item.summary, 2],
-    [(item.tags || []).join(' '), 2],
-    [(item.content || []).join('\n'), 1],
-    [(item.cases || []).join('\n'), 1],
-    [(item.pmApplication || []).join('\n'), 1],
-    ...extraFields.map((f) => [f, 1]),
-  ]
+  const q = normalizeSearchText(query)
+  if (!q) return 0
+
+  // 极短查询（1 字）：只打标题 / 标签，避免正文误匹配
+  const short = q.length <= 1
+  const packs = short
+    ? [
+        [item.title, 4],
+        [(item.tags || []).join(' '), 3],
+      ]
+    : [
+        [item.title, 4],
+        [item.summary, 2],
+        [(item.tags || []).join(' '), 3],
+        // 正文权重更低，且仅当查询足够长时才参与
+        ...(q.length >= 2
+          ? [
+              [(item.content || []).join('\n'), 0.6],
+              [(item.cases || []).join('\n'), 0.5],
+              [(item.pmApplication || []).join('\n'), 0.5],
+            ]
+          : []),
+        ...extraFields.map((f) => [f, 1]),
+      ]
+
   let best = 0
   for (const [text, weight] of packs) {
     const s = fuzzyMatchScore(text, query) * weight
     if (s > best) best = s
+  }
+
+  // 仅靠正文弱命中时提高门槛，减少「随便输入都有结果」
+  const titleHit = fuzzyMatchScore(item.title, query) > 0
+  const tagHit = fuzzyMatchScore((item.tags || []).join(' '), query) > 0
+  const summaryHit = !short && fuzzyMatchScore(item.summary, query) > 0
+  if (!titleHit && !tagHit && !summaryHit) {
+    if (best < 450) return 0
   }
   return best
 }

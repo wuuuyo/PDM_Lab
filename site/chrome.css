@@ -1249,65 +1249,49 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     overflow: hidden;
   }
 
+  html.mobile-chrome .topbar-left,
+  html.mobile-chrome .topbar-menu-btn,
+  html.mobile-chrome .topbar-crumbs,
+  html.mobile-chrome .topbar-center,
+  html.mobile-chrome .topbar-locale,
+  .topbar-left,
+  .topbar-menu-btn,
+  .topbar-crumbs,
+  .topbar-center {
+    display: none !important;
+  }
+
+  html.mobile-chrome .topbar-primary,
+  .topbar-primary {
+    justify-content: space-between;
+  }
+
   html.mobile-chrome .topbar-brand,
   .topbar-brand {
     display: inline-flex !important;
     flex: 0 0 auto;
-    max-width: 28%;
+    max-width: calc(100% - 52px);
     min-width: 0;
     overflow: hidden;
   }
 
-  html.mobile-chrome .topbar-brand-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  html.mobile-chrome .topbar-left,
-  html.mobile-chrome .topbar-menu-btn,
-  html.mobile-chrome .topbar-crumbs,
   html.mobile-chrome .topbar-right,
-  .topbar-left,
-  .topbar-menu-btn,
-  .topbar-crumbs,
   .topbar-right {
-    display: none !important;
+    display: flex !important;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
-  html.mobile-chrome .topbar-center,
-  .topbar-center {
-    flex: 1 1 auto !important;
-    max-width: none !important;
-    width: auto !important;
-    min-width: 0 !important;
-    overflow: hidden;
+  html.mobile-chrome .topbar-account-icon-only,
+  .topbar-account-icon-only {
+    width: 36px !important;
+    height: 36px !important;
   }
 
-  html.mobile-chrome .topbar-search,
-  .topbar-search {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  html.mobile-chrome .topbar-search input,
-  .topbar-search input {
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  html.mobile-chrome .topbar-search-results,
-  .topbar-search-results {
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: none;
-    box-sizing: border-box;
+  html.mobile-chrome .topbar-account.active,
+  .topbar-account.active {
+    box-shadow: 0 0 0 2px rgba(45, 90, 74, 0.25);
   }
 
   .sidebar,
@@ -1344,7 +1328,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
 
   .mobile-tabbar {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--mobile-tab-count, 6), minmax(0, 1fr));
     gap: 0;
     width: 100%;
   }
@@ -1380,6 +1364,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 0.58rem;
   }
 
   .mobile-page-head {

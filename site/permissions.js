@@ -25,7 +25,7 @@
         { id: 'business', labelZh: '业务管理', labelEn: 'Business', actions: ['view'] },
         { id: 'security', labelZh: '权限安全', labelEn: 'Security', actions: ['view'] },
         { id: 'workflow', labelZh: '工作流程', labelEn: 'Workflow', actions: ['view'] },
-        { id: 'reference', labelZh: '快速参考', labelEn: 'Quick Ref', actions: ['view'] },
+        { id: 'reference', labelZh: '速查知识库', labelEn: 'Keyword lookup', actions: ['view'] },
       ],
     },
     {
