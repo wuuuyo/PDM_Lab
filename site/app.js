@@ -2370,9 +2370,40 @@ function renderKnowledgeMultiline(text) {
   return '<div class="article-long-card article-preline">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>'
 }
 
+function renderKnowledgeFieldRow(text) {
+  const value = normalizeKnowledgeText(text)
+  if (!value.includes(' · ') || !value.includes('=')) return ''
+  const parts = value.split(/\s+·\s+/).map((part) => part.trim()).filter(Boolean)
+  if (parts.length < 2) return ''
+  const title = parts.shift()
+  if (!title || title.includes('=')) return ''
+  const fields = parts
+    .map((part) => {
+      const index = part.indexOf('=')
+      if (index <= 0) return null
+      const label = part.slice(0, index).trim()
+      const body = part.slice(index + 1).trim()
+      if (!label || !body) return null
+      return { label, body }
+    })
+    .filter(Boolean)
+  if (!fields.length) return ''
+  return '<section class="article-field-row">' +
+    '<h3>' + escapeHtml(title) + '</h3>' +
+    '<dl>' + fields.map((field) =>
+      '<div>' +
+        '<dt>' + escapeHtml(field.label) + '</dt>' +
+        '<dd>' + escapeHtml(field.body) + '</dd>' +
+      '</div>',
+    ).join('') + '</dl>' +
+  '</section>'
+}
+
 function renderKnowledgeParagraphs(lines) {
   return (lines || []).map((p, index) => {
     const text = normalizeKnowledgeText(p)
+    const fieldRow = renderKnowledgeFieldRow(text)
+    if (fieldRow) return fieldRow
     const labeled = splitKnowledgeLabel(text)
     if (labeled) {
       return '<section class="article-insight-card">' +
