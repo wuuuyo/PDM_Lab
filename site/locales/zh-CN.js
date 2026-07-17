@@ -408,6 +408,7 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     favoriteAdded: '★ 已收藏',
     favToastAdd: '已加入收藏',
     favToastRemove: '已取消收藏',
+    favLoginRequired: '请先登录后再收藏',
     formatExplain: '解释',
     formatCase: '案例',
     formatPm: 'PM 应用',

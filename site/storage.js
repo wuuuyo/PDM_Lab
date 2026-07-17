@@ -322,6 +322,7 @@ function isFavorited(ref) {
 }
 
 async function toggleFavorite(ref) {
+  if (!window.PDMAuth?.isLoggedIn?.()) return favoritesCache
   await initStorage()
   const key = favoriteKey(ref)
   const exists = favoritesCache.find((f) => favoriteKey(f) === key)

@@ -2289,6 +2289,11 @@ function renderArticle(categoryId, itemId) {
 
 function bindFavoriteButton() {
   document.getElementById('btn-favorite')?.addEventListener('click', async () => {
+    if (!Auth().isLoggedIn()) {
+      showToast(t('article.favLoginRequired'), 'info')
+      navigate('/login')
+      return
+    }
     const btn = document.getElementById('btn-favorite')
     const ref = btn.dataset.source === 'my'
       ? { source: 'my', itemId: btn.dataset.item }

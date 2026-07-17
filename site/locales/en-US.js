@@ -410,6 +410,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     favoriteAdded: '★ Saved',
     favToastAdd: 'Added to favorites',
     favToastRemove: 'Removed from favorites',
+    favLoginRequired: 'Please sign in to save favorites',
     formatExplain: 'Explain',
     formatCase: 'Cases',
     formatPm: 'PM apply',
