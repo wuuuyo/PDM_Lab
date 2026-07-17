@@ -64,6 +64,7 @@ function navigate(path) {
   const normalized = path.startsWith('#')
     ? path
     : `#${path.startsWith('/') ? path : `/${path}`}`
+  saveMobileScrollPosition()
   if (location.hash === normalized || (normalized === '#/' && (!location.hash || location.hash === '#'))) {
     render()
     return
@@ -192,14 +193,26 @@ function buildCrumbsFromRoute(parts) {
       }
       return c
     }
-    if (parts[1] === 'overview' || parts[1] === 'basics' || parts[1] === 'sub-roles') {
+    if (parts[1] === 'basics' || parts[1] === 'sub-roles') {
+      const sectionLabel =
+        parts[1] === 'basics'
+          ? iu('sectionBasics', '基础认知')
+          : iu('sectionRoles', '细分岗位')
+      c.push({ href: `#/industry/${parts[1]}`, label: sectionLabel })
+      if (parts[2] && industry?.getItem) {
+        const item = industry.getItem(parts[1], parts[2])
+        c.push({ label: item?.title || parts[2] })
+      }
+      return c
+    }
+    if (parts[1] === 'overview') {
       const overviewLabel = iu('sectionOverview', '行业概览')
       if (parts[1] === 'overview' && !parts[2]) {
         c.push({ label: overviewLabel })
         return c
       }
-      const secId = parts[1] === 'overview' ? parts[2] : parts[1]
-      const itemId = parts[1] === 'overview' ? parts[3] : parts[2]
+      const secId = parts[2]
+      const itemId = parts[3]
       c.push({ href: '#/industry/overview', label: overviewLabel })
       if (secId && itemId && industry?.getItem) {
         const item = industry.getItem(secId, itemId)
@@ -264,6 +277,72 @@ function buildCrumbsFromRoute(parts) {
 }
 
 let topbarSearchDocBound = false
+const mobileScrollPositions = new Map()
+let currentMobileScrollKey = location.hash || '#/'
+let mobileScrollButtonBound = false
+try {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+} catch (_) {}
+
+function routeScrollKey(hash = location.hash) {
+  return hash || '#/'
+}
+
+function mobileScrollStorageKey(key) {
+  return `pm-lab-mobile-scroll:${key}`
+}
+
+function saveMobileScrollPosition(key = currentMobileScrollKey) {
+  if (!isMobileViewport()) return
+  const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0)
+  mobileScrollPositions.set(key, y)
+  try {
+    sessionStorage.setItem(mobileScrollStorageKey(key), String(y))
+  } catch (_) {}
+}
+
+function restoreMobileScrollPosition() {
+  if (!isMobileViewport()) return
+  const key = routeScrollKey()
+  let y = mobileScrollPositions.get(key)
+  if (!Number.isFinite(y)) {
+    try {
+      const stored = Number(sessionStorage.getItem(mobileScrollStorageKey(key)))
+      if (Number.isFinite(stored)) y = stored
+    } catch (_) {}
+  }
+  const target = Number.isFinite(y) ? Math.max(0, y) : 0
+  const apply = () => {
+    window.scrollTo({ top: target, behavior: 'auto' })
+    currentMobileScrollKey = key
+    syncMobileScrollTopButton()
+  }
+  requestAnimationFrame(() => requestAnimationFrame(apply))
+  window.setTimeout(apply, 120)
+}
+
+function syncMobileScrollTopButton() {
+  const btn = document.getElementById('mobile-scroll-top')
+  if (!btn) return
+  const y = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0
+  const show = isMobileViewport() && y > 180
+  btn.classList.toggle('visible', show)
+}
+
+function bindMobileScrollTopButton() {
+  const btn = document.getElementById('mobile-scroll-top')
+  if (!btn || mobileScrollButtonBound) return
+  mobileScrollButtonBound = true
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const key = routeScrollKey()
+    mobileScrollPositions.set(key, 0)
+    try { sessionStorage.setItem(mobileScrollStorageKey(key), '0') } catch (_) {}
+  })
+  window.addEventListener('scroll', syncMobileScrollTopButton, { passive: true })
+  window.addEventListener('resize', syncMobileScrollTopButton)
+}
+
 /** 全站检索：知识库 / 行业认知 / 学习路径 / 工具 / 站点页面 */
 function searchSiteContent(query, limit = 10) {
   const q = String(query || '').trim()
@@ -344,7 +423,7 @@ function searchSiteContent(query, limit = 10) {
     { title: t('nav.dailyLearn'), meta: t('nav.sectionPersonal'), href: '#/daily-learn', keys: ['每日学习', 'daily'] },
     { title: t('nav.favorites'), meta: t('nav.sectionPersonal'), href: '#/favorites', keys: ['收藏', 'favorites'] },
     { title: t('nav.reviews'), meta: t('nav.sectionPersonal'), href: '#/reviews', keys: ['复盘', 'reviews'] },
-    { title: t('kbMod.refPathTitle', null, '4 阶段学习路径'), meta: t('nav.sectionLearning'), href: '#/industry/learning-path/kb-4stage', keys: ['学习路径', '4阶段'] },
+    { title: t('home.primaryPathTitle', null, '学习主线'), meta: t('nav.sectionLearning'), href: '#/industry/learning-path/kb-4stage', keys: ['学习主线', '主线', '4阶段'] },
   ]
   for (const p of pages) {
     const title = String(p.title || '').toLowerCase()
@@ -372,6 +451,46 @@ function searchSiteContent(query, limit = 10) {
     guard += 1
   }
   return out
+}
+
+function searchKnowledgeOnly(query, limit = 12) {
+  const q = String(query || '').trim()
+  if (!q || /^[a-z0-9]$/i.test(q)) return []
+  const normalizedQuery = q.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '')
+  const strictAcronym = /^[a-z0-9]{2}$/i.test(q)
+  const results = []
+  const seen = new Set()
+  for (const { category, item, source, score } of K.searchKnowledgeMerged(q)) {
+    if (source !== 'my' && (item.sourceId === 'keyword-index' || item.kind === 'keyword-index')) continue
+    if (strictAcronym) {
+      const rawTitleTags = `${item.title || ''} ${(item.tags || []).join(' ')}`.toLowerCase()
+      const titleTagHay = rawTitleTags.replace(/[^a-z0-9\u4e00-\u9fff]+/g, '')
+      const acronymHit =
+        rawTitleTags.startsWith(normalizedQuery) ||
+        new RegExp(`(^|[^a-z0-9])${normalizedQuery}([^a-z0-9]|$)`, 'i').test(rawTitleTags)
+      if (!acronymHit && !titleTagHay.startsWith(normalizedQuery) && (score || 0) < 3600) continue
+    }
+    const href =
+      source === 'my'
+        ? `#/my-knowledge/view/${item.id}`
+        : `#/article/${category.id}/${encodeURIComponent(item.id)}`
+    const key = `${href}:${item.title}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    const catLabel = source === 'my'
+      ? category.title
+      : t(`categories.${category.id}.title`, null, category.title)
+    results.push({
+      title: item.title,
+      desc: item.summary || item.section || '',
+      meta: `${catLabel}${source === 'my' ? t('nav.searchSourceMy') : ''}`,
+      href,
+      score: score || 0,
+      categoryId: category.id,
+      itemId: item.id,
+    })
+  }
+  return results.sort((a, b) => b.score - a.score).slice(0, limit)
 }
 
 function bindTopbarSearch() {
@@ -456,12 +575,13 @@ function renderTopAccount(activePath) {
   const el = document.getElementById('topbar-account')
   if (!el) return
 
-  const mobile = isMobileViewport()
-  const guestHref = mobile ? '#/m/account' : '#/login'
-  const guestActive =
+  const menuActive =
     activePath === '/login' ||
+    activePath === '/feedback' ||
     activePath === '/m/account' ||
-    activePath === '/account'
+    activePath === '/account' ||
+    activePath === '/reset-password' ||
+    activePath.startsWith('/admin')
 
   if (Auth().isLoggedIn()) {
     const session = Auth().getSession()
@@ -469,25 +589,20 @@ function renderTopAccount(activePath) {
     const email = session?.user?.email || ''
     const displayName = profile?.display_name?.trim()
     const initials = getUserInitials(email, displayName)
-    // 移动端：点头像进账号页；桌面端保留下拉菜单
-    if (mobile) {
-      el.innerHTML = `
-    <a href="#/m/account" class="topbar-account topbar-account-logged-in topbar-account-icon-only ${guestActive ? 'active' : ''}" title="${escapeHtml(email || t('mobile.accountTitle'))}" aria-label="${escapeHtml(t('nav.accountMenuAria'))}">
-      <span class="topbar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
-    </a>`
-      return
-    }
     el.innerHTML = `
-    <div class="topbar-account topbar-account-logged-in">
+    <div class="topbar-account topbar-account-logged-in ${menuActive ? 'active' : ''}">
       <button type="button" class="topbar-account-trigger topbar-account-icon-only" id="topbar-account-menu-btn" aria-label="${escapeHtml(t('nav.accountMenuAria'))}" title="${escapeHtml(email)}">
         <span class="topbar-account-avatar" aria-hidden="true">${escapeHtml(initials)}</span>
       </button>
       <div class="topbar-account-menu" id="topbar-account-menu" hidden>
-        <div class="topbar-account-menu-email">${escapeHtml(displayName || email)}</div>
+        <div class="topbar-account-menu-profile">
+          <strong>${escapeHtml(displayName || t('account.profileLink'))}</strong>
+          <span>${escapeHtml(email)}</span>
+        </div>
         <a href="#/account" class="topbar-account-menu-item">${escapeHtml(t('account.profileLink'))}</a>
-        <a href="#/daily-learn" class="topbar-account-menu-item">${escapeHtml(t('nav.dailyLearnSettings'))}</a>
-        ${Auth().isAdmin() ? `<a href="#/admin" class="topbar-account-menu-item">${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
+        <a href="#/reset-password" class="topbar-account-menu-item">${escapeHtml(t('auth.resetTitle'))}</a>
         <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
+        ${Auth().isSuperAdmin?.() ? `<a href="#/admin" class="topbar-account-menu-item">${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
         <button type="button" class="topbar-account-menu-item topbar-account-menu-danger" id="topbar-logout">${escapeHtml(t('nav.logout'))}</button>
       </div>
     </div>`
@@ -495,11 +610,17 @@ function renderTopAccount(activePath) {
   }
 
   el.innerHTML = `
-    <a href="${guestHref}" class="topbar-account topbar-account-guest topbar-account-icon-only ${guestActive ? 'active' : ''}" title="${escapeHtml(t('nav.loginRegister'))}" aria-label="${escapeHtml(t('nav.loginRegister'))}">
-      <span class="topbar-account-avatar topbar-account-avatar-guest" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c.8-2.2 2.4-3.3 4.5-3.3s3.7 1.1 4.5 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </span>
-    </a>`
+    <div class="topbar-account topbar-account-guest ${menuActive ? 'active' : ''}">
+      <button type="button" class="topbar-account-trigger topbar-account-icon-only" id="topbar-account-menu-btn" aria-label="${escapeHtml(t('nav.accountMenuAria'))}" title="${escapeHtml(t('nav.loginRegister'))}">
+        <span class="topbar-account-avatar topbar-account-avatar-guest" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c.8-2.2 2.4-3.3 4.5-3.3s3.7 1.1 4.5 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </span>
+      </button>
+      <div class="topbar-account-menu" id="topbar-account-menu" hidden>
+        <a href="#/login" class="topbar-account-menu-item">${escapeHtml(t('nav.loginRegister'))}</a>
+        <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
+      </div>
+    </div>`
 }
 
 function renderLocaleSwitcher() {
@@ -510,6 +631,73 @@ function renderLocaleSwitcher() {
   const next = current === 'en-US' ? 'zh-CN' : 'en-US'
   el.innerHTML = `
     <button type="button" class="locale-toggle" data-locale="${next}" aria-label="${escapeHtml(t('locale.label'))}" title="${escapeHtml(t('locale.label'))}">${label}</button>`
+}
+
+function renderTopbarHelp() {
+  const btn = document.getElementById('topbar-help-btn')
+  if (!btn) return
+  const label = t('home.openGuide')
+  btn.setAttribute('aria-label', label)
+  btn.setAttribute('title', label)
+}
+
+function notificationTypeLabel(type) {
+  if (type === 'progress') return t('notifications.typeProgress', null, '进度')
+  if (type === 'daily') return t('notifications.typeDaily', null, '学习')
+  if (type === 'forum') return t('notifications.typeForum', null, '回复')
+  return t('notifications.typeSystem', null, '系统')
+}
+
+function formatNotificationTime(value) {
+  const ts = value ? new Date(value).getTime() : 0
+  if (!ts) return ''
+  const diff = Math.max(0, Date.now() - ts)
+  const minute = 60 * 1000
+  const hour = 60 * minute
+  const day = 24 * hour
+  if (diff < minute) return t('notifications.justNow', null, '刚刚')
+  if (diff < hour) return t('notifications.minutesAgo', { count: Math.floor(diff / minute) }, `${Math.floor(diff / minute)} 分钟前`)
+  if (diff < day) return t('notifications.hoursAgo', { count: Math.floor(diff / hour) }, `${Math.floor(diff / hour)} 小时前`)
+  return new Date(value).toLocaleDateString()
+}
+
+function renderTopbarNotifications() {
+  const el = document.getElementById('topbar-notifications')
+  const api = window.PDMNotifications
+  if (!el || !api) return
+  const items = api.list().slice(0, 8)
+  const unread = api.unreadCount()
+  el.innerHTML = `
+    <div class="topbar-notification">
+      <button type="button" class="topbar-notification-trigger" id="topbar-notification-btn" aria-label="${escapeHtml(t('notifications.title', null, '通知'))}" title="${escapeHtml(t('notifications.title', null, '通知'))}">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M13.2 7.2a4.2 4.2 0 1 0-8.4 0c0 4.8-1.8 5.4-1.8 5.4h12s-1.8-.6-1.8-5.4Z" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10.2 15a1.35 1.35 0 0 1-2.4 0" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>
+        </svg>
+        ${unread ? `<span class="topbar-notification-badge">${unread > 9 ? '9+' : unread}</span>` : ''}
+      </button>
+      <div class="topbar-notification-menu" id="topbar-notification-menu" hidden>
+        <div class="topbar-notification-head">
+          <strong>${escapeHtml(t('notifications.title', null, '通知'))}</strong>
+          <div>
+            <button type="button" id="notification-mark-all">${escapeHtml(t('notifications.markAllRead', null, '全部已读'))}</button>
+            <button type="button" id="notification-clear-all">${escapeHtml(t('notifications.clearAll', null, '清空'))}</button>
+          </div>
+        </div>
+        <div class="topbar-notification-list">
+          ${items.length ? items.map((item) => `
+            <a href="${escapeHtml(item.href || '#/')}" class="topbar-notification-item ${item.readAt ? '' : 'is-unread'}" data-notification-id="${escapeHtml(item.id)}">
+              <span class="topbar-notification-kind">${escapeHtml(notificationTypeLabel(item.type))}</span>
+              <span class="topbar-notification-copy">
+                <strong>${escapeHtml(item.title)}</strong>
+                ${item.body ? `<small>${escapeHtml(item.body)}</small>` : ''}
+                <time>${escapeHtml(formatNotificationTime(item.createdAt))}</time>
+              </span>
+            </a>`).join('') : `
+            <div class="topbar-notification-empty">${escapeHtml(t('notifications.empty', null, '暂无通知'))}</div>`}
+        </div>
+      </div>
+    </div>`
 }
 
 function renderForbidden() {
@@ -567,27 +755,22 @@ function renderFeedbackPage(mine = []) {
         <h1>${escapeHtml(t('feedback.title'))}</h1>
         <p>${escapeHtml(t('feedback.desc'))}</p>
       </header>
-      ${!Auth().isLoggedIn() ? `
-        <div class="login-required-page" style="padding-top:24px">
-          <p>${escapeHtml(t('feedback.requiredLogin'))}</p>
-          <a href="#/login" class="btn-primary">${escapeHtml(t('auth.cta'))}</a>
+      <form id="feedback-form" class="form-card feedback-form">
+        <div class="form-group">
+          <label>${escapeHtml(t('feedback.ratingLabel'))}</label>
+          <p class="form-hint">${escapeHtml(t('feedback.ratingHint'))}</p>
+          ${renderStars(0, true, 0)}
+          <input type="hidden" id="feedback-rating" value="" />
         </div>
-      ` : `
-        <form id="feedback-form" class="form-card feedback-form">
-          <div class="form-group">
-            <label>${escapeHtml(t('feedback.ratingLabel'))}</label>
-            <p class="form-hint">${escapeHtml(t('feedback.ratingHint'))}</p>
-            ${renderStars(0, true, 0)}
-            <input type="hidden" id="feedback-rating" value="" />
-          </div>
-          <div class="form-group">
-            <label for="feedback-content">${escapeHtml(t('feedback.contentLabel'))}</label>
-            <textarea id="feedback-content" rows="5" placeholder="${escapeHtml(t('feedback.contentPlaceholder'))}" required></textarea>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" id="feedback-submit">${escapeHtml(t('feedback.submit'))}</button>
-          </div>
-        </form>
+        <div class="form-group">
+          <label for="feedback-content">${escapeHtml(t('feedback.contentLabel'))}</label>
+          <textarea id="feedback-content" rows="5" placeholder="${escapeHtml(t('feedback.contentPlaceholder'))}" required></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="feedback-submit">${escapeHtml(t('feedback.submit'))}</button>
+        </div>
+      </form>
+      ${Auth().isLoggedIn() ? `
         <section class="section">
           <h2 class="section-title">${escapeHtml(t('feedback.myTitle'))}</h2>
           <div class="feedback-mine-list">
@@ -602,7 +785,7 @@ function renderFeedbackPage(mine = []) {
               </article>`).join('') : `<p class="empty-hint">${escapeHtml(t('feedback.emptyMine'))}</p>`}
           </div>
         </section>
-      `}
+      ` : ''}
     </div>`
 }
 
@@ -621,6 +804,10 @@ function bindFeedbackEvents() {
 
   document.getElementById('feedback-form')?.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (!Auth().isLoggedIn()) {
+      showToast(t('feedback.requiredLogin'), 'info')
+      return
+    }
     const content = document.getElementById('feedback-content')?.value || ''
     const r = Number(ratingInput?.value || rating || 0)
     try {
@@ -853,8 +1040,8 @@ function getMobileTab(parts) {
   if (p0 === 'tools') return 'tools'
   if (p0 === 'forum') return 'forum'
   if (p0 === 'category' || p0 === 'article' || p0 === 'module' || p0 === 'doc' || p0 === 'chapter' || p0 === 'kb' || p0 === 'glossary' || p0 === 'mindmap') return 'knowledge'
-  if (p0 === 'personal' || ['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn', 'feedback'].includes(p0)) return 'personal'
-  if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin' || p0 === 'account') return 'account'
+  if (p0 === 'personal' || ['favorites', 'notes', 'my-knowledge', 'reviews', 'memory', 'daily-learn'].includes(p0)) return 'personal'
+  if (p0 === 'login' || p0 === 'reset-password' || p0 === 'admin' || p0 === 'account' || p0 === 'feedback') return 'account'
   return 'home'
 }
 
@@ -865,6 +1052,7 @@ function getMobileBackHref(parts) {
   if (tab === 'tools') return '#/tools'
   if (tab === 'forum') return '#/forum'
   if (tab === 'personal') return '#/m/personal'
+  if (tab === 'account') return '#/m/account'
   return '#/'
 }
 
@@ -885,7 +1073,9 @@ function getMobilePageMeta(parts) {
 
   if (p0 === 'industry') {
     let title = t('nav.sectionLearning')
-    if (parts[1] === 'overview') title = t('content.industryUi.sectionOverview', null, '行业认知')
+    if (parts[1] === 'basics' && !parts[2]) title = t('content.industryUi.sectionBasics', null, '基础认知')
+    else if (parts[1] === 'sub-roles' && !parts[2]) title = t('content.industryUi.sectionRoles', null, '细分岗位')
+    else if (parts[1] === 'overview') title = t('content.industryUi.sectionOverview', null, '行业认知')
     else if (parts[1] === 'learning-path' && !parts[2]) title = t('content.industryUi.pathBreadcrumb', null, '学习路径')
     else if (parts[1] === 'learning-path' && parts[2]) {
       const path = window.PDMIndustry?.getLearningPath?.(parts[2])
@@ -956,7 +1146,7 @@ function getMobilePageMeta(parts) {
   if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref: tabRoot }
   if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref: tabRoot }
   if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref: tabRoot }
-  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: tabRoot }
+  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: '#/m/account' }
   if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
   if (p0 === 'account') return { title: t('account.profileTitle'), backHref: '#/m/account' }
   if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: '#/m/account' }
@@ -990,6 +1180,9 @@ function applyMobilePageChrome(title, backHref) {
   if (!main) return
   if (main.querySelector('.mobile-page-head')) return
   main.insertAdjacentHTML('afterbegin', renderMobilePageHead(title, backHref))
+  main.querySelector('.mobile-back-btn')?.addEventListener('click', () => {
+    saveMobileScrollPosition()
+  })
 }
 
 let mobileMainObserver = null
@@ -1031,8 +1224,8 @@ function renderMobileHubPage(title, desc, items) {
     </div>`
 }
 
-/** 一级入口页：二级功能卡片（知识库 / 个人空间 / 管理后台） */
-function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', extraHtml = '' }) {
+/** 一级入口页：二级功能卡片（知识库 / 我的空间 / 管理后台） */
+function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', beforeGridHtml = '', extraHtml = '' }) {
   const grid = cards.length
     ? `<div class="sec-hub-grid">
         ${cards
@@ -1060,6 +1253,7 @@ function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', e
         ${desc ? `<p class="sec-hub-desc">${escapeHtml(desc)}</p>` : ''}
         ${actionsHtml ? `<div class="hero-actions" style="margin-top:16px">${actionsHtml}</div>` : ''}
       </header>
+      ${beforeGridHtml}
       ${grid}
       ${extraHtml}
     </div>`
@@ -1084,6 +1278,11 @@ function buildKnowledgeNavItems() {
       items.push({ href: `#/category/${c.id}`, title: catTitle(c), catId: c.id, docId: null })
     }
   }
+  items.sort((a, b) => {
+    if (a.docId === 'career-playbook') return 1
+    if (b.docId === 'career-playbook') return -1
+    return 0
+  })
   return items
 }
 
@@ -1126,6 +1325,11 @@ function getKnowledgeHubCards() {
     })
 }
 
+window.PDMKnowledgeNav = {
+  buildItems: buildKnowledgeNavItems,
+  getCards: getKnowledgeHubCards,
+}
+
 function getPersonalHubCards() {
   return getMobilePersonalItems().map((x) => ({
     href: x.href,
@@ -1146,20 +1350,122 @@ function getAdminHubCards() {
 }
 
 function renderKnowledgeHubPage() {
-  return renderSectionCardHub({
-    eyebrow: t('nav.sectionKnowledge'),
-    title: t('kbMod.kbHomePickTitle', null, '选择学习主题'),
-    desc: t('kbMod.kbHomePickDesc', null, '单知识点卡片式阅读；系统学习请从首页「快速上手」开始'),
-    cards: getKnowledgeHubCards(),
+  const cards = getKnowledgeHubCards()
+  return `
+    <div class="page kb-home-page">
+      <header class="kb-home-hero">
+        <p class="kb-home-eyebrow">${escapeHtml(t('nav.sectionKnowledge'))}</p>
+        <div class="kb-home-hero-main">
+          <div>
+            <h1>${escapeHtml(t('kbMod.kbHomePickTitle', null, '\u9009\u62e9\u5b66\u4e60\u4e3b\u9898'))}</h1>
+            <p>${escapeHtml(t('kbMod.kbHomePickDesc', null, '\u5355\u77e5\u8bc6\u70b9\u5361\u7247\u5f0f\u9605\u8bfb\uff1b\u7cfb\u7edf\u5b66\u4e60\u8bf7\u4ece\u9996\u9875\u300c\u5b66\u4e60\u4e3b\u7ebf\u300d\u5f00\u59cb'))}</p>
+          </div>
+          <div class="kb-home-quick-actions">
+            <a href="#/glossary" class="btn-ghost">${escapeHtml(t('kbMod.refGlossaryTitle', null, '\u77e5\u8bc6\u901f\u67e5'))}</a>
+            <a href="#/mindmap" class="btn-ghost">${escapeHtml(t('kbMod.refMindmapTitle', null, '\u77e5\u8bc6\u56fe\u8c31'))}</a>
+          </div>
+        </div>
+      </header>
+
+      <section class="kb-home-toolbar" aria-label="${escapeHtml(t('kbMod.innerSearchTitle', null, '\u77e5\u8bc6\u5e93\u641c\u7d22'))}">
+        <div class="kb-inner-search-box">
+          <span aria-hidden="true">/</span>
+          <input type="search" id="kb-inner-search-input" placeholder="${escapeHtml(t('kbMod.innerSearchPlaceholder', null, 'KANO / PRD / SSO'))}" autocomplete="off" />
+          <button type="button" class="btn-primary" id="kb-inner-search-go">${escapeHtml(t('common.search', null, '\u641c\u7d22'))}</button>
+        </div>
+        <div class="kb-home-toolbar-hint">${escapeHtml(t('kbMod.innerSearchHint', null, '\u641c\u7d22\u4ec5\u5339\u914d\u77e5\u8bc6\u70b9\uff0c\u70b9\u51fb\u7ed3\u679c\u76f4\u8fbe\u77e5\u8bc6\u5361\u7247'))}</div>
+      </section>
+      <section class="kb-inner-search-results" id="kb-inner-search-results" hidden></section>
+
+      <section class="kb-home-topic-grid" id="kb-home-topic-grid">
+        ${cards.map((c, i) => `
+          <a href="${c.href}" class="kb-home-topic-card" data-kb-cat="${escapeHtml(c.catId || '')}" data-kb-topic="${escapeHtml((c.title + ' ' + (c.desc || '') + ' ' + (c.meta || '')).toLowerCase())}">
+            <span class="kb-home-topic-index">${String(i + 1).padStart(2, '0')}</span>
+            <span class="kb-home-topic-copy">
+              <strong>${escapeHtml(c.title)}</strong>
+              ${c.desc ? `<em>${escapeHtml(c.desc)}</em>` : ''}
+              ${c.meta ? `<small>${escapeHtml(c.meta)}</small>` : ''}
+            </span>
+            <span class="kb-home-topic-arrow" aria-hidden="true">&rarr;</span>
+          </a>`).join('')}
+      </section>
+    </div>`
+}
+function bindKnowledgeHubEvents() {
+  const input = document.getElementById('kb-inner-search-input')
+  const go = document.getElementById('kb-inner-search-go')
+  const results = document.getElementById('kb-inner-search-results')
+  const grid = document.getElementById('kb-home-topic-grid')
+  if (!input || !go || !results) return
+
+  const hide = () => results.setAttribute('hidden', '')
+  const show = (html) => {
+    results.innerHTML = html
+    results.removeAttribute('hidden')
+  }
+  const filterTopics = (q, found = []) => {
+    if (!grid) return
+    const cards = [...grid.querySelectorAll('.kb-home-topic-card')]
+    const hitCats = new Set(found.map((hit) => hit.categoryId).filter(Boolean))
+    for (const card of cards) {
+      const hay = card.getAttribute('data-kb-topic') || ''
+      const cat = card.getAttribute('data-kb-cat') || ''
+      const related = hitCats.has(cat) || hay.includes(q.toLowerCase())
+      card.hidden = Boolean(q) && found.length > 0 && !related
+      card.classList.toggle('is-search-related', Boolean(q) && related)
+    }
+    grid.classList.toggle('is-filtering', Boolean(q))
+  }
+  const paint = () => {
+    const q = input.value.trim()
+    if (!q) {
+      filterTopics('', [])
+      hide()
+      return
+    }
+    const found = searchKnowledgeOnly(q, 12)
+    filterTopics(q, found)
+    if (!found.length) {
+      show(`<div class="kb-inner-search-empty">${escapeHtml(t('nav.searchEmpty'))}</div>`)
+      return
+    }
+    show(`
+      <div class="kb-inner-search-head">
+        <strong>${escapeHtml(t('kbMod.innerSearchResults', null, '\u5339\u914d\u7684\u77e5\u8bc6\u5361\u7247'))}</strong>
+        <span>${escapeHtml(t('home.itemCount', { n: found.length }, `${found.length} \u4e2a`))}</span>
+      </div>
+      <div class="kb-inner-search-list">
+        ${found.map((hit) => `
+          <a href="${escapeHtml(hit.href)}" class="kb-inner-search-item">
+            <strong>${escapeHtml(hit.title)}</strong>
+            ${hit.desc ? `<span>${escapeHtml(hit.desc)}</span>` : ''}
+            <small>${escapeHtml(hit.meta)}</small>
+          </a>`).join('')}
+      </div>`)
+  }
+
+  go.addEventListener('click', paint)
+  input.addEventListener('input', paint)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hide()
+      return
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const first = results.querySelector('.kb-inner-search-item')
+      if (first && !results.hasAttribute('hidden')) first.click()
+      else paint()
+    }
   })
 }
 
 function renderPersonalHubPage() {
   const loggedIn = Auth().isLoggedIn()
-  // 未登录：与移动端一致，用个人空间卡片枢纽 + 登录 CTA（不再用居中 login-gate 卡）
+  // 未登录：与移动端一致，用我的空间卡片枢纽 + 登录 CTA（不再用居中 login-gate 卡）
   return renderSectionCardHub({
     eyebrow: t('nav.sectionPersonal'),
-    title: t('kbMod.personalHubTitle', null, '个人空间'),
+    title: t('kbMod.personalHubTitle', null, '我的空间'),
     desc: loggedIn
       ? t('mobile.personalHubDescLoggedIn', null, '收藏、笔记、个人知识库与复盘，都在这里。')
       : t('auth.personalGateDesc'),
@@ -1211,7 +1517,6 @@ function getMobilePersonalItems() {
     { id: 'myKnowledge', href: '#/my-knowledge', title: t('nav.myKnowledge'), desc: t('mobile.personalMyKnowledgeDesc') },
     { id: 'reviews', href: '#/reviews', title: t('nav.reviews'), desc: t('mobile.personalReviewsDesc') },
     { id: 'dailyLearn', href: '#/daily-learn', title: t('nav.dailyLearn'), desc: t('mobile.personalDailyDesc'), needLogin: true },
-    { id: 'feedback', href: '#/feedback', title: t('nav.feedback'), desc: t('mobile.personalFeedbackDesc') },
   ].filter((x) => {
     if (x.needLogin && !Auth().isLoggedIn()) return false
     return can(x.id)
@@ -1347,8 +1652,13 @@ function renderMobileAccountHub() {
         </div>
         <button type="button" class="btn-secondary mobile-profile-logout" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>
       </section>
-      ${Auth().isAdmin() ? `
-        <a href="#/admin" class="mobile-account-admin-link">
+      ${Perm().can('feedback') ? `
+        <a href="#/feedback" class="mobile-account-action-link">
+          <span>${escapeHtml(t('nav.feedback'))}</span>
+          <span aria-hidden="true">→</span>
+        </a>` : ''}
+      ${Auth().isSuperAdmin?.() ? `
+        <a href="#/admin" class="mobile-account-action-link mobile-account-admin-link">
           <span>${escapeHtml(t('nav.sectionAdmin'))}</span>
           <span aria-hidden="true">→</span>
         </a>` : ''}
@@ -1530,7 +1840,7 @@ function renderSidebar(activePath) {
   const personalActive =
     activePath === '/personal' ||
     activePath.startsWith('/personal/') ||
-    ['/favorites', '/notes', '/my-knowledge', '/reviews', '/memory', '/daily-learn', '/feedback'].some(
+    ['/favorites', '/notes', '/my-knowledge', '/reviews', '/memory', '/daily-learn'].some(
       (p) => activePath === p || activePath.startsWith(`${p}/`),
     ) ||
     activePath.startsWith('/m/personal')
@@ -1553,7 +1863,6 @@ function renderSidebar(activePath) {
     can('myKnowledge') && { href: '#/my-knowledge', title: t('nav.myKnowledge'), active: activePath.includes('/my-knowledge') },
     can('reviews') && { href: '#/reviews', title: t('nav.reviews'), active: activePath === '/reviews' || activePath === '/memory' },
     Auth().isLoggedIn() && can('dailyLearn') && { href: '#/daily-learn', title: t('nav.dailyLearn'), active: activePath === '/daily-learn' },
-    can('feedback') && { href: '#/feedback', title: t('nav.feedback'), active: activePath === '/feedback' },
   ].filter(Boolean)
 
   const adminLinks = Auth().isAdmin()
@@ -1657,6 +1966,46 @@ function renderHomeTile(tile) {
   </a>`
 }
 
+function renderHomeDashboard({ total, pathProgress, pathHref }) {
+  const pushSettings = DailyPush()?.getSettings?.()
+  const cards = [
+    {
+      label: t('home.dashNext'),
+      value: pushSettings?.enabled ? t('home.dashPushTime', { time: pushSettings.time || '09:00' }) : t('home.dashPushOff'),
+      desc: pushSettings?.lastPushItems?.length
+        ? t('home.dashPushReady', { n: pushSettings.lastPushItems.length })
+        : t('home.dashPushDesc'),
+      href: '#/daily-learn',
+    },
+    {
+      label: t('home.dashProgress'),
+      value: pathProgress?.total ? `${pathProgress.done}/${pathProgress.total}` : t('home.dashProgressEmpty'),
+      desc: t('home.dashProgressDesc'),
+      href: pathHref,
+    },
+    {
+      label: t('home.dashKnowledge'),
+      value: t('home.metaTopics', { n: total }),
+      desc: t('home.dashKnowledgeDesc'),
+      href: '#/kb',
+    },
+  ]
+
+  return `
+    <div class="home-dashboard" aria-label="${escapeHtml(t('home.dashLabel'))}">
+      ${cards
+        .map(
+          (card) => `
+        <a href="${card.href}" class="home-dash-card">
+          <span class="home-dash-label">${escapeHtml(card.label)}</span>
+          <strong>${escapeHtml(card.value)}</strong>
+          <span>${escapeHtml(card.desc)}</span>
+        </a>`,
+        )
+        .join('')}
+    </div>`
+}
+
 function renderHome() {
   const stats = K.getKnowledgeStats?.() || { totalCount: 0 }
   const path = window.PDMIndustry?.getRecommendedPath?.()
@@ -1665,15 +2014,40 @@ function renderHome() {
   const pathHref = path ? `#/industry/learning-path/${path.id}` : '#/industry/learning-path'
   const pathProgress = path ? window.PDMStorage?.countPathProgress?.(path) : null
 
-  const sceneLinks = [
-    { label: t('home.sceneNewcomer'), href: '#/industry/learning-path/newcomer-8w' },
-    { label: t('home.sceneJob'), href: '#/industry/learning-path/job-hunt' },
-    { label: t('home.sceneIntern'), href: '#/industry/learning-path/intern' },
-    { label: t('home.sceneSwitch'), href: '#/industry/learning-path/career-switch' },
+  const scenarioPlans = [
+    { id: 'newcomer-8w', label: t('home.sceneNewcomer') },
+    { id: 'job-hunt', label: t('home.sceneJob') },
+    { id: 'intern', label: t('home.sceneIntern') },
+    { id: 'career-switch', label: t('home.sceneSwitch') },
+  ].map((plan) => {
+    const detail = window.PDMIndustry?.getLearningPath?.(plan.id)
+    return {
+      ...plan,
+      href: `#/industry/learning-path/${plan.id}`,
+      title: detail?.title || plan.label,
+    }
+  })
+
+  const lookupCards = [
+    {
+      href: '#/glossary',
+      title: t('home.lookupGlossaryTitle'),
+      desc: t('home.lookupGlossaryDesc'),
+    },
+    {
+      href: '#/mindmap',
+      title: t('home.lookupMapTitle'),
+      desc: t('home.lookupMapDesc'),
+    },
+    {
+      href: '#/kb',
+      title: t('home.lookupTopicsTitle'),
+      desc: t('home.lookupTopicsDesc'),
+    },
   ]
 
   const guideSteps = [
-    { num: '01', title: t('home.guideStep1Title'), desc: t('home.guideStep1Desc'), href: '#/industry/overview' },
+    { num: '01', title: t('home.guideStep1Title'), desc: t('home.guideStep1Desc'), href: '#/industry/basics' },
     { num: '02', title: t('home.guideStep2Title'), desc: t('home.guideStep2Desc'), href: pathHref },
     { num: '03', title: t('home.guideStep3Title'), desc: t('home.guideStep3Desc'), href: '#/kb' },
     { num: '04', title: t('home.guideStep4Title'), desc: t('home.guideStep4Desc'), href: '#/tools' },
@@ -1703,71 +2077,59 @@ function renderHome() {
           <div class="home-composer-results" id="home-composer-results" hidden></div>
         </div>
 
-        <nav class="home-scene-links" aria-label="${escapeHtml(t('home.sceneLinksLabel'))}">
-          ${sceneLinks
-            .map(
-              (s, i) =>
-                `${i ? '<span class="home-scene-sep" aria-hidden="true">|</span>' : ''}<a href="${s.href}" class="home-scene-link">${escapeHtml(s.label)}</a>`,
-            )
-            .join('')}
-        </nav>
-
         <div class="home-stage-ctas">
-          <a href="#/glossary" class="btn-ghost">${escapeHtml(t('home.ctaKb'))}</a>
-          <a href="#/mindmap" class="btn-ghost">${escapeHtml(t('home.ctaMindmap'))}</a>
+          <a href="${pathHref}" class="btn-primary">${escapeHtml(t('home.ctaQuickStart'))}</a>
+          <a href="#/industry/learning-path" class="btn-ghost">${escapeHtml(t('home.ctaChoosePlan'))}</a>
         </div>
 
         <div class="home-stage-meta">
           <span>${escapeHtml(t('home.metaKbHubs'))}</span>
           <span class="dot">·</span>
           <span>${escapeHtml(t('home.metaTopics', { n: total }))}</span>
-          <span class="dot">·</span>
-          <button type="button" class="home-inline-link" id="home-open-guide">${escapeHtml(t('home.openGuide'))}</button>
         </div>
       </section>
 
-      <section class="home-section home-quickstart-section">
-        <div class="home-quickstart">
-          <div class="home-quickstart-copy">
-            <p class="home-quickstart-kicker">${escapeHtml(t('home.primaryPathBadge'))}</p>
-            <h2>${escapeHtml(path?.title || t('home.primaryPathTitle'))}</h2>
-            <p>${escapeHtml(path?.cardDesc || t('home.primaryPathDesc'))}</p>
-            ${
-              pathProgress?.total
-                ? `<p class="home-quickstart-progress">${escapeHtml(
-                    t('home.pathProgress', { done: pathProgress.done, total: pathProgress.total }),
-                  )}</p>`
-                : ''
-            }
-          </div>
-          <div class="home-quickstart-actions">
-            <a href="${pathHref}" class="btn-primary">${escapeHtml(t('home.ctaQuickStart'))}</a>
-            <a href="#/industry/learning-path" class="btn-ghost">${escapeHtml(t('home.allPathsCta'))}</a>
+      <section class="home-section home-learning-section" id="home-scenarios">
+        <div class="home-learning-board">
+          <a href="${pathHref}" class="home-learning-main">
+            <span class="home-learning-kicker">${escapeHtml(t('home.recommendedTrackBadge', null, '推荐路线'))}</span>
+            <strong>${escapeHtml(path?.title || t('home.primaryPathTitle'))}</strong>
+            <span>${escapeHtml(t('home.mainTrackHint'))}</span>
+            ${pathProgress?.total ? `<em>${escapeHtml(t('home.pathProgress', { done: pathProgress.done, total: pathProgress.total }))}</em>` : ''}
+          </a>
+          <div class="home-learning-plans">
+            <div class="home-learning-plans-head">
+              <span>${escapeHtml(t('home.goalPlansLabel'))}</span>
+              <a href="#/industry/learning-path">${escapeHtml(t('home.allPathsCta'))}</a>
+            </div>
+            <div class="home-plan-list">
+              ${scenarioPlans
+                .map(
+                  (plan) => `
+                <a href="${plan.href}" class="home-plan-chip">${escapeHtml(plan.title)}</a>`,
+                )
+                .join('')}
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="home-section" id="home-guide">
-        <div class="home-section-head">
-          <h2 class="home-section-title">${escapeHtml(t('home.guideTitle'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.guideDesc'))}</p>
+      <section class="home-section home-lookup-section">
+        <div class="home-section-head home-section-head-compact">
+          <h2 class="home-section-title">${escapeHtml(t('home.lookupTitle'))}</h2>
+          <p class="home-section-desc">${escapeHtml(t('home.lookupDesc'))}</p>
         </div>
-        <ol class="home-guide-steps">
-          ${guideSteps
+        <div class="home-lookup-grid">
+          ${lookupCards
             .map(
-              (step) => `
-            <li>
-              <a href="${step.href}" class="home-guide-step">
-                <span class="home-guide-num">${step.num}</span>
-                <span class="home-guide-copy">
-                  <strong>${escapeHtml(step.title)}</strong>
-                  <span>${escapeHtml(step.desc)}</span>
-                </span>
-              </a>
-            </li>`,
+              (card) => `
+            <a href="${card.href}" class="home-lookup-card">
+              <strong>${escapeHtml(card.title)}</strong>
+              <span>${escapeHtml(card.desc)}</span>
+            </a>`,
             )
             .join('')}
-        </ol>
+        </div>
       </section>
 
       <section class="home-section home-about-section home-section-last">
@@ -1808,6 +2170,7 @@ function renderHome() {
 
 let homeComposerDocBound = false
 const ONBOARDING_KEY = 'pm-lab-onboarding-done'
+const GUIDE_PENDING_KEY = 'pm-lab-open-guide'
 
 function closeHomeOnboarding(persist = true) {
   document.getElementById('home-onboarding')?.setAttribute('hidden', '')
@@ -1816,11 +2179,19 @@ function closeHomeOnboarding(persist = true) {
   }
 }
 
+function openHomeOnboarding() {
+  document.getElementById('home-onboarding')?.removeAttribute('hidden')
+}
+
 function maybeOpenHomeOnboarding() {
   try {
+    if (sessionStorage.getItem(GUIDE_PENDING_KEY) === '1') {
+      sessionStorage.removeItem(GUIDE_PENDING_KEY)
+      openHomeOnboarding()
+      return
+    }
     if (localStorage.getItem(ONBOARDING_KEY) === '1') return
   } catch (_) {}
-  document.getElementById('home-onboarding')?.removeAttribute('hidden')
 }
 
 function bindHomeEvents() {
@@ -1900,9 +2271,6 @@ function bindHomeEvents() {
     })
   }
 
-  document.getElementById('home-open-guide')?.addEventListener('click', () => {
-    document.getElementById('home-guide')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  })
   document.getElementById('home-onboarding-close')?.addEventListener('click', () => closeHomeOnboarding(true))
   document.getElementById('home-onboarding-dismiss')?.addEventListener('click', () => closeHomeOnboarding(true))
   document.getElementById('home-onboarding-backdrop')?.addEventListener('click', () => closeHomeOnboarding(true))
@@ -1937,23 +2305,98 @@ function renderCategory(categoryId) {
     </div>`
 }
 
-function renderKnowledgeParagraphs(lines) {
-  return (lines || []).map((p) => {
-    const text = String(p)
-    if (text.startsWith('【') && text.endsWith('】')) {
-      return `<h3 class="article-subhead">${escapeHtml(text.slice(1, -1))}</h3>`
-    }
-    if (text.includes('\n')) {
-      return `<p class="article-preline">${escapeHtml(text).replace(/\n/g, '<br>')}</p>`
-    }
-    // 表格式条目（含 · 或多处冒号）用等宽感列表展现
-    if (text.includes(' · ') || /^[^：]{1,20}：/.test(text)) {
-      return `<p class="article-kv">${escapeHtml(text)}</p>`
-    }
-    return `<p>${escapeHtml(text)}</p>`
-  }).join('')
+function normalizeKnowledgeText(text) {
+  return String(text || '')
+    .replace(/\u3010\u8865\u5145\u5b8c\u5584\uff5c([^\u3011]+)\u3011/g, '$1\uff1a')
+    .replace(/^\u8865\u5145\u5b8c\u5584\s*/g, '')
 }
 
+function splitKnowledgeLabel(text) {
+  const normalized = normalizeKnowledgeText(text).trim()
+  const match = normalized.match(/^([^\uff1a:]{2,18})[\uff1a:]\s*(.+)$/)
+  if (!match) return null
+  const label = match[1].trim()
+  const body = match[2].trim()
+  if (!label || !body || /^https?$/i.test(label)) return null
+  return { label, body }
+}
+
+function renderSplitKnowledgeBody(text) {
+  const parts = String(text || '').split(/(?=\d+[.\u3001]\s*)/).map((x) => x.trim()).filter(Boolean)
+  if (parts.length < 2) return escapeHtml(text)
+  return '<ol class="article-mini-list">' + parts.map((part) => '<li>' + escapeHtml(part.replace(/^\d+[.\u3001]\s*/, '')) + '</li>').join('') + '</ol>'
+}
+
+function isKnowledgeDiagram(text) {
+  const value = String(text || '')
+  if (!value.includes('\n')) return false
+  return /[\u2500-\u257f\u2190-\u21ff]|(\n\s*[\u2502\u251c\u2514\u250c\u2510\u2518\u2524])|(\s{2,}[-\u2500>])/.test(value)
+}
+function renderKnowledgeDiagram(text) {
+  return '<div class="article-diagram-card"><pre>' + escapeHtml(text) + '</pre></div>'
+}
+
+function renderKnowledgeLineList(text) {
+  const rawLines = String(text || '').split('\n').filter((line) => line.trim())
+  const lines = rawLines.map((line) => line.trim())
+  const listLines = lines.filter((line) => /^(\d+[.\u3001]|[-*\u2022]|[\u251c\u2514\u2502])\s*/.test(line))
+  if (lines.length < 2 || listLines.length < Math.ceil(lines.length * 0.45)) return ''
+  return '<div class="article-structured-list">' + rawLines.map((rawLine) => {
+    const line = rawLine.trim()
+    const level = (/^\s{2,}/.test(rawLine) || /^[\u251c\u2514\u2502]/.test(line)) ? ' is-sub' : ''
+    const clean = line.replace(/^(\d+[.\u3001]|[-*\u2022]|[\u251c\u2514\u2502\u2500\s]+)\s*/, '').trim()
+    return '<div class="article-structured-item' + level + '">' + escapeHtml(clean || line) + '</div>'
+  }).join('') + '</div>'
+}
+function splitLongKnowledgeText(text) {
+  const value = String(text || '').trim()
+  if (value.length < 96) return []
+  return value
+    .split(/(?<=[\u3002\uff1b;])\s*/)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 8)
+}
+
+function renderKnowledgeLongCard(text) {
+  const parts = splitLongKnowledgeText(text)
+  if (parts.length < 2) return ''
+  return '<div class="article-long-card">' + parts.map((part) => '<p>' + escapeHtml(part) + '</p>').join('') + '</div>'
+}
+
+function renderKnowledgeMultiline(text) {
+  if (isKnowledgeDiagram(text)) return renderKnowledgeDiagram(text)
+  const listHtml = renderKnowledgeLineList(text)
+  if (listHtml) return listHtml
+  return '<div class="article-long-card article-preline">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>'
+}
+
+function renderKnowledgeParagraphs(lines) {
+  return (lines || []).map((p, index) => {
+    const text = normalizeKnowledgeText(p)
+    const labeled = splitKnowledgeLabel(text)
+    if (labeled) {
+      return '<section class="article-insight-card">' +
+        '<div class="article-insight-label">' + escapeHtml(labeled.label) + '</div>' +
+        '<div class="article-insight-body">' + renderSplitKnowledgeBody(labeled.body) + '</div>' +
+      '</section>'
+    }
+    if (index === 0 && text.length >= 8 && text.length <= 88 && !text.includes('\n')) {
+      return '<section class="article-insight-card article-insight-card-lead">' +
+        '<div class="article-insight-label">' + escapeHtml(t('article.coreUnderstanding', null, '\u6838\u5fc3\u7406\u89e3')) + '</div>' +
+        '<div class="article-insight-body">' + escapeHtml(text) + '</div>' +
+      '</section>'
+    }
+    if (text.includes('\n')) {
+      return renderKnowledgeMultiline(text)
+    }
+    if (text.includes(' \u8def ') || /^[^\u952b\uff1a:]{1,20}[\u952b\uff1a:]/.test(text)) {
+      return '<p class="article-kv">' + escapeHtml(text) + '</p>'
+    }
+    const longCard = renderKnowledgeLongCard(text)
+    if (longCard) return longCard
+    return '<p>' + escapeHtml(text) + '</p>'
+  }).join('')
+}
 /** 业务词条正文：分区标题 + 要点列表 + 键值行 */
 function renderTermDetailBody(item) {
   const lines = item.content || []
@@ -2041,9 +2484,7 @@ function renderKnowledgeDetailBody(item, opts = {}) {
     </div>`
   }
 
-  const explainHtml = useTermLayout
-    ? renderTermDetailBody(item)
-    : `<div class="article-body">${renderKnowledgeParagraphs(explain)}</div>`
+  const explainHtml = `<div class="article-body ${useTermLayout ? 'article-body-term-unified' : ''}">${renderKnowledgeParagraphs(explain)}</div>`
 
   // 业务词条：解释区走 term 排版，案例由页面单独渲染，避免双层分区
   if (useTermLayout || !hasStructured) {
@@ -2150,6 +2591,10 @@ function bindArticleNotesEvents() {
     : { source: 'public', categoryId: section.dataset.noteCat, itemId: section.dataset.noteItem }
 
   document.getElementById('article-note-add')?.addEventListener('click', async () => {
+    if (!Auth().isLoggedIn()) {
+      showToast(t('auth.noteLoginRequired', null, '请先登录后再添加笔记'), 'info')
+      return
+    }
     const input = document.getElementById('article-note-input')
     const content = input?.value.trim()
     if (!content) {
@@ -2209,7 +2654,30 @@ function bindArticleNotesEvents() {
   })
 }
 
+const LEGACY_ARTICLE_TARGETS = {
+  'methodology/user-research': ['methodology', 'kb-product-methodology-2-5-用户访谈'],
+  'methodology/requirement-analysis': ['workflow', 'kb-workflow-2-需求分析'],
+  'methodology/mvp': ['methodology', 'kb-pm-bagu-mvp'],
+  'skills/prd': ['methodology', 'kb-product-methodology-4-3-prd-标准-7-章节'],
+  'skills/prototype': ['methodology', 'kb-career-playbook-原型设计'],
+  'skills/roadmap': ['methodology', 'kb-career-playbook-roadmap-版本规划'],
+  'skills/metrics-design': ['methodology', 'kb-career-playbook-核心指标设计'],
+  'domain/b-vs-c': ['methodology', 'kb-career-playbook-b-端-vs-c-端产品差异'],
+  'domain/business-model': ['methodology', 'kb-product-methodology-1-2-商业模式画布补全项-2'],
+  'domain/ai-product': ['methodology', 'kb-career-playbook-ai-产品专题'],
+  'interview/star': ['methodology', 'kb-career-playbook-star-法则'],
+  'interview/competitor-analysis': ['methodology', 'kb-career-playbook-竞品分析'],
+  'interview/estimate-dau': ['methodology', 'kb-career-playbook-估算题'],
+  'interview/why-pm': ['methodology', 'kb-career-playbook-为什么想做-pm'],
+  'interview/favorite-product': ['methodology', 'kb-career-playbook-介绍一个喜欢的产品'],
+}
+
 function renderArticle(categoryId, itemId) {
+  const legacyTarget = LEGACY_ARTICLE_TARGETS[`${categoryId}/${itemId}`]
+  if (legacyTarget) {
+    categoryId = legacyTarget[0]
+    itemId = legacyTarget[1]
+  }
   let cat = K.getCategoryByIdMerged(categoryId)
   let item = cat?.items.find((i) => i.id === itemId)
   if (!item) {
@@ -2612,6 +3080,10 @@ function renderArticleNotesHub() {
 
 function bindArticleNotesHubEvents() {
   document.getElementById('btn-hub-note-add')?.addEventListener('click', () => {
+    if (!Auth().isLoggedIn()) {
+      showToast(t('auth.noteLoginRequired', null, '请先登录后再添加笔记'), 'info')
+      return
+    }
     articleNotesEditState = { id: null, composing: true }
     render()
     document.getElementById('hub-note-content')?.focus()
@@ -2623,6 +3095,10 @@ function bindArticleNotesHubEvents() {
   })
 
   document.getElementById('btn-hub-note-create')?.addEventListener('click', async () => {
+    if (!Auth().isLoggedIn()) {
+      showToast(t('auth.noteLoginRequired', null, '请先登录后再添加笔记'), 'info')
+      return
+    }
     const content = document.getElementById('hub-note-content')?.value.trim()
     const title = document.getElementById('hub-note-title')?.value.trim()
     const linkKey = document.getElementById('hub-note-link')?.value || ''
@@ -3685,6 +4161,101 @@ function bindLocaleEvents() {
 }
 
 let topAccountDocBound = false
+let topbarHelpBound = false
+let topbarNotificationDocBound = false
+let notificationScanTimer = null
+let notificationScanInFlight = false
+function bindTopbarHelpEvents() {
+  if (topbarHelpBound) return
+  topbarHelpBound = true
+  document.getElementById('topbar-help-btn')?.addEventListener('click', () => {
+    const { parts } = parseRoute()
+    if (!parts.length) {
+      openHomeOnboarding()
+      return
+    }
+    try { sessionStorage.setItem(GUIDE_PENDING_KEY, '1') } catch (_) {}
+    navigate('/')
+  })
+}
+
+function bindTopbarNotificationEvents() {
+  const api = window.PDMNotifications
+  if (!api) return
+  const root = document.getElementById('topbar-notifications')
+  const menu = document.getElementById('topbar-notification-menu')
+
+  const closeMenu = () => {
+    document.getElementById('topbar-notification-menu')?.setAttribute('hidden', '')
+  }
+
+  if (root) {
+    root.onclick = (e) => {
+      const trigger = e.target.closest('#topbar-notification-btn')
+      if (!trigger) return
+      e.preventDefault()
+      e.stopPropagation()
+      const m = document.getElementById('topbar-notification-menu')
+      if (!m) return
+      if (m.hasAttribute('hidden')) m.removeAttribute('hidden')
+      else m.setAttribute('hidden', '')
+    }
+  }
+
+  menu?.querySelectorAll('.topbar-notification-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const id = item.getAttribute('data-notification-id')
+      if (id) api.markRead(id)
+      closeMenu()
+    })
+  })
+
+  document.getElementById('notification-mark-all')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    api.markAllRead()
+    renderTopbarNotifications()
+    bindTopbarNotificationEvents()
+  })
+
+  document.getElementById('notification-clear-all')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    api.clearAll()
+    renderTopbarNotifications()
+    bindTopbarNotificationEvents()
+  })
+
+  if (!topbarNotificationDocBound) {
+    topbarNotificationDocBound = true
+    document.addEventListener('click', (e) => {
+      const m = document.getElementById('topbar-notification-menu')
+      if (!m || m.hasAttribute('hidden')) return
+      if (!e.target.closest('.topbar-notification')) closeMenu()
+    })
+    window.addEventListener('pdm:notifications', () => {
+      renderTopbarNotifications()
+      bindTopbarNotificationEvents()
+    })
+  }
+}
+
+async function scanNotificationsSoon() {
+  const api = window.PDMNotifications
+  if (!api?.scanForumReplies || notificationScanInFlight) return
+  notificationScanInFlight = true
+  try {
+    await api.scanForumReplies()
+  } catch (_) {
+  } finally {
+    notificationScanInFlight = false
+  }
+}
+
+function scheduleNotificationScans() {
+  if (!window.PDMNotifications?.scanForumReplies || notificationScanTimer) return
+  scanNotificationsSoon()
+  notificationScanTimer = window.setInterval(scanNotificationsSoon, 180000)
+}
+
 function bindTopAccountEvents() {
   const menuBtn = document.getElementById('topbar-account-menu-btn')
   const menu = document.getElementById('topbar-account-menu')
@@ -3781,7 +4352,7 @@ function renderReviews() {
         <div class="form-actions"><button class="btn-primary" id="rf-save">保存</button><button class="btn-ghost" id="rf-cancel">取消</button></div>
       </div>`
   } else if (reviews.length === 0) {
-    reviewContent = `<div class="empty-state"><p>还没有复盘记录</p><p class="empty-hint">定期回顾学习与实践，用结构化复盘加速成长</p><button class="btn-primary" id="btn-new-review">开始第一次复盘</button></div>`
+    reviewContent = `<div class="empty-state"><p>还没有复盘记录</p><p class="empty-hint">定期回顾学习与实践，用结构化复盘加速成长</p></div>`
   } else {
     reviewContent = `<div class="review-list">${reviews.map(r => `
       <div class="review-card">
@@ -3805,8 +4376,6 @@ function renderReviews() {
   return `
     <div class="page memory-page">
       <header class="memory-header"><h1>复盘记录</h1><p>结构化记录学习与实践复盘，沉淀可复用的成长经验</p></header>
-      ${renderCloudPanel()}
-      ${renderStoragePanel()}
       <section class="memory-section">
         <div class="section-toolbar"><h2>我的复盘</h2><button class="btn-primary" id="btn-new-review">+ 新建复盘</button></div>
         ${reviewContent}
@@ -3817,37 +4386,6 @@ function renderReviews() {
 let pendingImportMode = 'merge'
 
 function bindReviewEvents() {
-  bindSyncEvents()
-  document.getElementById('btn-export-backup')?.addEventListener('click', () => {
-    exportBackup()
-    showToast('备份已下载到本地', 'success')
-  })
-
-  document.getElementById('btn-import-merge')?.addEventListener('click', () => {
-    pendingImportMode = 'merge'
-    document.getElementById('import-file')?.click()
-  })
-
-  document.getElementById('btn-import-replace')?.addEventListener('click', () => {
-    if (!confirm('覆盖导入将替换当前所有个人数据，此操作不可撤销。确定继续？')) return
-    pendingImportMode = 'replace'
-    document.getElementById('import-file')?.click()
-  })
-
-  document.getElementById('import-file')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      const result = await importBackup(file, pendingImportMode)
-      showToast(`导入成功：${result.reviewCount} 条复盘，${result.customKnowledgeCount} 条知识`, 'success')
-      render()
-    } catch (err) {
-      showToast(err.message || '导入失败', 'error')
-    }
-    e.target.value = ''
-    pendingImportMode = 'merge'
-  })
-
   document.getElementById('btn-new-review')?.addEventListener('click', () => {
     reviewState.showReviewForm = true
     reviewState.editingReview = null
@@ -3935,11 +4473,17 @@ function render() {
   renderMobileChrome(path)
   renderTopbarCrumbs(buildCrumbsFromRoute(parts))
   syncSiteWatermark()
+  renderTopbarHelp()
+  renderTopbarNotifications()
   bindLocaleEvents()
+  bindTopbarHelpEvents()
+  bindTopbarNotificationEvents()
   bindTopAccountEvents()
   bindMobileNavChrome()
   bindMobileViewportWatcher()
+  bindMobileScrollTopButton()
   bindSyncEvents()
+  scheduleNotificationScans()
   syncMobileChromeOffsets()
 
   const forbiddenHtml = renderForbidden()
@@ -3947,7 +4491,7 @@ function render() {
   const main = document.getElementById('main')
   const routePerm = Perm().routeFeature(parts)
   if (routePerm?.feature && routePerm.feature !== 'admin' && !Perm().can(routePerm.feature, routePerm.action)) {
-    const personalFeatures = ['favorites', 'notes', 'myKnowledge', 'reviews', 'dailyLearn', 'feedback']
+    const personalFeatures = ['favorites', 'notes', 'myKnowledge', 'reviews', 'dailyLearn']
     // 未登录访问个人能力：引导登录，而不是「无权访问」
     if (!Auth().isLoggedIn() && personalFeatures.includes(routePerm.feature)) {
       main.innerHTML = renderPersonalLoginGate()
@@ -3970,6 +4514,7 @@ function render() {
     main.innerHTML = renderMobilePersonalHub()
   } else if (parts[0] === 'kb') {
     main.innerHTML = renderKnowledgeHubPage()
+    bindKnowledgeHubEvents()
     Analytics()?.track('page_view', { page: 'kb-home' })
   } else if (parts[0] === 'personal') {
     main.innerHTML = renderPersonalHubPage()
@@ -4004,11 +4549,7 @@ function render() {
     if (!Auth().isAdmin()) main.innerHTML = forbiddenHtml
     else renderAdminRolesRoute()
   } else if (parts[0] === 'feedback') {
-    if (!Perm().can('feedback', 'edit') && !Perm().can('feedback', 'view')) {
-      main.innerHTML = renderPermissionDenied()
-    } else {
-      renderFeedbackRoute()
-    }
+    renderFeedbackRoute()
   } else if (parts[0] === 'admin' && parts[1] === 'knowledge' && parts[2] === 'new') {
     if (!Auth().isAdmin()) {
       main.innerHTML = forbiddenHtml
@@ -4043,9 +4584,6 @@ function render() {
   } else if (parts[0] === 'admin' && !parts[1]) {
     main.innerHTML = renderAdminHubPage()
     Analytics()?.track('page_view', { page: 'admin-hub' })
-  } else if (parts[0] === 'industry' && parts[1] && ['basics', 'sub-roles'].includes(parts[1]) && !parts[2]) {
-    navigate(`/industry/overview?tab=${parts[1]}`)
-    return
   } else if (parts[0] === 'industry' && parts[1] === 'learning-path' && parts[2] === 'path-overview') {
     navigate('/industry/learning-path')
     return
@@ -4154,6 +4692,9 @@ function render() {
   } else if (parts[0] === 'category' && parts[1] === 'reference') {
     navigate('/glossary')
     return
+  } else if (parts[0] === 'category' && parts[1] && ['interview', 'skills', 'domain'].includes(parts[1])) {
+    navigate('/doc/methodology/career-playbook')
+    return
   } else if (parts[0] === 'category' && parts[1]) {
     const catId = resolveKbCategoryId(parts[1])
     if (catId !== parts[1]) {
@@ -4246,10 +4787,18 @@ function render() {
     const meta = getMobilePageMeta(parts)
     if (meta) applyMobilePageChrome(meta.title, meta.backHref)
     requestAnimationFrame(() => syncMobileChromeOffsets())
+    restoreMobileScrollPosition()
   }
 }
 
-window.addEventListener('hashchange', render)
+window.addEventListener('hashchange', (event) => {
+  let oldHash = currentMobileScrollKey
+  try {
+    oldHash = new URL(event.oldURL).hash || oldHash
+  } catch (_) {}
+  saveMobileScrollPosition(routeScrollKey(oldHash))
+  render()
+})
 window.addEventListener('pdm-auth-changed', () => {
   // 登录态变化后立刻刷新顶栏/侧栏，避免仍显示「去登录」
   if (Auth().isLoggedIn() && (location.hash === '#/login' || location.hash === '#login')) {

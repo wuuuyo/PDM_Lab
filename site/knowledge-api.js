@@ -238,6 +238,28 @@ function fuzzyMatchScore(text, query) {
   if (hay.startsWith(q)) return 900
   if (hay.includes(q)) return 750 - Math.min(150, hay.indexOf(q))
 
+  const compactHay = hay.replace(/\s+/g, '')
+  const compactQ = q.replace(/\s+/g, '')
+  if (compactQ && compactHay !== hay) {
+    if (compactHay === compactQ) return 940
+    if (compactHay.startsWith(compactQ)) return 840
+    if (compactHay.includes(compactQ)) return 690 - Math.min(120, compactHay.indexOf(compactQ))
+  }
+
+  if (/[\u4e00-\u9fff]/.test(compactQ) && compactQ.length >= 2) {
+    let cursor = 0
+    let matched = 0
+    for (const char of compactQ) {
+      const next = compactHay.indexOf(char, cursor)
+      if (next === -1) break
+      matched += 1
+      cursor = next + 1
+    }
+    if (matched === compactQ.length) {
+      return 420 + Math.min(120, compactQ.length * 20)
+    }
+  }
+
   const tokens = q.split(' ').filter(Boolean)
   if (tokens.length > 1) {
     // 多词：每个词都必须是连续子串
@@ -493,5 +515,4 @@ window.PDMKnowledge = {
 }
 
 })()
-
 

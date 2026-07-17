@@ -128,6 +128,7 @@
     }
 
     if (onPushCallback) onPushCallback(records)
+    window.PDMNotifications?.notifyDailyPush?.(records)
     tryNotify(records)
     return records
   }

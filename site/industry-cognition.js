@@ -132,8 +132,8 @@
   const learningPaths = [
     {
       id: 'kb-4stage',
-      title: '快速上手',
-      badge: '主推',
+      title: '学习主线',
+      badge: '主线',
       duration: '6-8 周',
       weeklyHours: '每阶段 1-2 周',
       cardDesc: '入门 → 基础 → 进阶 → 实战，系统走完 PM 核心知识',
@@ -194,8 +194,8 @@
     },
     {
       id: 'newcomer-8w',
-      title: '通用新人路径',
-      badge: '推荐',
+      title: '新人计划',
+      badge: '计划',
       duration: '6-8 周',
       weeklyHours: '10-15 小时/周',
       cardDesc: '认知 → 作品 → 求职，零基础闭环',
@@ -282,8 +282,8 @@
     },
     {
       id: 'job-hunt',
-      title: '求职冲刺路径',
-      badge: '短期',
+      title: '求职计划',
+      badge: '计划',
       duration: '2-3 周',
       weeklyHours: '15-20 小时/周',
       cardDesc: '面试框架 + STAR + 开放题',
@@ -329,8 +329,8 @@
     },
     {
       id: 'intern',
-      title: '在校实习路径',
-      badge: '学生',
+      title: '实习计划',
+      badge: '计划',
       duration: '4-6 周',
       weeklyHours: '8-12 小时/周',
       cardDesc: '作品优先，冲第一份产品实习',
@@ -384,8 +384,8 @@
     },
     {
       id: 'career-switch',
-      title: '转行过渡路径',
-      badge: '转行',
+      title: '转行计划',
+      badge: '计划',
       duration: '8-12 周',
       weeklyHours: '12-18 小时/周',
       cardDesc: '经验迁移 + 方法论补课 + 叙事',

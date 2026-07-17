@@ -107,21 +107,26 @@
         if (panel && path) {
           panel.outerHTML = renderPathProgressBar(path)
         }
+        if (path && input.checked) {
+          const { done, total } = window.PDMStorage?.countPathProgress?.(path) || { done: 0, total: 0 }
+          window.PDMNotifications?.notifyPathProgress?.(path, done, total)
+        }
         input.closest('.path-task-row')?.classList.toggle('is-done', input.checked)
       })
     })
   }
 
   const INDUSTRY_HUB_ORDER = [
-    { id: 'overview', titleKey: 'sectionOverview', descKey: 'sectionOverviewDesc' },
+    { id: 'basics', titleKey: 'sectionBasics', descKey: 'sectionBasicsDesc' },
+    { id: 'sub-roles', titleKey: 'sectionRoles', descKey: 'sectionRolesDesc' },
     { id: 'learning-path', titleKey: 'sectionPaths', descKey: 'sectionPathsDesc' },
   ]
 
   const OVERVIEW_SECTION_IDS = ['basics', 'sub-roles']
 
   function industrySectionMeta(id) {
-    if (id === 'overview' || OVERVIEW_SECTION_IDS.includes(id)) {
-      return INDUSTRY_HUB_ORDER[0]
+    if (id === 'overview') {
+      return { id: 'overview', titleKey: 'sectionOverview', descKey: 'sectionOverviewDesc' }
     }
     return INDUSTRY_HUB_ORDER.find((s) => s.id === id) || null
   }
@@ -244,16 +249,16 @@
       const meta =
         plate.id === 'learning-path'
           ? ui('industryUi', 'pathCount', { n: pathCount })
-          : ui('industryUi', 'itemCount', { n: overviewItemCount() })
+          : ui('industryUi', 'itemCount', { n: Industry().getSection(plate.id)?.items?.length || 0 })
       return `
-        <a href="#/industry/${plate.id}" class="sec-hub-card">
-          <span class="sec-hub-card-index">${String(index + 1).padStart(2, '0')}</span>
-          <div class="sec-hub-card-body">
+        <a href="#/industry/${plate.id}" class="learning-nav-lane learning-nav-lane-${window.escapeHtml(plate.id)}">
+          <span class="learning-nav-index">${String(index + 1).padStart(2, '0')}</span>
+          <div class="learning-nav-copy">
             <h2>${window.escapeHtml(ui('industryUi', plate.titleKey))}</h2>
             <p>${window.escapeHtml(ui('industryUi', plate.descKey))}</p>
-            <span class="sec-hub-card-meta">${window.escapeHtml(meta)}</span>
           </div>
-          <span class="sec-hub-card-arrow" aria-hidden="true">→</span>
+          <span class="learning-nav-meta">${window.escapeHtml(meta)}</span>
+          <span class="learning-nav-arrow" aria-hidden="true">→</span>
         </a>`
     }).join('')
     return `
@@ -263,7 +268,7 @@
           <h1>${window.escapeHtml(ui('industryUi', 'hubTitle'))}</h1>
           <p class="sec-hub-desc">${window.escapeHtml(ui('industryUi', 'hubDesc'))}</p>
         </header>
-        <div class="sec-hub-grid">${cards}</div>
+        <div class="learning-nav-board">${cards}</div>
       </div>`
   }
 
@@ -311,7 +316,7 @@
         </div>`
     }
 
-    if (sectionId === 'overview' || OVERVIEW_SECTION_IDS.includes(sectionId)) {
+    if (sectionId === 'overview') {
       const activeTab = resolveOverviewTab(OVERVIEW_SECTION_IDS.includes(sectionId) ? sectionId : null)
       return `
         <div class="page sec-hub-page industry-page industry-overview-page">
@@ -401,7 +406,7 @@
     if (!sec || !item) return `<div class="page"><p>${window.escapeHtml(ui('industryUi', 'notFound'))}</p><a href="#/industry">${window.escapeHtml(tr('common.back'))}</a></div>`
     const meta = industrySectionMeta(sectionId)
     const secLabel = meta ? ui('industryUi', meta.titleKey) : sec.title
-    const secHref = OVERVIEW_SECTION_IDS.includes(sectionId) ? '#/industry/overview' : `#/industry/${sectionId}`
+    const secHref = `#/industry/${sectionId}`
     return `
       <div class="page article-page industry-page">
         <article class="article-content">

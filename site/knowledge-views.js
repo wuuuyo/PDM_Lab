@@ -79,7 +79,7 @@
     prd: () => t('kbMod.workflowPrdTitle', null, 'PRD 模板'),
     collab: () => t('kbMod.workflowCollabTitle', null, '跨部门协作'),
     kb: () => t('kbMod.workflowKbTitle', null, '知识库管理'),
-    glossary: () => t('kbMod.refGlossaryTitle', null, '关键词速查'),
+    glossary: () => t('kbMod.refGlossaryTitle', null, '知识速查'),
     mindmap: () => t('kbMod.refMindmapTitle', null, '知识图谱'),
     path: () => t('kbMod.refPathTitle', null, '学习路径'),
   }
@@ -436,11 +436,116 @@
     return null
   }
 
+  function cleanKnowledgeTitle(title) {
+    const raw = String(title || '').trim()
+    return raw
+      .replace(/^[（(]?\d+(?:\.\d+)*[）)]?[.、\s]+/, '')
+      .replace(/（[^）]*）|\([^)]*\)/g, '')
+      .trim() || raw
+  }
+
+  function allLinkedKnowledgeItems() {
+    return (window.PDMKnowledge?.getMergedCategories?.() || [])
+      .filter((cat) => cat.id !== 'reference')
+      .flatMap((cat) => (cat.items || [])
+        .filter((item) => item.kind !== 'glossary-letter' && item.kind !== 'mermaid')
+        .map((item) => ({
+          cat,
+          item,
+          title: cleanKnowledgeTitle(item.title),
+          href: `#/article/${cat.id}/${encodeURIComponent(item.id)}`,
+          section: item.section || '',
+        })))
+      .filter((entry) => entry.title)
+  }
+
+  function firstLetterOf(text) {
+    const s = String(text || '').trim()
+    const first = s.charAt(0).toUpperCase()
+    return /^[A-Z]$/.test(first) ? first : '#'
+  }
+
+  function buildLinkedGlossaryGroups() {
+    const map = new Map()
+    allLinkedKnowledgeItems().forEach((entry) => {
+      const terms = [entry.title, ...(entry.item.tags || [])]
+        .map(cleanKnowledgeTitle)
+        .filter(Boolean)
+      Array.from(new Set(terms)).forEach((term) => {
+        const key = firstLetterOf(term)
+        if (!map.has(key)) map.set(key, [])
+        const bucket = map.get(key)
+        if (!bucket.some((x) => x.term === term && x.href === entry.href)) {
+          bucket.push({
+            term,
+            meaning: entry.item.summary || entry.section || catTitle(entry.cat),
+            loc: catTitle(entry.cat),
+            href: entry.href,
+          })
+        }
+      })
+    })
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b))
+      .map(([letter, terms]) => ({
+        title: letter,
+        terms: terms.sort((a, b) => a.term.localeCompare(b.term, 'zh-CN')).slice(0, 80),
+      }))
+  }
+
+  function renderLinkedKnowledgeMap() {
+    const navItems = window.PDMKnowledgeNav?.buildItems?.() || []
+    const cards = navItems.map((navItem, idx) => {
+      const cat = getCat(navItem.catId)
+      const doc = navItem.docId ? getDoc(navItem.catId, navItem.docId) : null
+      const chapters = doc ? getDocChapters(navItem.catId, navItem.docId) : []
+      const links = chapters.length
+        ? chapters.slice(0, 8).map((chapter) => ({
+            title: chapter.title,
+            desc: chapter.tagline || chapter.tags || `${chapter.count || chapter.items?.length || 1} ${t('kbMod.topics', null, '个知识点')}`,
+            href: chapter.href || navItem.href,
+          }))
+        : (cat?.items || [])
+            .filter((item) => item.kind !== 'glossary-letter' && item.kind !== 'mermaid')
+            .slice(0, 8)
+            .map((item) => ({
+              title: cleanKnowledgeTitle(item.title),
+              desc: item.summary || item.section || '',
+              href: `#/article/${navItem.catId}/${encodeURIComponent(item.id)}`,
+            }))
+      return `
+        <article class="kb-linked-map-card">
+          <a href="${escapeHtml(navItem.href)}" class="kb-linked-map-title">
+            <span>${String(idx + 1).padStart(2, '0')}</span>
+            <strong>${escapeHtml(navItem.title)}</strong>
+          </a>
+          ${doc?.desc || cat?.description ? `<p class="kb-linked-map-desc">${escapeHtml(doc?.desc || cat?.description || '')}</p>` : ''}
+          <div class="kb-linked-map-links">
+            ${links.map((link) => `
+              <a href="${escapeHtml(link.href)}" title="${escapeHtml(link.desc || link.title)}">${escapeHtml(link.title)}</a>`).join('')}
+          </div>
+        </article>`
+    })
+    return `
+      <section class="kb-linked-map">
+        <div class="kb-linked-map-head">
+          <span>${escapeHtml(t('kbMod.linkedMapBadge', null, '知识库联动'))}</span>
+          <p>${escapeHtml(t('kbMod.linkedMapDesc', null, '按最新知识库 8 个主题生成，点击主题或节点即可进入对应内容。'))}</p>
+        </div>
+        <div class="kb-linked-map-grid">
+          ${cards.join('')}
+        </div>
+      </section>`
+  }
+
+
   function renderGlossary() {
-    const letters = itemsOf('reference')
+    const legacyLetters = itemsOf('reference')
       .filter((i) => i.kind === 'glossary-letter' || i.sourceId === 'keyword-index')
       .filter((i) => !/用法/.test(i.title))
 
+    const linkedLetters = buildLinkedGlossaryGroups()
+    const letters = linkedLetters.length ? linkedLetters : legacyLetters
     const letterKeys = letters.map((l) => l.title)
     const body = `
       <div class="kb-glossary">
@@ -471,7 +576,7 @@
                     .map(
                       (tm) => `
                     <article class="kb-glossary-term">
-                      <h3>${escapeHtml(tm.term)}</h3>
+                      <h3>${tm.href ? `<a href="${escapeHtml(tm.href)}">${escapeHtml(tm.term)}</a>` : escapeHtml(tm.term)}</h3>
                       <p>${escapeHtml(tm.meaning || '')}</p>
                       ${tm.loc ? `<span class="kb-glossary-loc">${escapeHtml(tm.loc)}</span>` : ''}
                     </article>`,
@@ -486,7 +591,7 @@
 
     return pageShell(
       '',
-      t('home.ctaKb', null, '速查知识库'),
+      t('home.ctaKb', null, '知识速查'),
       t('kbMod.refGlossaryDesc', null, '按字母速查术语定义与出处'),
       body,
       'kb-glossary-page',
@@ -497,6 +602,7 @@
     const maps = itemsOf('reference').filter((i) => i.kind === 'mermaid' || i.sourceId === 'mindmap')
     const body = `
       <div class="kb-mindmap-stack">
+        ${renderLinkedKnowledgeMap()}
         ${maps
           .map((m, idx) => {
             const code = (m.mermaid && m.mermaid[0]) || ''
@@ -564,6 +670,13 @@
         layout: 'grouped',
         chapterMode: 'section',
         skipSection: /待补充|相关词条/,
+      },
+      {
+        id: 'career-playbook',
+        title: '求职与作品集专题',
+        desc: '面试表达、作品集、行业视野与专项技能',
+        sourceId: 'career-playbook',
+        chapterMode: 'flat-items',
       },
     ],
     architecture: [

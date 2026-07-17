@@ -39,7 +39,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="nav-section">
-            <span className="nav-label">个人空间</span>
+            <span className="nav-label">我的空间</span>
             <Link
               to="/memory"
               className={`nav-item ${location.pathname === '/memory' ? 'active' : ''}`}

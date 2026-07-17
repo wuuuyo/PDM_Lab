@@ -30,7 +30,7 @@
     },
     {
       id: 'group_personal',
-      labelZh: '个人空间',
+      labelZh: '我的空间',
       labelEn: 'Workspace',
       children: [
         { id: 'favorites', labelZh: '我的收藏', labelEn: 'Favorites', actions: ['view', 'edit'] },
@@ -189,7 +189,7 @@
     }
     if (p0 === 'reviews' || p0 === 'memory') return { feature: 'reviews', action: 'view' }
     if (p0 === 'daily-learn') return { feature: 'dailyLearn', action: 'view' }
-    if (p0 === 'feedback') return { feature: 'feedback', action: parts[1] === 'new' || !parts[1] ? 'edit' : 'view' }
+    if (p0 === 'feedback') return null
     return null
   }
 

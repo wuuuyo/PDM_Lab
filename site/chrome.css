@@ -178,6 +178,26 @@ html.sidebar-collapsed .topbar {
   margin-left: auto;
 }
 
+.topbar-help-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.topbar-help-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(45, 90, 74, 0.35);
+  background: var(--bg-subtle);
+}
+
 .locale-toggle {
   min-width: 36px;
   height: 36px;
@@ -1232,7 +1252,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     box-sizing: border-box !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   html.mobile-chrome .topbar-primary,
@@ -1246,14 +1266,13 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     height: 44px;
     min-width: 0;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
   }
 
   html.mobile-chrome .topbar-left,
   html.mobile-chrome .topbar-menu-btn,
   html.mobile-chrome .topbar-crumbs,
   html.mobile-chrome .topbar-center,
-  html.mobile-chrome .topbar-locale,
   .topbar-left,
   .topbar-menu-btn,
   .topbar-crumbs,
@@ -1270,7 +1289,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
   .topbar-brand {
     display: inline-flex !important;
     flex: 0 0 auto;
-    max-width: calc(100% - 52px);
+    max-width: calc(100% - 142px);
     min-width: 0;
     overflow: hidden;
   }
@@ -1279,14 +1298,65 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
   .topbar-right {
     display: flex !important;
     align-items: center;
+    gap: 6px;
     margin-left: auto;
     flex-shrink: 0;
+    position: relative;
+    z-index: 420;
+  }
+
+  html.mobile-chrome .topbar-locale,
+  .topbar-locale {
+    display: block !important;
+  }
+
+  html.mobile-chrome .locale-toggle,
+  .locale-toggle {
+    min-width: 34px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 999px;
+    font-size: 0.75rem;
   }
 
   html.mobile-chrome .topbar-account-icon-only,
   .topbar-account-icon-only {
-    width: 36px !important;
-    height: 36px !important;
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  html.mobile-chrome .topbar-account-menu,
+  .topbar-account-menu {
+    position: fixed;
+    top: calc(var(--topbar-height, 56px) + 8px);
+    right: 10px;
+    width: min(260px, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+    z-index: 520;
+  }
+
+  html.mobile-chrome .topbar-help-btn,
+  .topbar-help-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  html.mobile-chrome .topbar-notification-trigger,
+  .topbar-notification-trigger {
+    width: 34px;
+    height: 34px;
+  }
+
+  html.mobile-chrome .topbar-notification-menu,
+  .topbar-notification-menu {
+    position: fixed;
+    top: calc(var(--topbar-height, 56px) + 8px);
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: min(520px, calc(100vh - var(--topbar-height, 56px) - 28px));
+    z-index: 520;
   }
 
   html.mobile-chrome .topbar-account.active,
@@ -1620,6 +1690,7 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     margin-top: 2px;
   }
 
+  .mobile-account-action-link,
   .mobile-account-admin-link {
     margin-top: 14px;
     display: flex;
@@ -1636,6 +1707,11 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     font-weight: 650;
   }
 
+  .mobile-account-action-link + .mobile-account-action-link {
+    margin-top: 10px;
+  }
+
+  .mobile-account-action-link span:last-child,
   .mobile-account-admin-link span:last-child {
     color: var(--text-muted);
   }

@@ -2,7 +2,7 @@
  * 知识库分类骨架 — 条目主要由 knowledge/product-knowledge-public 经
  * scripts/import-knowledge-base.mjs → knowledge-from-md.json 导入，再由 sync-knowledge.mjs 合并。
  *
- * 分类对齐 README 主题（每日学习不在知识库，见个人空间 `#/daily-learn`）：
+ * 分类对齐 README 主题（每日学习不在知识库，见我的空间 `#/daily-learn`）：
  * methodology | architecture | business | security | workflow | reference
  *
  * 同步：npm run sync:all

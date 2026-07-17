@@ -55,6 +55,14 @@ const SOURCES = [
     },
   },
   {
+    id: 'career-playbook',
+    file: '01-PM方法论/求职与作品集专题.md',
+    label: '求职与作品集专题',
+    headingLevel: '##',
+    defaultCategory: 'methodology',
+    sectionCategory: {},
+  },
+  {
     id: 'system-architecture',
     file: '02-技术架构/系统架构.md',
     label: '系统架构',
