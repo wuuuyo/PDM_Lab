@@ -295,8 +295,15 @@
           title: '面试框架搭建',
           goal: '建立答题结构，避免临场慌乱',
           tasks: [
-            { text: '通读面试八股分类，标记薄弱项', link: { href: '#/category/interview', label: '面试八股' } },
-            { text: '精读 STAR、竞品分析、估算题三篇', link: { href: '#/article/interview/star', label: 'STAR' } },
+            { text: '通读面试八股分类，标记薄弱项', link: { href: '#/doc/methodology/career-playbook', label: '求职专题' } },
+            {
+              text: '精读 STAR、竞品分析、估算题三篇',
+              links: [
+                { href: '#/article/methodology/kb-career-playbook-star-法则', label: 'STAR' },
+                { href: '#/article/methodology/kb-career-playbook-竞品分析', label: '竞品分析' },
+                { href: '#/article/methodology/kb-career-playbook-估算题', label: '估算题' },
+              ],
+            },
             { text: '整理 2 个项目故事（学校/实习/个人均可）', link: null },
             { text: '每天复述一个故事，录音自查逻辑', link: null },
           ],
@@ -307,9 +314,16 @@
           title: '开放题与行业题',
           goal: '覆盖高频开放题与行业认知题',
           tasks: [
-            { text: '练习「为什么想做 PM」「你的优势是什么」', link: { href: '#/article/interview/why-pm', label: '参考' } },
-            { text: '准备「介绍一个喜欢的产品」', link: { href: '#/article/interview/favorite-product', label: '参考' } },
-            { text: '复习 B/C 端、商业模式、增长相关文章', link: { href: '#/category/domain', label: '行业视野' } },
+            { text: '练习「为什么想做 PM」「你的优势是什么」', link: { href: '#/article/methodology/kb-career-playbook-为什么想做-pm', label: '为什么 PM' } },
+            { text: '准备「介绍一个喜欢的产品」', link: { href: '#/article/methodology/kb-career-playbook-介绍一个喜欢的产品', label: '喜欢的产品' } },
+            {
+              text: '复习 B/C 端、商业模式、增长相关文章',
+              links: [
+                { href: '#/article/methodology/kb-career-playbook-b-端-vs-c-端产品差异', label: 'B/C 差异' },
+                { href: '#/article/methodology/kb-product-methodology-1-2-商业模式画布补全项-2', label: '商业模式' },
+                { href: '#/article/methodology/kb-career-playbook-核心指标设计', label: '增长指标' },
+              ],
+            },
             { text: '论坛发帖求 mock 面试或组队练习', link: { href: '#/forum/new', label: '发帖' } },
           ],
           milestone: '能独立完成一次 45 分钟模拟面试',
@@ -320,7 +334,14 @@
           goal: '针对薄弱项强化，调整投递策略',
           tasks: [
             { text: '复盘模拟面试反馈，优化项目故事', link: { href: '#/reviews', label: '写复盘' } },
-            { text: '补充技能短板（PRD/数据/原型任一项）', link: { href: '#/category/skills', label: '核心技能' } },
+            {
+              text: '补充技能短板（PRD/数据/原型任一项）',
+              links: [
+                { href: '#/article/methodology/kb-product-methodology-4-3-prd-标准-7-章节', label: 'PRD' },
+                { href: '#/article/methodology/kb-career-playbook-核心指标设计', label: '数据指标' },
+                { href: '#/article/methodology/kb-career-playbook-原型设计', label: '原型' },
+              ],
+            },
             { text: '收藏高频题，考前快速复习', link: { href: '#/favorites', label: '收藏' } },
           ],
           milestone: '简历 + 作品集 + 面试故事三者一致、可互相印证',

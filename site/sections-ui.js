@@ -59,6 +59,9 @@
             .map(
               (task, taskIdx) => {
                 const done = Boolean(progress?.[`${index}:${taskIdx}`])
+                const links = Array.isArray(task.links) && task.links.length
+                  ? task.links
+                  : (task.link ? [task.link] : [])
                 return `
             <li class="path-task-row ${done ? 'is-done' : ''}">
               <label class="path-task-check">
@@ -66,7 +69,13 @@
                 <span class="path-task-check-ui" aria-hidden="true"></span>
                 <span class="path-task-text">${window.escapeHtml(task.text)}</span>
               </label>
-              ${task.link ? `<a href="${window.escapeHtml(task.link.href)}" class="path-task-btn">${window.escapeHtml(task.link.label)}</a>` : ''}
+              ${links.length ? `
+                <span class="path-task-actions">
+                  ${links.map((link) => {
+                    const href = window.PDMRouteResolver?.resolveHref?.(link.href, `${task.text || ''} ${link.label || ''}`) || link.href
+                    return `<a href="${window.escapeHtml(href)}" class="path-task-btn">${window.escapeHtml(link.label)}</a>`
+                  }).join('')}
+                </span>` : ''}
             </li>`
               },
             )
@@ -423,12 +432,16 @@
   }
 
   function renderToolCard(tool, showCategory) {
+    const externalHint = tool.networkHint
+      ? `<p class="tool-card-external-hint">${window.escapeHtml(ui('toolsUi', 'externalHint'))}</p>`
+      : ''
     return `
       <article class="tool-card">
         <div class="tool-card-main">
           ${showCategory ? `<span class="tool-card-tag">${window.escapeHtml(tool.categoryTitle)}</span>` : ''}
           <h3>${window.escapeHtml(tool.name)}</h3>
           <p>${window.escapeHtml(tool.desc)}</p>
+          ${externalHint}
         </div>
         <div class="tool-card-links">
           <a href="${window.escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-sm">${window.escapeHtml(ui('toolsUi', 'official'))}</a>
@@ -468,13 +481,6 @@
           <p class="sec-hub-desc">${window.escapeHtml(ui('toolsUi', 'hubDesc'))}</p>
         </header>
         <div class="tools-toolbar">
-          <div class="tools-search-wrap">
-            <svg class="tools-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <input type="search" id="tools-search" placeholder="${window.escapeHtml(ui('toolsUi', 'searchPlaceholder'))}" autocomplete="off" />
-          </div>
           <div class="industry-overview-tabs tools-category-tabs" role="tablist" aria-label="${window.escapeHtml(ui('toolsUi', 'tabsAria'))}">
             ${cats
               .map(
@@ -493,7 +499,6 @@
         <div class="tools-panel" id="tools-panel" role="tabpanel">
           ${renderToolsCardGrid(activeCat?.tools || [])}
         </div>
-        <div id="tools-search-results" class="tools-search-results" hidden></div>
       </div>`
   }
 
@@ -502,11 +507,9 @@
   }
 
   function bindToolsHub(initialCategoryId) {
-    const input = document.getElementById('tools-search')
     const panel = document.getElementById('tools-panel')
-    const results = document.getElementById('tools-search-results')
     const tabs = document.querySelectorAll('[data-tools-tab]')
-    if (!input || !panel || !results || !tabs.length) return
+    if (!panel || !tabs.length) return
 
     let activeId = resolveToolsActiveCategory(initialCategoryId)
 
@@ -527,34 +530,15 @@
       const cat = Tools().getCategory(activeId)
       panel.innerHTML = renderToolsCardGrid(cat?.tools || [])
       panel.hidden = false
-      results.hidden = true
       syncTabUi()
       syncToolsRoute()
-    }
-
-    const showSearchResults = (found) => {
-      panel.hidden = true
-      results.hidden = false
-      results.innerHTML = found.length
-        ? renderToolsCardGrid(found, true)
-        : `<p class="empty-hint">${window.escapeHtml(ui('toolsUi', 'searchEmpty'))}</p>`
     }
 
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
         activeId = tab.dataset.toolsTab || activeId
-        input.value = ''
         showCategoryTools()
       })
-    })
-
-    input.addEventListener('input', () => {
-      const q = input.value.trim()
-      if (!q) {
-        showCategoryTools()
-        return
-      }
-      showSearchResults(Tools().searchTools(q))
     })
 
     showCategoryTools()

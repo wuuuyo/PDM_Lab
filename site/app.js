@@ -578,6 +578,7 @@ function renderTopAccount(activePath) {
   const menuActive =
     activePath === '/login' ||
     activePath === '/feedback' ||
+    activePath === '/notifications' ||
     activePath === '/m/account' ||
     activePath === '/account' ||
     activePath === '/reset-password' ||
@@ -599,10 +600,10 @@ function renderTopAccount(activePath) {
           <strong>${escapeHtml(displayName || t('account.profileLink'))}</strong>
           <span>${escapeHtml(email)}</span>
         </div>
-        <a href="#/account" class="topbar-account-menu-item">${escapeHtml(t('account.profileLink'))}</a>
-        <a href="#/reset-password" class="topbar-account-menu-item">${escapeHtml(t('auth.resetTitle'))}</a>
-        <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
-        ${Auth().isSuperAdmin?.() ? `<a href="#/admin" class="topbar-account-menu-item">${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
+        <a href="#/account" class="topbar-account-menu-item" data-account-menu-link>${escapeHtml(t('account.profileLink'))}</a>
+        <a href="#/notifications" class="topbar-account-menu-item" id="topbar-notification-link" data-account-menu-link>${escapeHtml(t('notifications.menuTitle', null, '消息通知'))}</a>
+        <a href="#/feedback" class="topbar-account-menu-item" data-account-menu-link>${escapeHtml(t('nav.feedback'))}</a>
+        ${Auth().isSuperAdmin?.() ? `<a href="#/admin" class="topbar-account-menu-item" data-account-menu-link>${escapeHtml(t('nav.sectionAdmin'))}</a>` : ''}
         <button type="button" class="topbar-account-menu-item topbar-account-menu-danger" id="topbar-logout">${escapeHtml(t('nav.logout'))}</button>
       </div>
     </div>`
@@ -618,6 +619,7 @@ function renderTopAccount(activePath) {
       </button>
       <div class="topbar-account-menu" id="topbar-account-menu" hidden>
         <a href="#/login" class="topbar-account-menu-item">${escapeHtml(t('nav.loginRegister'))}</a>
+        <a href="#/notifications" class="topbar-account-menu-item" id="topbar-notification-link">${escapeHtml(t('notifications.menuTitle', null, '消息通知'))}</a>
         <a href="#/feedback" class="topbar-account-menu-item">${escapeHtml(t('nav.feedback'))}</a>
       </div>
     </div>`
@@ -662,42 +664,70 @@ function formatNotificationTime(value) {
 }
 
 function renderTopbarNotifications() {
-  const el = document.getElementById('topbar-notifications')
+  const legacyEl = document.getElementById('topbar-notifications')
+  if (legacyEl) legacyEl.innerHTML = ''
+  const link = document.getElementById('topbar-notification-link')
   const api = window.PDMNotifications
-  if (!el || !api) return
-  const items = api.list().slice(0, 8)
+  if (!link || !api) return
   const unread = api.unreadCount()
-  el.innerHTML = `
-    <div class="topbar-notification">
-      <button type="button" class="topbar-notification-trigger" id="topbar-notification-btn" aria-label="${escapeHtml(t('notifications.title', null, '通知'))}" title="${escapeHtml(t('notifications.title', null, '通知'))}">
-        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <path d="M13.2 7.2a4.2 4.2 0 1 0-8.4 0c0 4.8-1.8 5.4-1.8 5.4h12s-1.8-.6-1.8-5.4Z" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M10.2 15a1.35 1.35 0 0 1-2.4 0" stroke="currentColor" stroke-width="1.45" stroke-linecap="round"/>
-        </svg>
-        ${unread ? `<span class="topbar-notification-badge">${unread > 9 ? '9+' : unread}</span>` : ''}
-      </button>
-      <div class="topbar-notification-menu" id="topbar-notification-menu" hidden>
-        <div class="topbar-notification-head">
-          <strong>${escapeHtml(t('notifications.title', null, '通知'))}</strong>
-          <div>
-            <button type="button" id="notification-mark-all">${escapeHtml(t('notifications.markAllRead', null, '全部已读'))}</button>
-            <button type="button" id="notification-clear-all">${escapeHtml(t('notifications.clearAll', null, '清空'))}</button>
-          </div>
+  const title = t('notifications.menuTitle', null, '消息通知')
+  link.textContent = unread ? `${title}（${unread > 99 ? '99+' : unread}）` : title
+}
+
+function renderNotificationsPage() {
+  const api = window.PDMNotifications
+  const items = api?.list?.() || []
+  const unread = api?.unreadCount?.() || 0
+  const title = t('notifications.menuTitle', null, '消息通知')
+  return `
+    <div class="page notifications-page">
+      <header class="page-hero-block notifications-hero">
+        <span class="hero-badge">${escapeHtml(t('notifications.title', null, '通知'))}</span>
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(unread ? `你有 ${unread} 条未读消息。` : '学习进度、评论回复和系统提醒都会集中在这里。')}</p>
+        <div class="notifications-actions">
+          <button type="button" class="btn-ghost" id="notifications-mark-all" ${unread ? '' : 'disabled'}>${escapeHtml(t('notifications.markAllRead', null, '全部已读'))}</button>
+          <button type="button" class="btn-ghost" id="notifications-clear-all" ${items.length ? '' : 'disabled'}>${escapeHtml(t('notifications.clearAll', null, '清空'))}</button>
         </div>
-        <div class="topbar-notification-list">
-          ${items.length ? items.map((item) => `
-            <a href="${escapeHtml(item.href || '#/')}" class="topbar-notification-item ${item.readAt ? '' : 'is-unread'}" data-notification-id="${escapeHtml(item.id)}">
-              <span class="topbar-notification-kind">${escapeHtml(notificationTypeLabel(item.type))}</span>
-              <span class="topbar-notification-copy">
-                <strong>${escapeHtml(item.title)}</strong>
-                ${item.body ? `<small>${escapeHtml(item.body)}</small>` : ''}
-                <time>${escapeHtml(formatNotificationTime(item.createdAt))}</time>
-              </span>
-            </a>`).join('') : `
-            <div class="topbar-notification-empty">${escapeHtml(t('notifications.empty', null, '暂无通知'))}</div>`}
-        </div>
-      </div>
+      </header>
+      <section class="notifications-list-card">
+        ${items.length ? `
+          <div class="notifications-list">
+            ${items.map((item) => `
+              <a href="${escapeHtml(item.href || '#/')}" class="notifications-item ${item.readAt ? '' : 'is-unread'}" data-notification-id="${escapeHtml(item.id)}">
+                <span class="notifications-kind">${escapeHtml(notificationTypeLabel(item.type))}</span>
+                <span class="notifications-copy">
+                  <strong>${escapeHtml(item.title)}</strong>
+                  ${item.body ? `<small>${escapeHtml(item.body)}</small>` : ''}
+                  <time>${escapeHtml(formatNotificationTime(item.createdAt))}</time>
+                </span>
+              </a>`).join('')}
+          </div>` : `
+          <div class="notifications-empty">
+            <strong>${escapeHtml(t('notifications.empty', null, '暂无通知'))}</strong>
+            <span>有新的学习进度、评论回复时，会自动出现在这里。</span>
+          </div>`}
+      </section>
     </div>`
+}
+
+function bindNotificationsPageEvents() {
+  const api = window.PDMNotifications
+  if (!api) return
+  document.querySelectorAll('.notifications-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const id = item.getAttribute('data-notification-id')
+      if (id) api.markRead(id)
+    })
+  })
+  document.getElementById('notifications-mark-all')?.addEventListener('click', () => {
+    api.markAllRead()
+    render()
+  })
+  document.getElementById('notifications-clear-all')?.addEventListener('click', () => {
+    api.clearAll()
+    render()
+  })
 }
 
 function renderForbidden() {
@@ -1056,6 +1086,22 @@ function getMobileBackHref(parts) {
   return '#/'
 }
 
+const ACCOUNT_MENU_ORIGIN_KEY = 'pm-lab-account-menu-origin'
+
+function saveAccountMenuOrigin() {
+  const current = location.hash || '#/'
+  if (/^#\/(account|notifications|reset-password|feedback|admin|personal|m\/account)/.test(current)) return
+  try { sessionStorage.setItem(ACCOUNT_MENU_ORIGIN_KEY, current) } catch (_) {}
+}
+
+function getAccountMenuOrigin(fallback = '#/') {
+  try {
+    const value = sessionStorage.getItem(ACCOUNT_MENU_ORIGIN_KEY)
+    if (value && value.startsWith('#/')) return value
+  } catch (_) {}
+  return fallback
+}
+
 function getMobilePageMeta(parts) {
   if (!isMobileViewport()) return null
   if (!parts.length) return null
@@ -1095,6 +1141,7 @@ function getMobilePageMeta(parts) {
   }
   if (p0 === 'glossary') return { title: t('home.ctaKb'), backHref: '#/kb' }
   if (p0 === 'mindmap') return { title: t('home.ctaMindmap'), backHref: '#/kb' }
+  if (p0 === 'notifications') return { title: t('notifications.menuTitle', null, '消息通知'), backHref: getAccountMenuOrigin('#/') }
   if (p0 === 'module' && parts[1] && parts[2]) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
@@ -1146,16 +1193,17 @@ function getMobilePageMeta(parts) {
   if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref: tabRoot }
   if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref: tabRoot }
   if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref: tabRoot }
-  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: '#/m/account' }
+  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: getAccountMenuOrigin('#/m/account') }
   if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
-  if (p0 === 'account') return { title: t('account.profileTitle'), backHref: '#/m/account' }
-  if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: '#/m/account' }
+  if (p0 === 'account') return { title: t('account.profileTitle'), backHref: getAccountMenuOrigin('#/m/account') }
+  if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: getAccountMenuOrigin('#/m/account') }
   if (p0 === 'admin') {
-    if (parts[1] === 'knowledge') return { title: t('nav.adminKnowledge'), backHref: '#/m/account' }
-    if (parts[1] === 'accounts' || parts[1] === 'permissions') return { title: t('nav.adminAccounts'), backHref: '#/m/account' }
-    if (parts[1] === 'roles') return { title: t('nav.adminRoles'), backHref: '#/m/account' }
-    if (parts[1] === 'feedback') return { title: t('nav.adminFeedback'), backHref: '#/m/account' }
-    return { title: t('nav.adminStats'), backHref: '#/m/account' }
+    const backHref = getAccountMenuOrigin('#/m/account')
+    if (parts[1] === 'knowledge') return { title: t('nav.adminKnowledge'), backHref }
+    if (parts[1] === 'accounts' || parts[1] === 'permissions') return { title: t('nav.adminAccounts'), backHref }
+    if (parts[1] === 'roles') return { title: t('nav.adminRoles'), backHref }
+    if (parts[1] === 'feedback') return { title: t('nav.adminFeedback'), backHref }
+    return { title: t('nav.adminStats'), backHref }
   }
   return null
 }
@@ -1225,7 +1273,7 @@ function renderMobileHubPage(title, desc, items) {
 }
 
 /** 一级入口页：二级功能卡片（知识库 / 我的空间 / 管理后台） */
-function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', beforeGridHtml = '', extraHtml = '' }) {
+function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', beforeGridHtml = '', extraHtml = '', pageClass = '' }) {
   const grid = cards.length
     ? `<div class="sec-hub-grid">
         ${cards
@@ -1246,7 +1294,7 @@ function renderSectionCardHub({ title, desc, eyebrow, cards, actionsHtml = '', b
     : `<p class="empty-hint">${escapeHtml(t('mobile.hubEmpty'))}</p>`
 
   return `
-    <div class="page sec-hub-page">
+    <div class="page sec-hub-page ${escapeHtml(pageClass)}">
       <header class="sec-hub-hero">
         ${eyebrow ? `<p class="sec-hub-eyebrow">${escapeHtml(eyebrow)}</p>` : ''}
         <h1>${escapeHtml(title)}</h1>
@@ -1462,7 +1510,6 @@ function bindKnowledgeHubEvents() {
 
 function renderPersonalHubPage() {
   const loggedIn = Auth().isLoggedIn()
-  // 未登录：与移动端一致，用我的空间卡片枢纽 + 登录 CTA（不再用居中 login-gate 卡）
   return renderSectionCardHub({
     eyebrow: t('nav.sectionPersonal'),
     title: t('kbMod.personalHubTitle', null, '我的空间'),
@@ -1473,6 +1520,7 @@ function renderPersonalHubPage() {
     actionsHtml: loggedIn
       ? ''
       : `<a href="#/login" class="btn-primary">${escapeHtml(t('auth.personalGateCta'))}</a>`,
+    pageClass: 'personal-hub-page',
   })
 }
 
@@ -1563,6 +1611,25 @@ function renderNicknameForm(profile, email) {
     </section>`
 }
 
+function renderPasswordInlineForm() {
+  const configured = Auth().isConfigured()
+  return `
+    <section class="account-nickname-card account-password-card">
+      <div class="account-nickname-head">
+        <h2>${escapeHtml(t('auth.resetTitle'))}</h2>
+        <p>${escapeHtml(t('auth.resetDesc'))}</p>
+      </div>
+      ${!configured ? `<p class="auth-warn">${escapeHtml(t('auth.notConfigured'))}</p>` : ''}
+      <label class="account-nickname-field">
+        <span>${escapeHtml(t('auth.newPassword'))}</span>
+        <input id="auth-new-password" class="account-nickname-input" type="password" autocomplete="new-password" placeholder="${escapeHtml(t('auth.passwordPlaceholder'))}" minlength="6" />
+      </label>
+      <div class="account-nickname-actions">
+        <button type="button" class="btn-primary" id="auth-update-password" ${configured ? '' : 'disabled'}>${escapeHtml(t('auth.savePassword'))}</button>
+      </div>
+    </section>`
+}
+
 function accountInitial(name, email) {
   const src = (name || email || 'U').trim()
   const ch = src[0] || 'U'
@@ -1594,6 +1661,16 @@ function bindNicknameForm() {
   })
 }
 
+function bindAccountProfileActions() {
+  bindNicknameForm()
+  bindResetPasswordEvents()
+  document.getElementById('account-profile-logout')?.addEventListener('click', async () => {
+    await Auth().signOut()
+    showToast(t('auth.toastLoggedOut'), 'info')
+    navigate('/')
+  })
+}
+
 function renderAccountProfilePage() {
   if (!Auth().isLoggedIn()) {
     return renderLoginRequired(t('auth.requiredDefault'))
@@ -1601,13 +1678,28 @@ function renderAccountProfilePage() {
   const session = Auth().getSession?.()
   const email = session?.user?.email || ''
   const profile = Auth().getProfile?.()
+  const name = profile?.display_name?.trim() || ''
+  const initial = accountInitial(name, email)
   return `
     <div class="page account-profile-page">
       <header class="memory-header">
         <h1>${escapeHtml(t('account.profileTitle'))}</h1>
         <p>${escapeHtml(t('account.profileDesc'))}</p>
       </header>
-      ${renderNicknameForm(profile, email)}
+      <section class="account-overview-panel">
+        <div class="account-overview-id">
+          <span class="account-overview-avatar" aria-hidden="true">${escapeHtml(initial)}</span>
+          <div>
+            <strong>${escapeHtml(name || email || t('account.profileTitle'))}</strong>
+            ${email ? `<span>${escapeHtml(email)}</span>` : ''}
+          </div>
+        </div>
+        <div class="account-overview-grid">
+          ${renderNicknameForm(profile, email)}
+          ${renderPasswordInlineForm()}
+        </div>
+        <button type="button" class="btn-secondary account-overview-logout" id="account-profile-logout">${escapeHtml(t('nav.logout'))}</button>
+      </section>
     </div>`
 }
 
@@ -1627,7 +1719,7 @@ function renderMobileAccountHub() {
   return `
     <div class="page mobile-hub-page mobile-account-page">
       <header class="mobile-account-head">
-        <h1>${escapeHtml(t('mobile.accountTitle'))}</h1>
+        <h1>${escapeHtml(t('account.profileTitle'))}</h1>
       </header>
       <section class="mobile-profile-card">
         <div class="mobile-profile-top">
@@ -1650,6 +1742,15 @@ function renderMobileAccountHub() {
             <p class="mobile-profile-account">${escapeHtml(email || '—')}</p>
           </div>
         </div>
+        <div class="mobile-profile-fields mobile-profile-password">
+          <label class="mobile-profile-field">
+            <span>${escapeHtml(t('auth.newPassword'))}</span>
+            <div class="mobile-profile-nickname-row">
+              <input id="auth-new-password" class="account-nickname-input" type="password" autocomplete="new-password" placeholder="${escapeHtml(t('auth.passwordPlaceholder'))}" minlength="6" />
+              <button type="button" class="btn-primary btn-sm" id="auth-update-password" ${Auth().isConfigured() ? '' : 'disabled'}>${escapeHtml(t('auth.savePassword'))}</button>
+            </div>
+          </label>
+        </div>
         <button type="button" class="btn-secondary mobile-profile-logout" id="mobile-account-logout">${escapeHtml(t('nav.logout'))}</button>
       </section>
       ${Perm().can('feedback') ? `
@@ -1671,6 +1772,7 @@ function bindMobileAccountHub() {
     return
   }
   bindNicknameForm()
+  bindResetPasswordEvents()
   document.getElementById('mobile-account-logout')?.addEventListener('click', async () => {
     await Auth().signOut()
     showToast(t('auth.toastLoggedOut'), 'info')
@@ -2013,6 +2115,7 @@ function renderHome() {
   const total = stats.totalCount || cats.reduce((s, c) => s + c.items.length, 0)
   const pathHref = path ? `#/industry/learning-path/${path.id}` : '#/industry/learning-path'
   const pathProgress = path ? window.PDMStorage?.countPathProgress?.(path) : null
+  const heroTitle = t('home.heroTitle')
 
   const scenarioPlans = [
     { id: 'newcomer-8w', label: t('home.sceneNewcomer') },
@@ -2062,7 +2165,7 @@ function renderHome() {
         <h1 class="home-stage-title">
           <span class="home-stage-brand">PM Lab</span>
         </h1>
-        <p class="home-stage-line">${escapeHtml(t('home.heroTitle'))}</p>
+        ${heroTitle ? `<p class="home-stage-line">${escapeHtml(heroTitle)}</p>` : ''}
         <p class="home-stage-sub">${escapeHtml(t('home.heroSubtitle'))}</p>
 
         <div class="home-composer" id="home-composer" role="group" aria-label="${escapeHtml(t('home.composerLabel'))}">
@@ -2090,6 +2193,7 @@ function renderHome() {
       </section>
 
       <section class="home-section home-learning-section" id="home-scenarios">
+        <p class="home-learning-guide">${escapeHtml(t('home.mainTrackGuide'))}</p>
         <div class="home-learning-board">
           <a href="${pathHref}" class="home-learning-main">
             <span class="home-learning-kicker">${escapeHtml(t('home.recommendedTrackBadge', null, '推荐路线'))}</span>
@@ -2192,6 +2296,7 @@ function maybeOpenHomeOnboarding() {
     }
     if (localStorage.getItem(ONBOARDING_KEY) === '1') return
   } catch (_) {}
+  openHomeOnboarding()
 }
 
 function bindHomeEvents() {
@@ -2686,6 +2791,8 @@ function bindArticleNotesEvents() {
 }
 
 const LEGACY_ARTICLE_TARGETS = {
+  'methodology/kb-pm-bagu-案例-代理商平台接企学宝': ['methodology', 'kb-pm-bagu-文档体系案例-b-端平台对接外部培训系统'],
+  'methodology/kb-pm-bagu-4-个关键边界': ['methodology', 'kb-pm-bagu-冒烟测试-4-个关键边界'],
   'methodology/user-research': ['methodology', 'kb-product-methodology-2-5-用户访谈'],
   'methodology/requirement-analysis': ['workflow', 'kb-workflow-2-需求分析'],
   'methodology/mvp': ['methodology', 'kb-pm-bagu-mvp'],
@@ -2703,25 +2810,191 @@ const LEGACY_ARTICLE_TARGETS = {
   'interview/favorite-product': ['methodology', 'kb-career-playbook-介绍一个喜欢的产品'],
 }
 
-function renderArticle(categoryId, itemId) {
-  const legacyTarget = LEGACY_ARTICLE_TARGETS[`${categoryId}/${itemId}`]
+const LEGACY_ARTICLE_HINTS = {
+  'methodology/user-research': '用户访谈 用户研究',
+  'methodology/requirement-analysis': '需求分析 KANO RICE 真伪需求',
+  'methodology/mvp': 'MVP 最小可行产品',
+  'skills/prd': 'PRD 需求文档',
+  'skills/prototype': '原型设计 低保真',
+  'skills/roadmap': 'Roadmap 版本规划',
+  'skills/metrics-design': '核心指标 北极星 漏斗',
+  'domain/b-vs-c': 'B端 C端 产品差异',
+  'domain/business-model': '商业模式画布 商业模式',
+  'domain/ai-product': 'AI 产品专题',
+  'interview/star': 'STAR 法则',
+  'interview/competitor-analysis': '竞品分析',
+  'interview/estimate-dau': '估算题 DAU',
+  'interview/why-pm': '为什么想做 PM',
+  'interview/favorite-product': '介绍一个喜欢的产品',
+}
+
+function resolveMissingArticleCandidates(categoryId, itemId, limit = 4) {
+  const key = `${categoryId}/${itemId}`
+  const query = LEGACY_ARTICLE_HINTS[key] || String(itemId || '')
+    .replace(/^kb-/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\d+/g, ' ')
+    .trim()
+  if (!query) return []
+  const results = K.searchKnowledgeMerged?.(query) || []
+  const seen = new Set()
+  const candidates = []
+  for (const result of results) {
+    if (result.source === 'my' || !result.category?.id || !result.item?.id) continue
+    const href = `#/article/${result.category.id}/${encodeURIComponent(result.item.id)}`
+    if (seen.has(href)) continue
+    seen.add(href)
+    candidates.push({
+      href,
+      title: result.item.title,
+      desc: result.item.summary || result.item.section || '',
+      meta: catTitle(result.category),
+    })
+    if (candidates.length >= limit) break
+  }
+  return candidates
+}
+
+function getKnowledgeArticleTarget(categoryId, itemId) {
+  const cat = K.getCategoryByIdMerged(categoryId)
+  const item = cat?.items.find((i) => i.id === itemId)
+  if (cat && item) return { category: cat, item }
+  for (const c of K.getMergedCategories?.() || []) {
+    const hit = c.items.find((i) => i.id === itemId)
+    if (hit) return { category: c, item: hit }
+  }
+  return null
+}
+
+function articleHref(categoryId, itemId) {
+  return `#/article/${categoryId}/${encodeURIComponent(itemId)}`
+}
+
+function resolveKnowledgeArticleHref(categoryId, itemId, hint = '') {
+  const key = `${categoryId}/${itemId}`
+  const legacyTarget = LEGACY_ARTICLE_TARGETS[key]
   if (legacyTarget) {
-    categoryId = legacyTarget[0]
-    itemId = legacyTarget[1]
+    const target = getKnowledgeArticleTarget(legacyTarget[0], legacyTarget[1])
+    if (target) return articleHref(target.category.id, target.item.id)
   }
-  let cat = K.getCategoryByIdMerged(categoryId)
-  let item = cat?.items.find((i) => i.id === itemId)
-  if (!item) {
-    for (const c of K.getMergedCategories?.() || []) {
-      const hit = c.items.find((i) => i.id === itemId)
-      if (hit) {
-        cat = c
-        item = hit
-        break
-      }
+
+  const direct = getKnowledgeArticleTarget(categoryId, itemId)
+  if (direct) return articleHref(direct.category.id, direct.item.id)
+
+  const candidates = resolveMissingArticleCandidates(categoryId, itemId, 1)
+  if (candidates[0]?.href) return candidates[0].href
+
+  const searchText = [hint, LEGACY_ARTICLE_HINTS[key], itemId]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/[-_/#]+/g, ' ')
+    .trim()
+  if (searchText) {
+    const result = (K.searchKnowledgeMerged?.(searchText) || [])
+      .find((r) => r.source !== 'my' && r.category?.id && r.item?.id)
+    if (result) return articleHref(result.category.id, result.item.id)
+  }
+
+  return null
+}
+
+function resolveKnownRouteHref(href, hint = '') {
+  const raw = String(href || '').trim()
+  if (!raw || !raw.startsWith('#/')) return raw
+  const [path, query = ''] = raw.slice(2).split('?')
+  const parts = path.split('/').filter(Boolean).map((p) => {
+    try {
+      return decodeURIComponent(p)
+    } catch {
+      return p
     }
+  })
+
+  if (parts[0] === 'article' && parts[1] && parts[2]) {
+    const catId = resolveKbCategoryId(parts[1])
+    const resolved = resolveKnowledgeArticleHref(catId, parts[2], hint)
+    if (resolved) return resolved
   }
-  if (!cat || !item) return `<div class="page"><p>${escapeHtml(t('common.notFound'))}</p><a href="#/">${escapeHtml(t('common.backHome'))}</a></div>`
+
+  if (parts[0] === 'category' && parts[1]) {
+    if (['interview', 'skills', 'domain'].includes(parts[1])) return '#/doc/methodology/career-playbook'
+    if (['methodology', 'architecture'].includes(parts[1])) return '#/kb'
+    if (parts[1] === 'reference') return '#/glossary'
+    const catId = resolveKbCategoryId(parts[1])
+    if (catId !== parts[1]) return `#/category/${catId}`
+  }
+
+  return query ? `#/${path}?${query}` : `#/${path}`
+}
+
+window.PDMRouteResolver = {
+  resolveHref: resolveKnownRouteHref,
+  resolveArticleHref: resolveKnowledgeArticleHref,
+}
+
+let internalRouteGuardBound = false
+function bindInternalRouteGuard() {
+  if (internalRouteGuardBound) return
+  internalRouteGuardBound = true
+  document.addEventListener('click', (event) => {
+    const link = event.target?.closest?.('a[href^="#/"]')
+    if (!link) return
+    const href = link.getAttribute('href')
+    const resolved = resolveKnownRouteHref(href, link.textContent || '')
+    if (!resolved || resolved === href) return
+    event.preventDefault()
+    navigate(resolved)
+  })
+}
+
+function renderMissingArticlePage(categoryId, itemId) {
+  const candidates = resolveMissingArticleCandidates(categoryId, itemId)
+  return `
+    <div class="page article-missing-page">
+      <section class="article-missing-panel">
+        <p class="eyebrow">${escapeHtml(t('nav.sectionKnowledge'))}</p>
+        <h1>${escapeHtml(t('common.notFound'))}</h1>
+        <p>${escapeHtml(t('kbMod.missingArticleHint', null, '这个入口可能来自旧版知识库，当前内容已迁移或重命名。'))}</p>
+        <div class="article-missing-actions">
+          <a href="#/kb" class="btn-primary">${escapeHtml(t('nav.sectionKnowledge'))}</a>
+          <a href="#/glossary" class="btn-ghost">${escapeHtml(t('kbMod.refGlossaryTitle', null, '知识速查'))}</a>
+        </div>
+      </section>
+      ${candidates.length ? `
+        <section class="article-missing-suggestions">
+          <h2>${escapeHtml(t('kbMod.relatedKnowledge', null, '你可能要找'))}</h2>
+          <div class="article-missing-grid">
+            ${candidates.map((item) => `
+              <a href="${escapeHtml(item.href)}" class="article-missing-card">
+                <small>${escapeHtml(item.meta)}</small>
+                <strong>${escapeHtml(item.title)}</strong>
+                ${item.desc ? `<span>${escapeHtml(item.desc)}</span>` : ''}
+              </a>`).join('')}
+          </div>
+        </section>` : ''}
+    </div>`
+}
+
+function renderArticle(categoryId, itemId) {
+  const resolvedHref = resolveKnowledgeArticleHref(categoryId, itemId)
+  if (resolvedHref) {
+    const [resolvedCatId, resolvedItemId] = resolvedHref
+      .replace(/^#\/article\//, '')
+      .split('/')
+      .map((p) => {
+        try {
+          return decodeURIComponent(p)
+        } catch {
+          return p
+        }
+      })
+    categoryId = resolvedCatId
+    itemId = resolvedItemId
+  }
+  const target = getKnowledgeArticleTarget(categoryId, itemId)
+  let cat = target?.category
+  let item = target?.item
+  if (!cat || !item) return renderMissingArticlePage(categoryId, itemId)
   const catLabel = catTitle(cat)
   const trail = window.PDMKnowledgeViews?.resolveArticleTrail?.(cat.id, item.id)
   const topicLabel = trail?.doc
@@ -2809,13 +3082,165 @@ let knowledgeState = {
   form: { groupId: 'default', title: '', summary: '', tags: [], contentText: '' },
   tagInput: '',
 }
-let myKnowledgeState = { q: '', groupId: 'all', showGroupForm: false, editingGroup: null, groupForm: { name: '', description: '' } }
+let myKnowledgeState = { q: '', groupId: 'all', showGroupForm: false, editingGroup: null, openGroupMenu: null, groupForm: { name: '', description: '' } }
 let lastKnowledgeRoute = ''
 
 function emptyKnowledgeForm(groupId = 'default') {
   const groups = loadKnowledgeGroups()
   const gid = groups.some((g) => g.id === groupId) ? groupId : (groups[0]?.id || 'default')
   return { groupId: gid, title: '', summary: '', tags: [], contentText: '' }
+}
+
+const ADMIN_ARCHITECTURE_GROUP_ID = 'admin-system-architecture'
+const ADMIN_ARCHITECTURE_SEED_VERSION = 1
+let adminArchitectureSeedPromise = null
+
+function getAdminArchitectureKnowledgeSeeds() {
+  return [
+    {
+      id: 'admin-architecture-7-robot-iot',
+      groupId: ADMIN_ARCHITECTURE_GROUP_ID,
+      title: '7. 机器人 / IoT 系统特有架构',
+      summary: '内部场景知识：用云-边-端、OTA、数据双轨解释机器人 / IoT 系统为什么不能只按普通 Web 系统理解。',
+      tags: ['系统架构', '机器人', 'IoT', '云边端', '内部知识'],
+      content: [
+        '云-边-端架构把业务管理、边缘计算、实时控制拆到不同层级：云端负责平台与数据，边缘端负责本地计算与路径规划，设备端负责低延迟控制。',
+        '云端：承载账号、组织、设备管理、订单 / 工单、报表分析、OTA 策略、权限与审计。云端适合做“统一管理”和“跨设备协同”，但不适合承接毫秒级控制。',
+        '边缘端：通常在机器人本体或现场网关中，负责 SLAM、路径规划、任务调度、离线缓存、局域网通信。网络不稳定时，边缘端要能独立完成核心任务。',
+        '设备端：传感器、控制器、电机、急停、避障等低延迟能力。像“检测到障碍物立即停止”必须在设备端或边缘端完成，不能依赖云端请求。',
+        'OTA 空中升级要有灰度、校验、备份、回滚、升级窗口和结果上报。PM 写需求时要明确：升级对象、版本范围、失败策略、是否强制升级、用户是否可感知。',
+        '机器人数据通常是双轨：时序数据用于运行状态、故障诊断、传感器监控；业务数据用于订单、工单、客户、设备资产；地图、视频、图像则更适合专用地图服务或对象存储。',
+      ],
+      pmApplication: [
+        '实时性需求必须明确放在哪一层。业务平台可以等 1 秒，路径规划可能只能等 100ms，紧急制动必须在 10ms 级别内处理。',
+        '凡是涉及机器人、硬件、IoT 的需求，PRD 里要补充网络异常、离线策略、升级失败、设备状态回传和数据存储位置。',
+      ],
+    },
+    {
+      id: 'admin-architecture-8-evolution',
+      groupId: ADMIN_ARCHITECTURE_GROUP_ID,
+      title: '8. 架构演进路径与技术债判断',
+      summary: '从单体、模块化单体、微服务、服务网格到云原生，帮助 PM 判断什么时候应该偿还技术债。',
+      tags: ['系统架构', '技术债', '架构演进', '内部知识'],
+      content: [
+        '常见演进路径：单体架构 → 模块化单体 → 微服务 → 服务网格 → 云原生 / Serverless。不是越高级越好，而是要匹配团队规模、业务复杂度和系统压力。',
+        '单体适合早期验证，研发效率高、部署简单；问题是模块边界容易混乱，后期改动牵一发动全身。',
+        '模块化单体适合中期治理，通过清晰模块边界降低耦合，是很多 B 端系统最现实的过渡形态。',
+        '微服务适合团队多人并行、业务域稳定、流量压力较高的阶段；代价是链路追踪、服务治理、数据一致性、发布运维复杂度都会上升。',
+        '服务网格和云原生适合多服务、大规模、多地域部署场景。PM 不需要掌握底层实现，但要理解它们通常是为了解决治理、弹性、可观测和发布效率问题。',
+        '技术债信号：改一个小需求耗时明显变长、发版频繁引发连锁故障、新人无法独立理解模块、线上事故频发、同类逻辑在多个地方重复实现。',
+      ],
+      pmApplication: [
+        'PM 不要把“重构”当成研发自己的事。当技术债开始影响交付速度、稳定性和客户体验时，应推动技术债偿还 Sprint。',
+        '判断是否重构时，要问清楚：影响哪些业务目标、不重构的代价是什么、重构范围多大、如何灰度、如何验收。',
+      ],
+    },
+    {
+      id: 'admin-architecture-9-diagram',
+      groupId: ADMIN_ARCHITECTURE_GROUP_ID,
+      title: '9. 架构图绘制：PM 必会的沟通工具',
+      summary: '用 C4 模型区分上下文图、容器图、组件图和代码图，避免架构沟通只停留在口头描述。',
+      tags: ['系统架构', '架构图', 'C4模型', '内部知识'],
+      content: [
+        'C4 模型分为四层：Context、Container、Component、Code。PM 通常需要掌握前两层，用于业务、产品、研发、测试之间快速对齐。',
+        'Context 图回答“系统和谁交互”：用户、内部角色、外部系统、第三方服务、核心数据流。适合立项、评审、跨团队沟通。',
+        'Container 图回答“系统由哪些大块组成”：Web 前端、移动端、后端服务、数据库、缓存、消息队列、对象存储、第三方接口等。',
+        'Component 图回答“某个服务内部怎么拆”：通常由研发主导，PM 只需要能看懂关键模块边界。',
+        'Code 图回答具体类、函数、代码结构，PM 一般不需要参与。',
+        '画架构图时要避免三个问题：只画框不画关系、只画技术组件不画业务角色、没有标注同步 / 异步 / 数据方向 / 权限边界。',
+      ],
+      pmApplication: [
+        '评审复杂需求时，PM 至少准备一张 Context 图，说明用户、平台、外部系统、数据流和关键依赖。',
+        '如果一个需求涉及登录、支付、第三方对接、设备控制、数据同步，建议补一张 Container 图，让研发提前发现风险。',
+      ],
+    },
+    {
+      id: 'admin-architecture-10-review-questions',
+      groupId: ADMIN_ARCHITECTURE_GROUP_ID,
+      title: '10. PM 必会的 10 个架构评审问题',
+      summary: '用于需求评审前自检：数据存储、同步方式、QPS、延迟、一致性、失败兜底、数据量、维护和上线标准。',
+      tags: ['系统架构', '需求评审', '技术评审', '内部知识'],
+      content: [
+        '1. 数据存在哪：主库、缓存、对象存储、时序库、日志平台分别存什么，是否涉及敏感数据。',
+        '2. 同步还是异步：用户是否必须立刻看到结果，是否可以用消息队列或异步任务处理。',
+        '3. 能扛多少 QPS：预估峰值、平均值、活动流量、设备上报频率，避免只说“很多用户”。',
+        '4. 延迟要求是什么：同步接口、异步任务、设备控制、报表生成的可接受时间不同。',
+        '5. 一致性要求是什么：强一致、最终一致、允许延迟多久，失败后是否需要补偿。',
+        '6. 触发频率是什么：用户主动触发、定时任务、设备自动上报、外部系统回调，要分别说明。',
+        '7. 失败怎么兜底：重试、回滚、降级、人工处理、用户提示、告警通知分别怎么设计。',
+        '8. 数据量预估是多少：日增、峰值、保留周期、归档策略、查询范围。',
+        '9. 谁来维护：研发、运维、业务运营、客服是否有明确责任边界和 oncall 机制。',
+        '10. 上线标准是什么：灰度比例、监控指标、告警阈值、回滚条件、验收 checklist。',
+      ],
+      pmApplication: [
+        '正确答案不是“研发决定”，而是 PM 先给业务口径和约束，研发再设计技术方案。',
+        '评审前可以用模板表达：数据位置 + 同步方式 + 性能目标 + 一致性口径 + 失败兜底 + 灰度上线标准。',
+      ],
+    },
+  ].map((entry) => ({
+    ...entry,
+    seedVersion: ADMIN_ARCHITECTURE_SEED_VERSION,
+  }))
+}
+
+function ensureSuperAdminArchitectureKnowledgeSeed() {
+  if (!Auth().isSuperAdmin?.()) return false
+  if (adminArchitectureSeedPromise) return true
+  const now = new Date().toISOString()
+  const group = {
+    id: ADMIN_ARCHITECTURE_GROUP_ID,
+    name: '系统架构（内部）',
+    description: '仅超级管理员可见的内部架构知识沉淀',
+    createdAt: now,
+    updatedAt: now,
+  }
+  const groups = loadKnowledgeGroups()
+  const items = loadCustomKnowledge()
+  const seeds = getAdminArchitectureKnowledgeSeeds()
+  let changed = false
+  const nextGroups = groups.some((g) => g.id === group.id)
+    ? groups.map((g) => (g.id === group.id ? { ...g, ...group, createdAt: g.createdAt || now } : g))
+    : [group, ...groups]
+  changed = changed || nextGroups.length !== groups.length
+  const byId = new Map(items.map((item) => [item.id, item]))
+  for (const seed of seeds) {
+    const existing = byId.get(seed.id)
+    if (!existing || Number(existing.seedVersion || 0) < ADMIN_ARCHITECTURE_SEED_VERSION) {
+      byId.set(seed.id, {
+        ...existing,
+        ...seed,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+      })
+      changed = true
+    }
+  }
+  if (!changed) return false
+  adminArchitectureSeedPromise = Promise.resolve()
+    .then(() => saveKnowledgeGroups(nextGroups))
+    .then(() => saveCustomKnowledge(Array.from(byId.values())))
+    .then(() => {
+      adminArchitectureSeedPromise = null
+      render()
+    })
+    .catch((e) => {
+      adminArchitectureSeedPromise = null
+      console.warn('seed admin architecture knowledge failed:', e)
+    })
+  return true
+}
+
+function updateKnowledgeFormDraftFromDom() {
+  const form = knowledgeState.form || emptyKnowledgeForm()
+  knowledgeState.form = {
+    ...form,
+    groupId: document.getElementById('kf-group')?.value || form.groupId || 'default',
+    title: document.getElementById('kf-title')?.value || '',
+    summary: document.getElementById('kf-summary')?.value || '',
+    tags: Array.isArray(form.tags) ? form.tags : [],
+    contentText: document.getElementById('kf-content')?.value || '',
+  }
+  knowledgeState.tagInput = document.getElementById('kf-tag-input')?.value || ''
 }
 
 function renderMyKnowledgeHub() {
@@ -2827,52 +3252,69 @@ function renderMyKnowledgeHub() {
     groupCounts[g.id] = K.getMyKnowledgeItems(g.id).length
   }
   const total = K.getMyKnowledgeItems().length
+  const allTags = [...new Set(K.getMyKnowledgeItems().flatMap((item) => item.tags || []))].filter(Boolean)
+  const activeGroupName = groupId === 'all'
+    ? '全部分组'
+    : (groups.find((g) => g.id === groupId)?.name || '当前分组')
 
   return `
     <div class="page my-knowledge-page">
-      <header class="memory-header">
+      <header class="memory-header my-knowledge-header">
         <h1>我的知识库</h1>
-        <p>自定义分组、新增与编辑个人知识，支持关键词与分组筛选</p>
+        <p>自定义分组、新增与编辑个人知识，支持关键词与分组筛选。</p>
+        <div class="my-knowledge-stats" aria-label="我的知识库统计">
+          <span><strong>${total}</strong> 个知识点</span>
+          <span><strong>${groups.length}</strong> 个分组</span>
+          <span><strong>${allTags.length}</strong> 个标签</span>
+        </div>
       </header>
-      ${renderCloudPanel()}
       <div class="my-knowledge-layout">
         <aside class="my-knowledge-sidebar">
           <button type="button" class="btn-secondary btn-block" id="btn-new-group">+ 新建分组</button>
           <nav class="group-nav">
             <button type="button" class="group-nav-item ${groupId === 'all' ? 'active' : ''}" data-group="all">全部 <span class="nav-count">${total}</span></button>
             ${groups.map((g) => `
-              <button type="button" class="group-nav-item ${groupId === g.id ? 'active' : ''}" data-group="${g.id}">
-                <span class="group-nav-name">${escapeHtml(g.name)}</span>
-                <span class="nav-count">${groupCounts[g.id] || 0}</span>
-              </button>`).join('')}
+              <div class="group-nav-row ${groupId === g.id ? 'active' : ''}">
+                <button type="button" class="group-nav-item" data-group="${g.id}">
+                  <span class="group-nav-name">${escapeHtml(g.name)}</span>
+                  <span class="nav-count">${groupCounts[g.id] || 0}</span>
+                </button>
+                <button type="button" class="group-more-btn" data-group-menu="${g.id}" aria-label="分组操作：${escapeHtml(g.name)}" aria-expanded="${myKnowledgeState.openGroupMenu === g.id}">
+                  <span aria-hidden="true">⋯</span>
+                </button>
+                ${myKnowledgeState.openGroupMenu === g.id ? `
+                  <div class="group-action-menu">
+                    <button type="button" class="group-action-menu-item btn-edit-group" data-id="${g.id}">编辑分组</button>
+                    ${g.id !== 'default' ? `<button type="button" class="group-action-menu-item danger btn-del-group" data-id="${g.id}">删除分组</button>` : ''}
+                  </div>` : ''}
+              </div>`).join('')}
           </nav>
           ${myKnowledgeState.showGroupForm ? renderGroupForm() : ''}
-          <div class="group-manage-list">
-            ${groups.map((g) => `
-              <div class="group-manage-row">
-                <span>${escapeHtml(g.name)}</span>
-                <span>
-                  <button type="button" class="btn-ghost btn-sm btn-edit-group" data-id="${g.id}">编辑</button>
-                  ${g.id !== 'default' ? `<button type="button" class="btn-ghost btn-sm btn-del-group" data-id="${g.id}">删</button>` : ''}
-                </span>
-              </div>`).join('')}
-          </div>
         </aside>
         <main class="my-knowledge-main">
           <div class="my-knowledge-toolbar">
             <input type="search" id="my-k-search" placeholder="搜索标题、标签、正文、分组…" value="${escapeHtml(q)}" />
+            <span class="my-knowledge-filter-pill">${escapeHtml(activeGroupName)} · ${items.length} 条</span>
             <a href="#/my-knowledge/add${groupId !== 'all' ? `?group=${groupId}` : ''}" class="btn-primary">+ 新增知识</a>
           </div>
-          <div class="article-list">
+          <div class="article-list my-knowledge-list">
             ${items.length ? items.map((item, i) => `
-              <a href="#/my-knowledge/view/${item.id}" class="article-card custom-item">
-                <span class="article-index">${String(i + 1).padStart(2, '0')}</span>
-                <div class="article-card-body">
-                  <h3>${escapeHtml(item.title)} <span class="custom-badge">${escapeHtml(item.groupName)}</span></h3>
-                  <p>${escapeHtml(item.summary)}</p>
-                  <div class="article-tags">${item.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+              <div class="article-card custom-item my-knowledge-item-card">
+                <a href="#/my-knowledge/view/${item.id}" class="my-knowledge-item-link">
+                  <span class="article-index">${String(i + 1).padStart(2, '0')}</span>
+                  <div class="article-card-body">
+                    <h3>${escapeHtml(item.title)} <span class="custom-badge">${escapeHtml(item.groupName)}</span></h3>
+                    <p>${escapeHtml(item.summary)}</p>
+                    <div class="article-tags">${(item.tags || []).slice(0, 4).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+                  </div>
+                </a>
+                <div class="my-knowledge-card-actions">
+                  <label for="move-${escapeHtml(item.id)}">移动到</label>
+                  <select id="move-${escapeHtml(item.id)}" class="my-knowledge-move-select" data-id="${escapeHtml(item.id)}">
+                    ${groups.map((g) => `<option value="${g.id}" ${item.groupId === g.id ? 'selected' : ''}>${escapeHtml(g.name)}</option>`).join('')}
+                  </select>
                 </div>
-              </a>`).join('') : '<p class="empty-hint">暂无知识，点击「新增知识」开始记录</p>'}
+              </div>`).join('') : '<p class="empty-hint">暂无知识，点击「新增知识」开始记录</p>'}
           </div>
         </main>
       </div>
@@ -2940,15 +3382,6 @@ function renderKnowledgeForm(editItemId) {
   let editing = null
   if (editItemId) {
     editing = K.getMyKnowledgeEntry(editItemId)
-    if (editing) {
-      knowledgeState.form = {
-        groupId: editing.groupId,
-        title: editing.title,
-        summary: editing.summary,
-        tags: [...editing.tags],
-        contentText: editing.content.join('\n\n'),
-      }
-    }
   }
 
   const { params } = parseRoute()
@@ -2963,7 +3396,7 @@ function renderKnowledgeForm(editItemId) {
     <div class="page knowledge-form-page">
       <div class="knowledge-form-header">
         <h1>${isEdit ? '编辑知识点' : '新增知识点'}</h1>
-        <p>保存后存入「我的知识库」，登录后自动云端同步。</p>
+        <p>保存后存入「我的知识库」，可按分组管理，也可用标签做跨分组检索。</p>
       </div>
       <div class="form-card knowledge-form">
         <div class="form-group">
@@ -2982,6 +3415,7 @@ function renderKnowledgeForm(editItemId) {
         </div>
         <div class="form-group">
           <label>标签</label>
+          <p class="form-hint tag-definition">标签用于标记知识点的属性或场景，例如「面试」「方法论」「数据分析」。它不替代分组，主要用于搜索与快速识别。</p>
           <div class="tag-input-row">
             <input id="kf-tag-input" placeholder="输入后回车添加" value="${escapeHtml(knowledgeState.tagInput)}" />
             <button type="button" class="btn-secondary" id="kf-add-tag">添加</button>
@@ -3219,6 +3653,7 @@ function renderFavoritesPage() {
 
 function bindKnowledgeFormEvents() {
   document.getElementById('kf-add-tag')?.addEventListener('click', () => {
+    updateKnowledgeFormDraftFromDom()
     const input = document.getElementById('kf-tag-input')
     const tag = input?.value.trim()
     if (tag && !knowledgeState.form.tags.includes(tag)) {
@@ -3226,6 +3661,10 @@ function bindKnowledgeFormEvents() {
       knowledgeState.tagInput = ''
       render()
     }
+  })
+
+  document.getElementById('kf-tag-input')?.addEventListener('input', (e) => {
+    knowledgeState.tagInput = e.target.value
   })
 
   document.getElementById('kf-tag-input')?.addEventListener('keydown', (e) => {
@@ -3237,17 +3676,19 @@ function bindKnowledgeFormEvents() {
 
   document.querySelectorAll('#kf-tags .removable').forEach(el => {
     el.addEventListener('click', () => {
+      updateKnowledgeFormDraftFromDom()
       knowledgeState.form.tags = knowledgeState.form.tags.filter(t => t !== el.dataset.tag)
       render()
     })
   })
 
   document.getElementById('kf-save')?.addEventListener('click', async () => {
+    updateKnowledgeFormDraftFromDom()
     const btn = document.getElementById('kf-save')
-    const title = document.getElementById('kf-title')?.value.trim()
-    const summary = document.getElementById('kf-summary')?.value.trim()
-    const groupId = document.getElementById('kf-group')?.value
-    const contentText = document.getElementById('kf-content')?.value || ''
+    const title = knowledgeState.form.title.trim()
+    const summary = knowledgeState.form.summary.trim()
+    const groupId = knowledgeState.form.groupId
+    const contentText = knowledgeState.form.contentText || ''
     if (!title) {
       showToast('请填写标题', 'error')
       return
@@ -3288,15 +3729,41 @@ function bindMyKnowledgeHubEvents() {
     myKnowledgeState.q = e.target.value
     render()
   })
+  document.querySelectorAll('.my-knowledge-move-select').forEach((select) => {
+    select.addEventListener('click', (e) => e.stopPropagation())
+    select.addEventListener('change', async (e) => {
+      const itemId = e.target.dataset.id
+      const nextGroupId = e.target.value
+      const groups = loadKnowledgeGroups()
+      const groupName = groups.find((g) => g.id === nextGroupId)?.name || '目标分组'
+      const now = new Date().toISOString()
+      const items = loadCustomKnowledge().map((item) => (
+        item.id === itemId ? { ...item, groupId: nextGroupId, updatedAt: now } : item
+      ))
+      await saveCustomKnowledge(items)
+      showToast(`已移动到「${groupName}」`, 'success')
+      render()
+    })
+  })
   document.querySelectorAll('.group-nav-item').forEach((btn) => {
     btn.addEventListener('click', () => {
       myKnowledgeState.groupId = btn.dataset.group
+      myKnowledgeState.openGroupMenu = null
+      render()
+    })
+  })
+  document.querySelectorAll('.group-more-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const id = btn.dataset.groupMenu
+      myKnowledgeState.openGroupMenu = myKnowledgeState.openGroupMenu === id ? null : id
       render()
     })
   })
   document.getElementById('btn-new-group')?.addEventListener('click', () => {
     myKnowledgeState.showGroupForm = true
     myKnowledgeState.editingGroup = null
+    myKnowledgeState.openGroupMenu = null
     myKnowledgeState.groupForm = { name: '', description: '' }
     render()
   })
@@ -3329,6 +3796,7 @@ function bindMyKnowledgeHubEvents() {
       myKnowledgeState.editingGroup = g.id
       myKnowledgeState.groupForm = { name: g.name, description: g.description || '' }
       myKnowledgeState.showGroupForm = true
+      myKnowledgeState.openGroupMenu = null
       render()
     })
   })
@@ -3341,6 +3809,7 @@ function bindMyKnowledgeHubEvents() {
       await saveKnowledgeGroups(groups)
       await saveCustomKnowledge(items)
       if (myKnowledgeState.groupId === gid) myKnowledgeState.groupId = 'all'
+      myKnowledgeState.openGroupMenu = null
       showToast('分组已删除', 'info')
       render()
     })
@@ -4173,12 +4642,14 @@ function bindLoginEvents() {
 
 function bindResetPasswordEvents() {
   document.getElementById('auth-update-password')?.addEventListener('click', async () => {
-    const password = document.getElementById('auth-new-password')?.value
+    const input = document.getElementById('auth-new-password')
+    const password = input?.value
     if (!password || password.length < 6) return showToast(t('auth.passwordTooShort'), 'error')
     try {
       await Auth().updatePassword(password)
+      if (input) input.value = ''
       showToast(t('auth.passwordUpdated'), 'success')
-      navigate('/')
+      if ((location.hash || '').startsWith('#/reset-password')) navigate('/')
     } catch (e) { showToast(e.message, 'error') }
   })
 }
@@ -4211,60 +4682,11 @@ function bindTopbarHelpEvents() {
 }
 
 function bindTopbarNotificationEvents() {
-  const api = window.PDMNotifications
-  if (!api) return
-  const root = document.getElementById('topbar-notifications')
-  const menu = document.getElementById('topbar-notification-menu')
-
-  const closeMenu = () => {
-    document.getElementById('topbar-notification-menu')?.setAttribute('hidden', '')
-  }
-
-  if (root) {
-    root.onclick = (e) => {
-      const trigger = e.target.closest('#topbar-notification-btn')
-      if (!trigger) return
-      e.preventDefault()
-      e.stopPropagation()
-      const m = document.getElementById('topbar-notification-menu')
-      if (!m) return
-      if (m.hasAttribute('hidden')) m.removeAttribute('hidden')
-      else m.setAttribute('hidden', '')
-    }
-  }
-
-  menu?.querySelectorAll('.topbar-notification-item').forEach((item) => {
-    item.addEventListener('click', () => {
-      const id = item.getAttribute('data-notification-id')
-      if (id) api.markRead(id)
-      closeMenu()
-    })
-  })
-
-  document.getElementById('notification-mark-all')?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    api.markAllRead()
-    renderTopbarNotifications()
-    bindTopbarNotificationEvents()
-  })
-
-  document.getElementById('notification-clear-all')?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    api.clearAll()
-    renderTopbarNotifications()
-    bindTopbarNotificationEvents()
-  })
-
   if (!topbarNotificationDocBound) {
     topbarNotificationDocBound = true
-    document.addEventListener('click', (e) => {
-      const m = document.getElementById('topbar-notification-menu')
-      if (!m || m.hasAttribute('hidden')) return
-      if (!e.target.closest('.topbar-notification')) closeMenu()
-    })
     window.addEventListener('pdm:notifications', () => {
       renderTopbarNotifications()
-      bindTopbarNotificationEvents()
+      if ((location.hash || '').startsWith('#/notifications')) render()
     })
   }
 }
@@ -4302,6 +4724,13 @@ function bindTopAccountEvents() {
     const open = m.hasAttribute('hidden')
     if (open) m.removeAttribute('hidden')
     else m.setAttribute('hidden', '')
+  })
+
+  document.querySelectorAll('[data-account-menu-link]').forEach((link) => {
+    link.addEventListener('click', () => {
+      saveAccountMenuOrigin()
+      closeMenu()
+    })
   })
 
   if (!topAccountDocBound) {
@@ -4555,8 +4984,12 @@ function render() {
     bindMobileAccountHub()
   } else if (parts[0] === 'account') {
     main.innerHTML = renderAccountProfilePage()
-    if (Auth().isLoggedIn()) bindNicknameForm()
+    if (Auth().isLoggedIn()) bindAccountProfileActions()
     Analytics()?.track('page_view', { page: 'account' })
+  } else if (parts[0] === 'notifications') {
+    main.innerHTML = renderNotificationsPage()
+    bindNotificationsPageEvents()
+    Analytics()?.track('page_view', { page: 'notifications' })
   } else if (parts[0] === 'login') {
     if (Auth().isLoggedIn()) {
       navigate('/')
@@ -4781,13 +5214,31 @@ function render() {
   } else if (parts[0] === 'my-knowledge' && parts[1] === 'edit' && parts[2]) {
     if (!Auth().isLoggedIn()) main.innerHTML = renderLoginRequired(t('auth.requiredDefault'))
     else {
-      lastKnowledgeRoute = `edit:${parts[2]}`
+      const routeKey = `edit:${parts[2]}`
+      if (lastKnowledgeRoute !== routeKey) {
+        const editing = K.getMyKnowledgeEntry(parts[2])
+        if (editing) {
+          knowledgeState.form = {
+            groupId: editing.groupId,
+            title: editing.title,
+            summary: editing.summary,
+            tags: [...(editing.tags || [])],
+            contentText: (editing.content || []).join('\n\n'),
+          }
+          knowledgeState.tagInput = ''
+        }
+        lastKnowledgeRoute = routeKey
+      }
       main.innerHTML = renderKnowledgeForm(parts[2])
       bindKnowledgeFormEvents()
     }
   } else if (parts[0] === 'my-knowledge') {
     if (!Auth().isLoggedIn()) main.innerHTML = renderLoginRequired(t('auth.requiredMyKnowledge'))
     else {
+      if (ensureSuperAdminArchitectureKnowledgeSeed()) {
+        main.innerHTML = `<div class="page"><p>${escapeHtml(t('common.loading'))}</p></div>`
+        return
+      }
       main.innerHTML = renderMyKnowledgeHub()
       bindMyKnowledgeHubEvents()
       bindSyncEvents()
@@ -4872,6 +5323,7 @@ function syncMobileChromeOffsets() {
   document.documentElement.style.setProperty('--mobile-bottom-offset', `${bottomH}px`)
 }
 ensureDefaultHomeHash()
+bindInternalRouteGuard()
 render()
 initStorage()
   .then(() => {

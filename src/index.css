@@ -1301,7 +1301,21 @@ select {
   }
 
   .article-nav {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    padding-top: 24px;
+  }
+
+  .article-nav-link {
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .article-nav-link .nav-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .storage-panel {

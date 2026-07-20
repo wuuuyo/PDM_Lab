@@ -1348,6 +1348,13 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     height: 34px;
   }
 
+  html.mobile-chrome .topbar-account-menu .topbar-notification-menu-row,
+  .topbar-account-menu .topbar-notification-menu-row {
+    width: 100%;
+    height: auto;
+    min-height: 36px;
+  }
+
   html.mobile-chrome .topbar-notification-menu,
   .topbar-notification-menu {
     position: fixed;
@@ -1357,6 +1364,17 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     width: auto;
     max-height: min(520px, calc(100vh - var(--topbar-height, 56px) - 28px));
     z-index: 520;
+  }
+
+  html.mobile-chrome .topbar-account-menu .topbar-notification-menu,
+  .topbar-account-menu .topbar-notification-menu {
+    position: static;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+    max-height: 320px;
+    z-index: auto;
   }
 
   html.mobile-chrome .topbar-account.active,

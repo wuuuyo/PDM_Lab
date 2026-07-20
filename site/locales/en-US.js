@@ -48,7 +48,7 @@ window.PM_LAB_LOCALES['en-US'] = {
   home: {
     audienceBadge: 'A learning workspace for new PMs',
     heroTitle: 'Learn PM foundations, methods, and practice in one place',
-    heroSubtitle: 'Start with the main track, switch plans by goal, and return to the knowledge base whenever a concept needs clarity.',
+    heroSubtitle: 'Manage product knowledge, capture experience, and quickly find methods and terminology.',
     openGuide: 'How to use',
     metaTopics: '{n} topics',
     metaKbHubs: '8 knowledge topics',
@@ -68,6 +68,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     primaryPathCta: 'Start learning track',
     allPathsCta: 'All plans',
     mainTrackHint: 'Default starting point',
+    mainTrackGuide: 'New to product work? Start with the learning track to build your foundation step by step.',
     goalPlansLabel: 'Switch by goal',
     pathProgress: 'Local progress {done}/{total} tasks',
     dashLabel: 'Home learning overview',
@@ -160,9 +161,9 @@ window.PM_LAB_LOCALES['en-US'] = {
     searchNeedQuery: 'Enter a keyword to search',
   },
   account: {
-    profileTitle: 'Profile',
-    profileDesc: 'Manage your display name and account details',
-    profileLink: 'Profile',
+    profileTitle: 'Account',
+    profileDesc: 'Manage email, nickname, password, and account details',
+    profileLink: 'Account',
     nicknameTitle: 'Display name',
     nicknameDesc: 'Shown in your account menu and community features',
     nicknameLabel: 'Nickname',
@@ -524,7 +525,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     toolsUi: {
       badge: 'Tools',
       hubTitle: 'PM toolkit',
-      hubDesc: 'Eight tool categories with learn links — switch tabs or search in-page.',
+      hubDesc: 'Eight practical tool categories — browse by scenario and pick what fits.',
       searchPlaceholder: 'Search tools…',
       tabsAria: 'Tool categories',
       itemCount: '{n} tools',
@@ -532,6 +533,7 @@ window.PM_LAB_LOCALES['en-US'] = {
       back: 'Back',
       official: 'Website',
       learn: 'Learn',
+      externalHint: 'Overseas service; access may require a stable network or sign-up.',
       searchEmpty: 'No matching tools',
       tabs: {
         prototype: 'Prototype',
@@ -546,6 +548,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     },
     notifications: {
       title: 'Notifications',
+      menuTitle: 'Messages',
       empty: 'No notifications yet',
       markAllRead: 'Mark all read',
       clearAll: 'Clear',
