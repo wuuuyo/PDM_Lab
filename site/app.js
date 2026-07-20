@@ -2112,26 +2112,19 @@ function renderHome() {
   const stats = K.getKnowledgeStats?.() || { totalCount: 0 }
   const path = window.PDMIndustry?.getRecommendedPath?.()
   const cats = K.getMergedCategories()
+  const knowledgeNavItems = buildKnowledgeNavItems()
   const total = stats.totalCount || cats.reduce((s, c) => s + c.items.length, 0)
+  const topicCount = knowledgeNavItems.length || stats.categoryCount || cats.length
   const pathHref = path ? `#/industry/learning-path/${path.id}` : '#/industry/learning-path'
   const pathProgress = path ? window.PDMStorage?.countPathProgress?.(path) : null
   const heroTitle = t('home.heroTitle')
 
-  const scenarioPlans = [
-    { id: 'newcomer-8w', label: t('home.sceneNewcomer') },
-    { id: 'job-hunt', label: t('home.sceneJob') },
-    { id: 'intern', label: t('home.sceneIntern') },
-    { id: 'career-switch', label: t('home.sceneSwitch') },
-  ].map((plan) => {
-    const detail = window.PDMIndustry?.getLearningPath?.(plan.id)
-    return {
-      ...plan,
-      href: `#/industry/learning-path/${plan.id}`,
-      title: detail?.title || plan.label,
-    }
-  })
-
   const lookupCards = [
+    {
+      href: '#/kb',
+      title: t('home.lookupTopicsTitle'),
+      desc: t('home.lookupTopicsDesc', { n: topicCount }),
+    },
     {
       href: '#/glossary',
       title: t('home.lookupGlossaryTitle'),
@@ -2142,19 +2135,22 @@ function renderHome() {
       title: t('home.lookupMapTitle'),
       desc: t('home.lookupMapDesc'),
     },
-    {
-      href: '#/kb',
-      title: t('home.lookupTopicsTitle'),
-      desc: t('home.lookupTopicsDesc'),
-    },
+  ]
+
+  const learningLinks = [
+    { href: pathHref, title: t('home.primaryPathTitle'), featured: true },
+    { href: '#/industry/learning-path/newcomer-8w', title: t('home.sceneNewcomerShort', null, '新人') },
+    { href: '#/industry/learning-path/job-hunt', title: t('home.sceneJobShort', null, '求职') },
+    { href: '#/industry/learning-path/intern', title: t('home.sceneInternShort', null, '实习') },
+    { href: '#/industry/learning-path/career-switch', title: t('home.sceneSwitchShort', null, '转行') },
   ]
 
   const guideSteps = [
     { num: '01', title: t('home.guideStep1Title'), desc: t('home.guideStep1Desc'), href: '#/industry/basics' },
     { num: '02', title: t('home.guideStep2Title'), desc: t('home.guideStep2Desc'), href: pathHref },
     { num: '03', title: t('home.guideStep3Title'), desc: t('home.guideStep3Desc'), href: '#/kb' },
-    { num: '04', title: t('home.guideStep4Title'), desc: t('home.guideStep4Desc'), href: '#/tools' },
-    { num: '05', title: t('home.guideStep5Title'), desc: t('home.guideStep5Desc'), href: '#/forum' },
+    { num: '04', title: t('home.guideStep4Title'), desc: t('home.guideStep4Desc'), href: pathHref },
+    { num: '05', title: t('home.guideStep5Title'), desc: t('home.guideStep5Desc'), href: '#/industry/learning-path' },
   ]
 
   return `
@@ -2180,59 +2176,45 @@ function renderHome() {
           <div class="home-composer-results" id="home-composer-results" hidden></div>
         </div>
 
-        <div class="home-stage-ctas">
-          <a href="${pathHref}" class="btn-primary">${escapeHtml(t('home.ctaQuickStart'))}</a>
-          <a href="#/industry/learning-path" class="btn-ghost">${escapeHtml(t('home.ctaChoosePlan'))}</a>
-        </div>
-
         <div class="home-stage-meta">
-          <span>${escapeHtml(t('home.metaKbHubs'))}</span>
+          <span>${escapeHtml(t('home.metaKbHubs', { n: topicCount }))}</span>
           <span class="dot">·</span>
           <span>${escapeHtml(t('home.metaTopics', { n: total }))}</span>
         </div>
       </section>
 
-      <section class="home-section home-learning-section" id="home-scenarios">
-        <p class="home-learning-guide">${escapeHtml(t('home.mainTrackGuide'))}</p>
-        <div class="home-learning-board">
-          <a href="${pathHref}" class="home-learning-main">
-            <span class="home-learning-kicker">${escapeHtml(t('home.recommendedTrackBadge', null, '推荐路线'))}</span>
-            <strong>${escapeHtml(path?.title || t('home.primaryPathTitle'))}</strong>
-            <span>${escapeHtml(t('home.mainTrackHint'))}</span>
-            ${pathProgress?.total ? `<em>${escapeHtml(t('home.pathProgress', { done: pathProgress.done, total: pathProgress.total }))}</em>` : ''}
-          </a>
-          <div class="home-learning-plans">
-            <div class="home-learning-plans-head">
-              <span>${escapeHtml(t('home.goalPlansLabel'))}</span>
-              <a href="#/industry/learning-path">${escapeHtml(t('home.allPathsCta'))}</a>
-            </div>
-            <div class="home-plan-list">
-              ${scenarioPlans
-                .map(
-                  (plan) => `
-                <a href="${plan.href}" class="home-plan-chip">${escapeHtml(plan.title)}</a>`,
-                )
-                .join('')}
-            </div>
+      <section class="home-section home-entry-section home-lookup-section">
+        <div class="home-entry-bar home-entry-bar-primary">
+          <div class="home-entry-copy">
+            <h2>${escapeHtml(t('home.lookupTitle'))}</h2>
+            <p>${escapeHtml(t('home.lookupDesc'))}</p>
+          </div>
+          <div class="home-entry-pills">
+            ${lookupCards
+              .map(
+                (card) => `
+              <a href="${card.href}" class="home-entry-pill" title="${escapeHtml(card.desc)}">${escapeHtml(card.title)}</a>`,
+              )
+              .join('')}
           </div>
         </div>
       </section>
 
-      <section class="home-section home-lookup-section">
-        <div class="home-section-head home-section-head-compact">
-          <h2 class="home-section-title">${escapeHtml(t('home.lookupTitle'))}</h2>
-          <p class="home-section-desc">${escapeHtml(t('home.lookupDesc'))}</p>
-        </div>
-        <div class="home-lookup-grid">
-          ${lookupCards
-            .map(
-              (card) => `
-            <a href="${card.href}" class="home-lookup-card">
-              <strong>${escapeHtml(card.title)}</strong>
-              <span>${escapeHtml(card.desc)}</span>
-            </a>`,
-            )
-            .join('')}
+      <section class="home-section home-entry-section home-learning-section" id="home-scenarios">
+        <div class="home-entry-bar home-entry-bar-secondary">
+          <div class="home-entry-copy">
+            <h2>${escapeHtml(t('home.learningTitle', null, '学习路径'))}</h2>
+            <p>${escapeHtml(t('home.learningDesc', null, '默认从学习主线开始；有明确目标时选择对应计划。'))}</p>
+            ${pathProgress?.total ? `<em>${escapeHtml(t('home.pathProgress', { done: pathProgress.done, total: pathProgress.total }))}</em>` : ''}
+          </div>
+          <div class="home-entry-pills home-entry-pills-learning">
+            ${learningLinks
+              .map(
+                (item) => `
+              <a href="${item.href}" class="home-entry-pill ${item.featured ? 'home-entry-pill-featured' : ''}">${escapeHtml(item.title)}</a>`,
+              )
+              .join('')}
+          </div>
         </div>
       </section>
 
@@ -2264,7 +2246,8 @@ function renderHome() {
             ${guideSteps.map((step) => `<li><strong>${escapeHtml(step.title)}</strong><span>${escapeHtml(step.desc)}</span></li>`).join('')}
           </ol>
           <div class="home-onboarding-actions">
-            <a href="${pathHref}" class="btn-primary" id="home-onboarding-start">${escapeHtml(t('home.onboardingStart'))}</a>
+            <a href="#/kb" class="btn-primary" id="home-onboarding-kb">${escapeHtml(t('home.onboardingKbCta', null, '查看知识库'))}</a>
+            <a href="${pathHref}" class="btn-ghost" id="home-onboarding-start">${escapeHtml(t('home.onboardingStart'))}</a>
             <button type="button" class="btn-ghost" id="home-onboarding-dismiss">${escapeHtml(t('home.onboardingDismiss'))}</button>
           </div>
         </div>
@@ -2379,6 +2362,7 @@ function bindHomeEvents() {
   document.getElementById('home-onboarding-close')?.addEventListener('click', () => closeHomeOnboarding(true))
   document.getElementById('home-onboarding-dismiss')?.addEventListener('click', () => closeHomeOnboarding(true))
   document.getElementById('home-onboarding-backdrop')?.addEventListener('click', () => closeHomeOnboarding(true))
+  document.getElementById('home-onboarding-kb')?.addEventListener('click', () => closeHomeOnboarding(true))
   document.getElementById('home-onboarding-start')?.addEventListener('click', () => closeHomeOnboarding(true))
   maybeOpenHomeOnboarding()
 }
@@ -4918,7 +4902,16 @@ async function renderAdminRolesRoute() {
 function syncSiteWatermark() {
   const el = document.getElementById('site-watermark')
   if (!el) return
-  el.textContent = t('home.siteWatermark', null, 'Developed by Justine WU, contact: wuuuyo0527@gmail.com')
+  el.textContent = t('home.siteWatermark', null, 'Developed by Justine WU')
+}
+
+function syncMobileScrollTopLabel() {
+  const el = document.getElementById('mobile-scroll-top')
+  if (!el) return
+  const label = t('common.backToTop', null, '回到顶部')
+  el.textContent = label
+  el.setAttribute('aria-label', label)
+  el.setAttribute('title', label)
 }
 
 function render() {
@@ -4935,6 +4928,7 @@ function render() {
   syncSiteWatermark()
   renderTopbarHelp()
   renderTopbarNotifications()
+  syncMobileScrollTopLabel()
   bindLocaleEvents()
   bindTopbarHelpEvents()
   bindTopbarNotificationEvents()
