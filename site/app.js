@@ -35,6 +35,36 @@ function showToast(msg, type = 'info') {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3200)
 }
 
+let copyProtectionBound = false
+function isCopyAllowedTarget(target) {
+  const el = target?.nodeType === Node.TEXT_NODE ? target.parentElement : target
+  if (!el || !el.closest) return false
+  return Boolean(el.closest('input, textarea, select, [contenteditable="true"], .allow-copy'))
+}
+
+function canCopySiteContent() {
+  return Boolean(Auth().isSuperAdmin?.() || Perm().can?.('contentCopy', 'view'))
+}
+
+function syncCopyProtectionState() {
+  document.body?.classList.toggle('copy-protected', !canCopySiteContent())
+}
+
+function bindCopyProtection() {
+  if (copyProtectionBound) return
+  copyProtectionBound = true
+  syncCopyProtectionState()
+  const block = (event) => {
+    if (canCopySiteContent()) return
+    if (isCopyAllowedTarget(event.target)) return
+    event.preventDefault()
+    showToast(t('common.copyDisabled', null, '\u672c\u7ad9\u5185\u5bb9\u5df2\u7981\u6b62\u590d\u5236'), 'info')
+  }
+  document.addEventListener('copy', block)
+  document.addEventListener('cut', block)
+  document.addEventListener('dragstart', block)
+}
+
 function formatDate(iso) {
   if (window.PMLabI18n?.formatDate) return window.PMLabI18n.formatDate(iso)
   return new Date(iso).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -3131,6 +3161,10 @@ function renderArticle(categoryId, itemId) {
             ${(item.cases || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
           </ul>
         </section>` : ''}
+        <div class="article-copyright-notice">
+          <span>${escapeHtml(t('article.copyrightTitle', null, '\u539f\u521b\u58f0\u660e'))}</span>
+          <p>${escapeHtml(t('article.copyrightDesc', null, '\u672c\u6587\u4e3a Justine WU \u539f\u521b\u5185\u5bb9\uff0c\u672a\u7ecf\u6388\u6743\u4e0d\u5f97\u590d\u5236\u3001\u8f6c\u8f7d\u3001\u5546\u7528\u6216\u7528\u4e8e\u6a21\u578b\u8bad\u7ec3\u3002'))}</p>
+        </div>
         ${renderArticleNotesPanel(favRef)}
       </article>
       <nav class="article-nav">
@@ -5026,6 +5060,7 @@ function render() {
   renderTopbarHelp()
   renderTopbarNotifications()
   syncMobileScrollTopLabel()
+  syncCopyProtectionState()
   bindLocaleEvents()
   bindTopbarHelpEvents()
   bindTopbarNotificationEvents()
@@ -5418,6 +5453,7 @@ function syncMobileChromeOffsets() {
 }
 ensureDefaultHomeHash()
 bindInternalRouteGuard()
+bindCopyProtection()
 render()
 initStorage()
   .then(() => {

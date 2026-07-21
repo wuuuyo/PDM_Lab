@@ -12,7 +12,8 @@
     "write:config": "node scripts/write-config.mjs",
     "sync:all": "node scripts/import-knowledge-base.mjs && node scripts/sync-knowledge.mjs && node scripts/build-skills-catalog.mjs && node scripts/write-config.mjs",
     "build:site": "node scripts/sync-knowledge.mjs && node scripts/write-config.mjs",
-    "build:skills": "node scripts/build-skills-catalog.mjs"
+    "build:skills": "node scripts/build-skills-catalog.mjs",
+    "check:release": "node scripts/check-encoding.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

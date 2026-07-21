@@ -217,6 +217,7 @@ create table if not exists public.forum_posts (
   title text not null,
   body text not null,
   author_email text,
+  author_name text,
   comment_count int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -226,9 +227,28 @@ create table if not exists public.forum_comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.forum_posts(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
+  author_name text,
   body text not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.forum_posts
+  add column if not exists author_name text;
+
+alter table public.forum_comments
+  add column if not exists author_name text;
+
+update public.forum_posts p
+set author_name = coalesce(nullif(trim(pr.display_name), ''), split_part(p.author_email, '@', 1), '用户')
+from public.profiles pr
+where p.user_id = pr.id
+  and (p.author_name is null or trim(p.author_name) = '');
+
+update public.forum_comments c
+set author_name = coalesce(nullif(trim(pr.display_name), ''), '用户')
+from public.profiles pr
+where c.user_id = pr.id
+  and (c.author_name is null or trim(c.author_name) = '');
 
 create index if not exists forum_posts_created_at_idx on public.forum_posts (created_at desc);
 create index if not exists forum_comments_post_id_idx on public.forum_comments (post_id);

@@ -9480,6 +9480,45 @@ html.sidebar-collapsed .site-watermark {
   background: #4f5fa8;
 }
 
+.article-copyright-notice {
+  margin-top: 34px;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(70, 82, 64, 0.12);
+  color: rgba(70, 82, 64, 0.64);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.article-copyright-notice span {
+  display: inline-flex;
+  margin-bottom: 4px;
+  color: rgba(70, 82, 64, 0.76);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.article-copyright-notice p {
+  margin: 0;
+}
+
+body.copy-protected,
+body.copy-protected .main,
+body.copy-protected .sidebar,
+body.copy-protected .topbar {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body.copy-protected input,
+body.copy-protected textarea,
+body.copy-protected select,
+body.copy-protected [contenteditable="true"],
+body.copy-protected .allow-copy {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 @media (max-width: 700px) {
   .article-content .article-insight-card {
     grid-template-columns: 1fr;

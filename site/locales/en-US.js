@@ -126,7 +126,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     aboutEyebrow: 'About',
     aboutTitle: 'PM Lab · DevDoc',
     aboutDesc: 'A lightweight handbook for new PMs: paths, knowledge, tools, and reviews in one workflow.',
-    aboutMaintainer: 'Developed by Justine WU, MSc of HKU, contact me: wuuuyo0527@gmail.com',
+    aboutMaintainer: '\u00a9 2026 Justine WU. All rights reserved. Contact: wuuuyo0527@gmail.com',
     aboutContactEmail: 'wuuuyo0527@gmail.com',
     siteWatermark: 'Developed by Justine WU',
     sectionLearnDesc: 'Jump in as needed; search goes straight to content',
@@ -237,6 +237,7 @@ window.PM_LAB_LOCALES['en-US'] = {
     forbidden: 'Access denied',
     deleted: 'Deleted',
     syncDone: 'Synced',
+    copyDisabled: 'Copying is disabled for site content',
   },
   mobile: {
     accountTab: 'Account',
@@ -473,6 +474,8 @@ window.PM_LAB_LOCALES['en-US'] = {
     notesAdd: 'Add note',
     notesSaved: 'Note saved',
     notesEmptyInput: 'Please enter note content',
+    copyrightTitle: 'Original statement',
+    copyrightDesc: 'This content is originally created by Justine WU. Copying, reposting, commercial use, or model training use is not permitted without authorization.',
   },
   notes: {
     title: 'My notes',

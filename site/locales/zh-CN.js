@@ -130,7 +130,7 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     aboutEyebrow: '关于本站',
     aboutTitle: 'PM Lab · DevDoc',
     aboutDesc: '\u4e00\u4e2a\u9762\u5411\u4ea7\u54c1\u65b0\u4eba\u7684\u8f7b\u91cf\u624b\u518c\uff1a\u8def\u5f84\u3001\u77e5\u8bc6\u3001\u5de5\u5177\u548c\u590d\u76d8\u653e\u5728\u540c\u4e00\u4e2a\u5de5\u4f5c\u6d41\u91cc\u3002',
-    aboutMaintainer: 'Developed by Justine WU, MSc of HKU, contact me: wuuuyo0527@gmail.com',
+    aboutMaintainer: '\u00a9 2026 Justine WU. All rights reserved. Contact: wuuuyo0527@gmail.com',
     aboutContactEmail: 'wuuuyo0527@gmail.com',
     siteWatermark: 'Developed by Justine WU',
     sectionLearn: '核心板块',
@@ -237,6 +237,7 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     forbidden: '无权限访问',
     deleted: '已删除',
     syncDone: '同步完成',
+    copyDisabled: '本站内容已禁止复制',
   },
   mobile: {
     accountTab: '账号',
@@ -472,7 +473,9 @@ window.PM_LAB_LOCALES['zh-CN'] = {
     notesPlaceholder: '写下你的理解、疑问或心得体会…',
     notesAdd: '添加笔记',
     notesSaved: '笔记已保存',
-    notesEmptyInput: '请输入笔记内容',
+    notesEmptyInput: '\u8bf7\u8f93\u5165\u7b14\u8bb0\u5185\u5bb9',
+    copyrightTitle: '\u539f\u521b\u58f0\u660e',
+    copyrightDesc: '\u672c\u6587\u4e3a Justine WU \u539f\u521b\u5185\u5bb9\uff0c\u672a\u7ecf\u6388\u6743\u4e0d\u5f97\u590d\u5236\u3001\u8f6c\u8f7d\u3001\u5546\u7528\u6216\u7528\u4e8e\u6a21\u578b\u8bad\u7ec3\u3002',
   },
   notes: {
     title: '我的笔记',

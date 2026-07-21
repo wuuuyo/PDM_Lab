@@ -41,6 +41,14 @@
         { id: 'feedback', labelZh: '意见反馈', labelEn: 'Feedback', actions: ['view', 'edit'] },
       ],
     },
+    {
+      id: 'group_site',
+      labelZh: '站点设置',
+      labelEn: 'Site settings',
+      children: [
+        { id: 'contentCopy', labelZh: '允许复制内容', labelEn: 'Allow content copy', actions: ['view'], defaultView: false },
+      ],
+    },
   ]
 
   const FEATURES = FEATURE_TREE.flatMap((g) => g.children)
@@ -97,7 +105,7 @@
     const map = {}
     for (const f of FEATURES) {
       map[f.id] = {}
-      for (const a of f.actions) map[f.id][a] = true
+      for (const a of f.actions) map[f.id][a] = a === 'view' && f.defaultView === false ? false : true
     }
     return map
   }

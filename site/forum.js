@@ -8,12 +8,31 @@
     return Auth.getClient()
   }
 
+  function cleanAuthorName(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 32)
+  }
+
+  function getFallbackName(email) {
+    return email?.includes('@') ? email.split('@')[0] : ''
+  }
+
+  function getCurrentAuthorName() {
+    const Auth = window.PDMAuth
+    const profileName = cleanAuthorName(Auth?.getProfile?.()?.display_name)
+    const metaName = cleanAuthorName(Auth?.getSession?.()?.user?.user_metadata?.display_name)
+    const emailName = getFallbackName(Auth?.getSession?.()?.user?.email)
+    return profileName || metaName || emailName || '\u7528\u6237'
+  }
+
   function mapPost(row, profile) {
+    const profileName = cleanAuthorName(profile?.display_name)
+    const snapshotName = cleanAuthorName(row.author_name)
+    const fallbackName = getFallbackName(row.author_email)
     return {
       id: row.id,
       userId: row.user_id,
-      authorEmail: profile?.email || row.author_email || '用户',
-      authorName: profile?.display_name || row.author_email?.split('@')[0] || '用户',
+      authorEmail: profile?.email || row.author_email || '\u7528\u6237',
+      authorName: profileName || snapshotName || fallbackName || '\u7528\u6237',
       title: row.title,
       body: row.body,
       commentCount: row.comment_count ?? 0,
@@ -23,12 +42,14 @@
   }
 
   function mapComment(row, profile) {
+    const profileName = cleanAuthorName(profile?.display_name)
+    const snapshotName = cleanAuthorName(row.author_name)
     return {
       id: row.id,
       postId: row.post_id,
       userId: row.user_id,
-      authorEmail: profile?.email || '用户',
-      authorName: profile?.display_name || '用户',
+      authorEmail: profile?.email || '\u7528\u6237',
+      authorName: profileName || snapshotName || '\u7528\u6237',
       body: row.body,
       createdAt: row.created_at,
     }
@@ -82,21 +103,28 @@
 
   async function createPost(title, body) {
     const Auth = window.PDMAuth
-    if (!Auth.isLoggedIn()) throw new Error('请先登录')
+    if (!Auth.isLoggedIn()) throw new Error('\u8bf7\u5148\u767b\u5f55')
     const t = (title || '').trim()
     const b = (body || '').trim()
-    if (!t) throw new Error('请填写标题')
-    if (t.length > 100) throw new Error('标题最多 100 字')
-    if (!b) throw new Error('请填写内容')
-    if (b.length > 5000) throw new Error('正文最多 5000 字')
+    if (!t) throw new Error('\u8bf7\u586b\u5199\u6807\u9898')
+    if (t.length > 100) throw new Error('\u6807\u9898\u6700\u5927 100 \u5b57')
+    if (!b) throw new Error('\u8bf7\u586b\u5199\u5185\u5bb9')
+    if (b.length > 5000) throw new Error('\u6b63\u6587\u6700\u5927 5000 \u5b57')
     const sb = await getClient()
     const user = Auth.getSession().user
-    const { data, error } = await sb.from('forum_posts').insert({
+    const payload = {
       user_id: user.id,
       title: t,
       body: b,
       author_email: user.email,
-    }).select().single()
+      author_name: getCurrentAuthorName(),
+    }
+    let { data, error } = await sb.from('forum_posts').insert(payload).select().single()
+    if (error && /author_name|column/i.test(error.message || '')) {
+      const fallbackPayload = { ...payload }
+      delete fallbackPayload.author_name
+      ;({ data, error } = await sb.from('forum_posts').insert(fallbackPayload).select().single())
+    }
     if (error) throw error
     if (window.PDMAnalytics) window.PDMAnalytics.track('forum_post', { title: t.slice(0, 80) })
     return data
@@ -104,17 +132,24 @@
 
   async function createComment(postId, body) {
     const Auth = window.PDMAuth
-    if (!Auth.isLoggedIn()) throw new Error('请先登录')
+    if (!Auth.isLoggedIn()) throw new Error('\u8bf7\u5148\u767b\u5f55')
     const b = (body || '').trim()
-    if (!b) throw new Error('请填写评论')
-    if (b.length > 2000) throw new Error('评论最多 2000 字')
+    if (!b) throw new Error('\u8bf7\u586b\u5199\u8bc4\u8bba')
+    if (b.length > 2000) throw new Error('\u8bc4\u8bba\u6700\u5927 2000 \u5b57')
     const sb = await getClient()
     const user = Auth.getSession().user
-    const { data, error } = await sb.from('forum_comments').insert({
+    const payload = {
       post_id: postId,
       user_id: user.id,
       body: b,
-    }).select().single()
+      author_name: getCurrentAuthorName(),
+    }
+    let { data, error } = await sb.from('forum_comments').insert(payload).select().single()
+    if (error && /author_name|column/i.test(error.message || '')) {
+      const fallbackPayload = { ...payload }
+      delete fallbackPayload.author_name
+      ;({ data, error } = await sb.from('forum_comments').insert(fallbackPayload).select().single())
+    }
     if (error) throw error
     if (window.PDMAnalytics) window.PDMAnalytics.track('forum_comment', { postId })
     return data
