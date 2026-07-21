@@ -73,7 +73,7 @@
                 <span class="path-task-actions">
                   ${links.map((link) => {
                     const href = window.PDMRouteResolver?.resolveHref?.(link.href, `${task.text || ''} ${link.label || ''}`) || link.href
-                    return `<a href="${window.escapeHtml(href)}" class="path-task-btn">${window.escapeHtml(link.label)}</a>`
+                    return `<a href="${window.escapeHtml(href)}" class="path-task-btn" data-path-source-id="${window.escapeHtml(pathId)}">${window.escapeHtml(link.label)}</a>`
                   }).join('')}
                 </span>` : ''}
             </li>`
@@ -121,6 +121,11 @@
           window.PDMNotifications?.notifyPathProgress?.(path, done, total)
         }
         input.closest('.path-task-row')?.classList.toggle('is-done', input.checked)
+      })
+    })
+    document.querySelectorAll('.path-task-btn[data-path-source-id]').forEach((link) => {
+      link.addEventListener('click', () => {
+        window.PDMLearningPathSource?.save?.(link.dataset.pathSourceId, link.getAttribute('href') || '')
       })
     })
   }

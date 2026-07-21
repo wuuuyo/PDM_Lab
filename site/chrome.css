@@ -1489,6 +1489,40 @@ html.sidebar-collapsed .sidebar-collapse-btn svg {
     color: var(--text);
   }
 
+  /* Light sticky return bar for mobile detail pages. */
+  .mobile-page-head {
+    position: sticky;
+    top: var(--mobile-top-offset, 56px);
+    z-index: 95;
+    margin: -6px -16px 14px;
+    min-height: 38px;
+    padding: 6px 16px;
+    border-bottom: 1px solid rgba(45, 90, 74, 0.075);
+    background: rgba(250, 249, 247, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .mobile-back-btn {
+    padding: 5px 9px 5px 4px;
+    border-radius: 999px;
+    color: rgba(45, 90, 74, 0.88);
+    background: rgba(255, 255, 255, 0.32);
+    font-size: 0.82rem;
+    font-weight: 650;
+  }
+
+  .mobile-back-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mobile-page-title {
+    color: rgba(26, 26, 26, 0.72);
+    font-size: 0.88rem;
+    font-weight: 650;
+  }
+
   .mobile-hub-page {
     padding-top: 12px;
     padding-bottom: 24px;

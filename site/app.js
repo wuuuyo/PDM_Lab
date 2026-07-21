@@ -292,6 +292,77 @@ function mobileScrollStorageKey(key) {
   return `pm-lab-mobile-scroll:${key}`
 }
 
+const LEARNING_PATH_SOURCE_KEY = 'pm-lab-learning-path-source'
+const LEARNING_PATH_SOURCE_TTL = 1000 * 60 * 60 * 2
+
+function normalizeHashHref(href) {
+  const raw = String(href || '').trim()
+  if (!raw) return '#/'
+  if (raw.startsWith('#/')) return raw
+  if (raw.startsWith('/')) return `#${raw}`
+  if (raw.startsWith('#')) return raw
+  return `#/${raw}`
+}
+
+function comparableHashHref(href) {
+  const normalized = normalizeHashHref(href)
+  try {
+    return decodeURIComponent(normalized)
+  } catch (_) {
+    return normalized
+  }
+}
+
+function saveLearningPathSource(pathId, targetHref = '') {
+  const path = window.PDMIndustry?.getLearningPath?.(pathId)
+  const href = normalizeHashHref(location.hash || '#/')
+  if (!href.startsWith('#/industry/learning-path/')) return
+  const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0)
+  const payload = {
+    href,
+    targetHref: normalizeHashHref(targetHref),
+    title: path?.title || t('content.industryUi.pathBreadcrumb', null, '学习路径'),
+    y,
+    ts: Date.now(),
+  }
+  try {
+    sessionStorage.setItem(LEARNING_PATH_SOURCE_KEY, JSON.stringify(payload))
+    sessionStorage.setItem(mobileScrollStorageKey(routeScrollKey(href)), String(y))
+  } catch (_) {}
+}
+
+function getLearningPathSource() {
+  try {
+    const raw = sessionStorage.getItem(LEARNING_PATH_SOURCE_KEY)
+    if (!raw) return null
+    const source = JSON.parse(raw)
+    if (!source?.href || !source.href.startsWith('#/industry/learning-path/')) return null
+    if (Date.now() - Number(source.ts || 0) > LEARNING_PATH_SOURCE_TTL) {
+      sessionStorage.removeItem(LEARNING_PATH_SOURCE_KEY)
+      return null
+    }
+    const current = comparableHashHref(location.hash || '#/')
+    if (current === comparableHashHref(source.href)) return null
+    if (source.targetHref && current !== comparableHashHref(source.targetHref)) return null
+    return source
+  } catch (_) {
+    return null
+  }
+}
+
+function clearLearningPathSource() {
+  try { sessionStorage.removeItem(LEARNING_PATH_SOURCE_KEY) } catch (_) {}
+}
+
+function restoreLearningPathSourceScroll(source) {
+  if (!source) return
+  const target = Math.max(0, Number(source.y || 0))
+  try { sessionStorage.setItem(mobileScrollStorageKey(routeScrollKey(source.href)), String(target)) } catch (_) {}
+  const apply = () => window.scrollTo({ top: target, behavior: 'auto' })
+  requestAnimationFrame(() => requestAnimationFrame(apply))
+  window.setTimeout(apply, 120)
+}
+
 function saveMobileScrollPosition(key = currentMobileScrollKey) {
   if (!isMobileViewport()) return
   const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0)
@@ -1109,11 +1180,16 @@ function getMobilePageMeta(parts) {
 
   const tabRoot = getMobileBackHref(parts)
   const p0 = parts[0]
+  const source = getLearningPathSource()
+  const withSource = (meta) => {
+    if (!meta || !source) return meta
+    return { ...meta, backHref: source.href, sourceBack: true }
+  }
 
   // 底部 Tab 第一层：不插返回条（页面自带 hero）
   if (p0 === 'industry' && !parts[1]) return null
-  if (p0 === 'tools') return null
-  if (p0 === 'forum' && !parts[1]) return null
+  if (p0 === 'tools') return source ? { title: t('nav.tools'), backHref: source.href, sourceBack: true } : null
+  if (p0 === 'forum' && !parts[1]) return source ? { title: t('nav.forum'), backHref: source.href, sourceBack: true } : null
   if (p0 === 'personal' && !parts[1]) return null
   if (p0 === 'kb') return null
 
@@ -1130,18 +1206,18 @@ function getMobilePageMeta(parts) {
       const item = window.PDMIndustry?.getItem?.(parts[1], parts[2])
       title = item?.title || parts[2]
     }
-    return { title, backHref: '#/industry' }
+    return withSource({ title, backHref: '#/industry' })
   }
   if (p0 === 'forum') {
     const title =
       parts[1] === 'new'
         ? t('content.forumUi.newTitle', null, '发布帖子')
         : t('content.forumUi.postBreadcrumb', null, '帖子')
-    return { title, backHref: '#/forum' }
+    return withSource({ title, backHref: '#/forum' })
   }
-  if (p0 === 'glossary') return { title: t('home.ctaKb'), backHref: '#/kb' }
-  if (p0 === 'mindmap') return { title: t('home.ctaMindmap'), backHref: '#/kb' }
-  if (p0 === 'notifications') return { title: t('notifications.menuTitle', null, '消息通知'), backHref: getAccountMenuOrigin('#/') }
+  if (p0 === 'glossary') return withSource({ title: t('home.ctaKb'), backHref: '#/kb' })
+  if (p0 === 'mindmap') return withSource({ title: t('home.ctaMindmap'), backHref: '#/kb' })
+  if (p0 === 'notifications') return withSource({ title: t('notifications.menuTitle', null, '消息通知'), backHref: getAccountMenuOrigin('#/') })
   if (p0 === 'module' && parts[1] && parts[2]) {
     const labels = {
       demand: t('kbMod.workflowDemandTitle', null, '需求处理 7 步'),
@@ -1152,7 +1228,7 @@ function getMobilePageMeta(parts) {
       mindmap: t('kbMod.refMindmapTitle', null, '知识图谱'),
       path: t('kbMod.refPathTitle', null, '学习路径'),
     }
-    return { title: labels[parts[2]] || parts[2], backHref: `#/category/${parts[1]}` }
+    return withSource({ title: labels[parts[2]] || parts[2], backHref: `#/category/${parts[1]}` })
   }
   if (p0 === 'category' && parts[1]) {
     const cat = K.getCategoryByIdMerged?.(parts[1])
@@ -1160,21 +1236,21 @@ function getMobilePageMeta(parts) {
       window.PDMKnowledgeViews?.isFlatKbDoc?.(parts[1])
         ? t('nav.sectionKnowledge')
         : (catTitle(cat) || parts[1])
-    return { title: label, backHref: '#/m/knowledge' }
+    return withSource({ title: label, backHref: '#/m/knowledge' })
   }
   if (p0 === 'doc' && parts[1] && parts[2]) {
-    return {
+    return withSource({
       title: window.PDMKnowledgeViews?.kbDocLabel?.(parts[1], parts[2]) || parts[2],
       backHref: '#/m/knowledge',
-    }
+    })
   }
   if (p0 === 'chapter' && parts[1] && parts[2] && parts[3]) {
-    return {
+    return withSource({
       title:
         window.PDMKnowledgeViews?.getChapterLabel?.(parts[1], parts[2], parts[3]) ||
         decodeURIComponent(parts[3]),
       backHref: `#/doc/${parts[1]}/${parts[2]}`,
-    }
+    })
   }
   if (p0 === 'article' && parts[1] && parts[2]) {
     const item = K.getItemByIdMerged?.(parts[1], parts[2])
@@ -1186,31 +1262,31 @@ function getMobilePageMeta(parts) {
     } else if (parts[1] === 'workflow' || parts[1] === 'reference') {
       backHref = `#/category/${parts[1]}`
     }
-    return { title, backHref }
+    return withSource({ title, backHref })
   }
-  if (p0 === 'favorites') return { title: t('nav.favorites'), backHref: tabRoot }
-  if (p0 === 'notes') return { title: t('nav.articleNotes'), backHref: tabRoot }
-  if (p0 === 'my-knowledge') return { title: t('nav.myKnowledge'), backHref: tabRoot }
-  if (p0 === 'reviews' || p0 === 'memory') return { title: t('nav.reviews'), backHref: tabRoot }
-  if (p0 === 'daily-learn') return { title: t('nav.dailyLearn'), backHref: tabRoot }
-  if (p0 === 'feedback') return { title: t('nav.feedback'), backHref: getAccountMenuOrigin('#/m/account') }
-  if (p0 === 'login') return { title: t('auth.pageTitle'), backHref: '#/m/account' }
-  if (p0 === 'account') return { title: t('account.profileTitle'), backHref: getAccountMenuOrigin('#/m/account') }
-  if (p0 === 'reset-password') return { title: t('auth.resetTitle'), backHref: getAccountMenuOrigin('#/m/account') }
+  if (p0 === 'favorites') return withSource({ title: t('nav.favorites'), backHref: tabRoot })
+  if (p0 === 'notes') return withSource({ title: t('nav.articleNotes'), backHref: tabRoot })
+  if (p0 === 'my-knowledge') return withSource({ title: t('nav.myKnowledge'), backHref: tabRoot })
+  if (p0 === 'reviews' || p0 === 'memory') return withSource({ title: t('nav.reviews'), backHref: tabRoot })
+  if (p0 === 'daily-learn') return withSource({ title: t('nav.dailyLearn'), backHref: tabRoot })
+  if (p0 === 'feedback') return withSource({ title: t('nav.feedback'), backHref: getAccountMenuOrigin('#/m/account') })
+  if (p0 === 'login') return withSource({ title: t('auth.pageTitle'), backHref: '#/m/account' })
+  if (p0 === 'account') return withSource({ title: t('account.profileTitle'), backHref: getAccountMenuOrigin('#/m/account') })
+  if (p0 === 'reset-password') return withSource({ title: t('auth.resetTitle'), backHref: getAccountMenuOrigin('#/m/account') })
   if (p0 === 'admin') {
     const backHref = getAccountMenuOrigin('#/m/account')
-    if (parts[1] === 'knowledge') return { title: t('nav.adminKnowledge'), backHref }
-    if (parts[1] === 'accounts' || parts[1] === 'permissions') return { title: t('nav.adminAccounts'), backHref }
-    if (parts[1] === 'roles') return { title: t('nav.adminRoles'), backHref }
-    if (parts[1] === 'feedback') return { title: t('nav.adminFeedback'), backHref }
-    return { title: t('nav.adminStats'), backHref }
+    if (parts[1] === 'knowledge') return withSource({ title: t('nav.adminKnowledge'), backHref })
+    if (parts[1] === 'accounts' || parts[1] === 'permissions') return withSource({ title: t('nav.adminAccounts'), backHref })
+    if (parts[1] === 'roles') return withSource({ title: t('nav.adminRoles'), backHref })
+    if (parts[1] === 'feedback') return withSource({ title: t('nav.adminFeedback'), backHref })
+    return withSource({ title: t('nav.adminStats'), backHref })
   }
   return null
 }
 
-function renderMobilePageHead(title, backHref) {
+function renderMobilePageHead(title, backHref, sourceBack = false) {
   const back = backHref
-    ? `<a href="${backHref}" class="mobile-back-btn" aria-label="${escapeHtml(t('common.back'))}">
+    ? `<a href="${backHref}" class="mobile-back-btn" ${sourceBack ? 'data-learning-source-back="1"' : ''} aria-label="${escapeHtml(t('common.back'))}">
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>${escapeHtml(t('common.back'))}</span>
       </a>`
@@ -1222,15 +1298,33 @@ function renderMobilePageHead(title, backHref) {
     </header>`
 }
 
-function applyMobilePageChrome(title, backHref) {
+function applyMobilePageChrome(title, backHref, sourceBack = false) {
   if (!isMobileViewport()) return
   const main = document.getElementById('main')
   if (!main) return
   if (main.querySelector('.mobile-page-head')) return
-  main.insertAdjacentHTML('afterbegin', renderMobilePageHead(title, backHref))
+  main.insertAdjacentHTML('afterbegin', renderMobilePageHead(title, backHref, sourceBack))
   main.querySelector('.mobile-back-btn')?.addEventListener('click', () => {
     saveMobileScrollPosition()
+    if (main.querySelector('.mobile-back-btn')?.dataset.learningSourceBack === '1') {
+      restoreLearningPathSourceScroll(getLearningPathSource())
+    }
   })
+}
+
+function ensureMobilePageChromeForCurrentRoute() {
+  if (!isMobileViewport()) return
+  const main = document.getElementById('main')
+  if (!main) return
+  const { parts } = parseRoute()
+  const meta = getMobilePageMeta(parts)
+  if (!meta) {
+    main.querySelector('.mobile-page-head')?.remove()
+    return
+  }
+  const existing = main.querySelector('.mobile-page-head')
+  if (existing) return
+  applyMobilePageChrome(meta.title, meta.backHref, Boolean(meta.sourceBack))
 }
 
 let mobileMainObserver = null
@@ -1240,11 +1334,7 @@ function ensureMobileMainObserver() {
   if (mobileMainObserver) return
   mobileMainObserver = new MutationObserver(() => {
     if (!isMobileViewport()) return
-    const { parts } = parseRoute()
-    const meta = getMobilePageMeta(parts)
-    if (meta && !main.querySelector('.mobile-page-head')) {
-      applyMobilePageChrome(meta.title, meta.backHref)
-    }
+    ensureMobilePageChromeForCurrentRoute()
     syncMobileChromeOffsets()
   })
   mobileMainObserver.observe(main, { childList: true })
@@ -1807,6 +1897,7 @@ function renderMobileChrome(activePath) {
   document.documentElement.classList.remove('sidebar-mobile-open')
   document.getElementById('sidebar-backdrop')?.setAttribute('hidden', '')
   ensureMobileMainObserver()
+  ensureMobilePageChromeForCurrentRoute()
 
   const { parts } = parseRoute()
   const tab = getMobileTab(parts)
@@ -2914,6 +3005,12 @@ function resolveKnownRouteHref(href, hint = '') {
 window.PDMRouteResolver = {
   resolveHref: resolveKnownRouteHref,
   resolveArticleHref: resolveKnowledgeArticleHref,
+}
+
+window.PDMLearningPathSource = {
+  save: saveLearningPathSource,
+  get: getLearningPathSource,
+  clear: clearLearningPathSource,
 }
 
 let internalRouteGuardBound = false
@@ -5260,8 +5357,7 @@ function render() {
   }
 
   if (isMobileViewport()) {
-    const meta = getMobilePageMeta(parts)
-    if (meta) applyMobilePageChrome(meta.title, meta.backHref)
+    ensureMobilePageChromeForCurrentRoute()
     requestAnimationFrame(() => syncMobileChromeOffsets())
     restoreMobileScrollPosition()
   }
@@ -5294,12 +5390,16 @@ function bindMobileViewportWatcher() {
     const path = '/' + parts.join('/')
     renderSidebar(path)
     renderMobileChrome(path)
+    ensureMobilePageChromeForCurrentRoute()
     syncMobileChromeOffsets()
   }
   if (mq.addEventListener) mq.addEventListener('change', onChange)
   else mq.addListener(onChange)
   window.addEventListener('resize', () => {
-    if (isMobileViewport()) syncMobileChromeOffsets()
+    if (isMobileViewport()) {
+      ensureMobilePageChromeForCurrentRoute()
+      syncMobileChromeOffsets()
+    }
   })
 }
 
