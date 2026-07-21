@@ -117,18 +117,18 @@ function getEmailOrgLabel(email) {
   return domain.charAt(0).toUpperCase() + domain.slice(1)
 }
 
+function getSafeAvatarText(name, email) {
+  const source = String(name || email?.split('@')[0] || 'U').trim()
+  const chars = Array.from(source).filter((char) => /[\p{L}\p{N}]/u.test(char))
+  if (!chars.length) return 'U'
+  const first = chars[0]
+  const second = chars.find((char, index) => index > 0 && /[a-z0-9]/i.test(char))
+  if (/[\u4e00-\u9fff]/u.test(first)) return first
+  return (first + (second || '')).slice(0, 2).toUpperCase()
+}
+
 function getUserInitials(email, displayName) {
-  if (displayName?.trim()) {
-    const parts = displayName.trim().split(/\s+/)
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    return displayName.trim().slice(0, 2).toUpperCase()
-  }
-  if (email) {
-    const local = email.split('@')[0] || ''
-    if (/^[a-zA-Z]/.test(local)) return local.slice(0, 2).toUpperCase()
-    return local.slice(0, 2).toUpperCase() || '?'
-  }
-  return '?'
+  return getSafeAvatarText(displayName, email)
 }
 
 function getSidebarCollapsed() {
@@ -1751,9 +1751,7 @@ function renderPasswordInlineForm() {
 }
 
 function accountInitial(name, email) {
-  const src = (name || email || 'U').trim()
-  const ch = src[0] || 'U'
-  return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch
+  return getSafeAvatarText(name, email)
 }
 
 function bindNicknameForm() {
@@ -2350,7 +2348,7 @@ function renderHome() {
             const safe = escapeHtml(line)
             const safeEmail = escapeHtml(email)
             return safe.includes(safeEmail)
-              ? safe.replace(safeEmail, `<a href="mailto:${safeEmail}" class="home-about-contact">${safeEmail}</a>`)
+              ? safe.replace(safeEmail, `<a href="mailto:${safeEmail}" class="home-about-contact"><strong>${safeEmail}</strong></a>`)
               : safe
           })()}</p>
         </div>
@@ -2558,6 +2556,33 @@ function renderKnowledgeLineList(text) {
     return '<div class="article-structured-item' + level + '">' + escapeHtml(clean || line) + '</div>'
   }).join('') + '</div>'
 }
+
+function parseKnowledgeChecklistLine(text) {
+  const value = normalizeKnowledgeText(text).trim()
+  if (!/\[\s*\]/.test(value)) return null
+  const colonIndex = value.search(/[：:]/)
+  const title = colonIndex > 0 && colonIndex < 24 ? value.slice(0, colonIndex).trim() : ''
+  const body = title ? value.slice(colonIndex + 1).trim() : value
+  const items = body
+    .split(/\s+\/\s+|\s*；\s*|\s*;\s*/)
+    .map((part) => part.replace(/^\[\s*\]\s*/, '').trim())
+    .filter(Boolean)
+  if (!items.length) return null
+  return { title, items }
+}
+
+function renderKnowledgeChecklist(lines) {
+  const parsed = (lines || []).map(parseKnowledgeChecklistLine).filter(Boolean)
+  if (parsed.length < 2) return ''
+  return '<div class="article-checklist-list">' + parsed.map((group) => {
+    const title = group.title ? `<h3>${escapeHtml(group.title)}</h3>` : ''
+    const items = group.items.map((item) =>
+      `<li><span class="article-checkmark" aria-hidden="true"></span><span>${escapeHtml(item)}</span></li>`,
+    ).join('')
+    return `<section class="article-checklist-group">${title}<ul>${items}</ul></section>`
+  }).join('') + '</div>'
+}
+
 function splitLongKnowledgeText(text) {
   const value = String(text || '').trim()
   if (value.length < 96) return []
@@ -2610,6 +2635,8 @@ function renderKnowledgeFieldRow(text) {
 }
 
 function renderKnowledgeParagraphs(lines) {
+  const checklistHtml = renderKnowledgeChecklist(lines)
+  if (checklistHtml) return checklistHtml
   return (lines || []).map((p, index) => {
     const text = normalizeKnowledgeText(p)
     const fieldRow = renderKnowledgeFieldRow(text)
@@ -3208,6 +3235,12 @@ function emptyKnowledgeForm(groupId = 'default') {
 
 const ADMIN_ARCHITECTURE_GROUP_ID = 'admin-system-architecture'
 const ADMIN_ARCHITECTURE_SEED_VERSION = 1
+const ADMIN_SOFTWARE_PLATFORM_GROUP_ID = 'admin-software-platform'
+const ADMIN_SOFTWARE_PLATFORM_SEED_VERSION = 1
+const ADMIN_PROTOTYPE_DESIGN_GROUP_ID = 'admin-prototype-design'
+const ADMIN_PROTOTYPE_DESIGN_SEED_VERSION = 1
+const ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID = 'admin-pm-knowledge-framework'
+const ADMIN_PM_KNOWLEDGE_FRAMEWORK_SEED_VERSION = 1
 let adminArchitectureSeedPromise = null
 
 function getAdminArchitectureKnowledgeSeeds() {
@@ -3298,29 +3331,766 @@ function getAdminArchitectureKnowledgeSeeds() {
   }))
 }
 
+function getAdminSoftwarePlatformKnowledgeSeeds() {
+  return [
+    {
+      id: 'admin-software-platform-1-platform-product-map',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '1. 软件平台产品经理的能力地图',
+      summary: '平台型产品经理要同时理解用户场景、系统边界、权限、数据、配置、开放能力和运营治理。',
+      tags: ['软件平台', '平台产品经理', '能力地图', '内部知识'],
+      content: [
+        '软件平台不是单个功能集合，而是一套能承载多角色、多流程、多系统协作的基础能力。平台 PM 的核心任务，是把复杂业务沉淀成稳定、可配置、可扩展、可运营的产品底座。',
+        '能力地图可以分 7 层：用户与组织、业务对象、流程引擎、权限体系、配置体系、数据体系、开放与集成能力。',
+        '平台 PM 需要避免只做页面和按钮。真正的平台价值在于：同一套能力能不能复用到多个业务线，业务变化时能不能通过配置解决，而不是每次都重新开发。',
+        '判断一个需求是不是平台能力，可以看三个问题：是否多个业务会复用、是否规则经常变化、是否需要统一治理和数据沉淀。',
+      ],
+      pmApplication: [
+        '写需求前先画“平台能力地图”：用户角色、核心对象、流程状态、权限边界、配置项、数据指标、外部系统依赖。',
+        '评审时不要只问“这个页面怎么做”，要问“这个能力未来能不能复用、怎么配置、怎么扩展、谁来维护”。',
+      ],
+      examples: [
+        '案例：一个业务线提出“新增客户等级审批”。普通做法是写死一个审批页面；平台做法是抽象出“对象 + 状态流 + 审批节点 + 权限 + 通知”，后续订单审批、退款审批也能复用。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-2-ia-navigation',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '2. 信息架构与导航设计',
+      summary: '平台越复杂，越要用清晰的信息架构降低用户认知成本。',
+      tags: ['软件平台', '信息架构', '导航', '菜单设计', '内部知识'],
+      content: [
+        '信息架构决定用户能不能找到功能、理解功能、完成任务。平台产品常见问题不是功能少，而是功能太多、入口重复、命名不一致。',
+        '平台 IA 通常包含：一级模块、二级菜单、详情页、配置页、操作入口、全局搜索、面包屑、快捷入口。',
+        '菜单分组不要只按研发模块拆，要按用户任务和业务对象组织。例如“客户、订单、工单、设备、报表、系统设置”比“基础服务、业务服务、配置服务”更容易被业务用户理解。',
+        '平台导航要处理两类用户：高频用户需要快速入口，低频用户需要清晰路径。两者不能只靠一个大菜单解决。',
+      ],
+      pmApplication: [
+        '做 IA 时先列用户任务，而不是先列功能清单。用“用户来平台是为了做什么”反推导航结构。',
+        '评审菜单时检查三件事：同类功能是否集中、命名是否用户能懂、从首页到目标功能是否不超过 3 次点击。',
+      ],
+      examples: [
+        '案例：后台原来把“角色管理、账号管理、权限配置”分散在三个模块，用户经常找不到。改为“系统管理 / 账号与权限”后，管理员配置路径变短，客服提问减少。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-3-role-permission',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '3. 角色、权限与组织体系',
+      summary: '平台产品必须把“谁能看、谁能做、能看到哪些数据”设计清楚。',
+      tags: ['软件平台', '权限', '组织架构', 'RBAC', '内部知识'],
+      content: [
+        '权限体系一般拆成三层：账号体系、角色体系、数据范围。账号解决“你是谁”，角色解决“你能做什么”，数据范围解决“你能看哪些数据”。',
+        '平台常用 RBAC：用户绑定角色，角色拥有功能权限。复杂场景再叠加组织、区域、项目、客户归属等数据权限。',
+        '权限设计不能只控制菜单。按钮、接口、导出、批量操作、敏感字段、审批节点都要纳入权限边界。',
+        '权限越灵活，维护成本越高。平台 PM 要在“可配置”和“可理解”之间取平衡，避免角色碎片化。',
+      ],
+      pmApplication: [
+        'PRD 中必须补权限矩阵：角色 × 页面 × 操作 × 数据范围 × 敏感字段。',
+        '涉及权限的需求，要同时写异常：无权限时展示什么、申请权限怎么走、管理员如何排查用户为什么看不到。',
+      ],
+      examples: [
+        '案例：区域经理只能看本区域客户和订单，总部管理员可看全局。若只做菜单权限，区域经理仍可能通过接口查到其他区域数据，因此后端数据权限也必须一起做。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-4-workflow-engine',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '4. 流程引擎与状态流转',
+      summary: '审批、工单、订单、任务类平台需求，本质都是状态机和流程规则。',
+      tags: ['软件平台', '流程引擎', '状态机', '审批', '内部知识'],
+      content: [
+        '平台里的审批、工单、订单、任务都可以抽象成“对象 + 状态 + 动作 + 角色 + 条件 + 通知”。',
+        '状态流转要明确：初始状态、处理中状态、终态、异常状态、可回退状态。不要只画正常流程。',
+        '流程引擎的价值是把变化的业务规则配置化，例如审批节点、负责人、超时规则、抄送通知、撤回和驳回。',
+        '复杂流程要避免一开始就做万能引擎。先沉淀 2-3 个高频流程，抽象共性，再逐步平台化。',
+      ],
+      pmApplication: [
+        '写流程需求时，用状态机表替代纯文字描述：当前状态、可执行动作、动作人、前置条件、下一状态、通知对象。',
+        '验收时必须覆盖撤回、驳回、超时、重复提交、并发审批、流程中角色变更等异常。',
+      ],
+      examples: [
+        '案例：退款审批从“提交 → 财务审核 → 完成”扩展到“大额需要主管复核”。如果一开始把审批节点写死，后续就要改代码；如果抽象成流程配置，只需要新增条件节点。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-5-config-system',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '5. 配置化与规则引擎',
+      summary: '平台 PM 要判断哪些变化应该配置化，哪些不应该过早平台化。',
+      tags: ['软件平台', '配置化', '规则引擎', '内部知识'],
+      content: [
+        '配置化的目标是让高频变化的规则不必每次研发发版。常见配置包括：字段、表单、流程、权限、通知、字典、阈值、展示模板。',
+        '不是所有需求都要配置化。只有变化频繁、复用场景多、规则边界清晰、配置责任人明确时，才适合平台化。',
+        '配置项必须有默认值、校验规则、预览效果、版本记录、回滚能力和操作日志，否则很容易把平台变成“黑盒”。',
+        '规则引擎适合多条件判断，例如“如果客户等级=A 且金额>10万，则进入主管审批”。PM 需要把规则表达方式设计得业务可理解。',
+      ],
+      pmApplication: [
+        '评估配置化时问：谁来配、多久变一次、配错有什么影响、是否需要审批、是否要灰度、是否要回滚。',
+        'PRD 不要只写“支持配置”，要列配置项表：字段名、类型、默认值、可选值、校验、影响范围、权限。',
+      ],
+      examples: [
+        '案例：不同客户的工单 SLA 不同。写死会导致每个客户改代码；配置化后，管理员可按客户等级设置响应时限，但必须有上限校验和变更日志。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-6-data-model',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '6. 数据模型与核心对象',
+      summary: '软件平台的稳定性，取决于核心对象和字段边界是否设计清楚。',
+      tags: ['软件平台', '数据模型', '业务对象', '字段设计', '内部知识'],
+      content: [
+        '平台 PM 必须能识别核心对象：用户、组织、客户、订单、工单、设备、合同、商品、任务、审批单等。',
+        '每个对象都要定义：唯一 ID、关键字段、状态、归属关系、创建/更新规则、删除规则、审计字段。',
+        '数据模型不是数据库设计，但 PM 要能说清楚业务含义。字段命名、状态枚举、对象关系会直接影响后续扩展。',
+        '常见风险是同一个概念多个系统各叫各的，例如“客户、门店、租户、组织”混用，最后导致搜索、权限和报表全乱。',
+      ],
+      pmApplication: [
+        'PRD 里补“对象字段表”和“状态枚举表”，尤其是新增对象或跨系统同步时。',
+        '评审时确认 ID 口径：业务 ID、数据库 ID、第三方系统 ID、展示编号不能混用。',
+      ],
+      examples: [
+        '案例：一个平台同时有“客户”和“门店”。客户是签约主体，门店是履约地点。如果把两者混为一个对象，后续合同、工单、设备归属都会出错。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-7-api-integration',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '7. API、开放平台与系统集成',
+      summary: '平台型产品经常要和外部系统对接，PM 要懂接口边界、鉴权、字段映射和失败兜底。',
+      tags: ['软件平台', 'API', '开放平台', '系统集成', '内部知识'],
+      content: [
+        '系统集成不是“调一个接口”这么简单，而是身份、字段、状态、异常、权限、频率和对账的整体协同。',
+        'API 对接要写清：调用方、被调用方、触发时机、请求字段、返回字段、鉴权方式、失败重试、幂等规则、限流策略。',
+        '开放平台还要考虑开发者体验：API 文档、密钥管理、沙箱环境、错误码、Webhook、调用日志。',
+        '跨系统同步要明确主数据来源。谁是主系统，谁只能读取，谁可以修改，冲突时以谁为准。',
+      ],
+      pmApplication: [
+        'PRD 中新增“接口协作表”：接口名、方向、触发条件、字段映射、失败策略、验收方式。',
+        '验收时不要只看成功调用，还要测超时、重复回调、字段缺失、签名错误、限流、对方系统不可用。',
+      ],
+      examples: [
+        '案例：业务门户同步培训完成记录到 CRM。若只同步成功状态，失败记录无人处理，销售看到的数据就不准。正确做法是增加同步日志、失败重试和人工补偿入口。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-8-search-filter',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '8. 搜索、筛选与列表体验',
+      summary: '平台用户每天大量使用列表，搜索筛选体验直接影响效率。',
+      tags: ['软件平台', '搜索', '筛选', '列表', '内部知识'],
+      content: [
+        '平台的高频页面通常是列表页。用户关心的是快速定位对象、批量处理、导出和追踪状态。',
+        '搜索分三类：精确搜索、模糊搜索、高级筛选。不同字段要明确是否支持模糊、是否分词、是否大小写敏感。',
+        '筛选项要围绕任务设计，不要把所有字段都塞进高级筛选。常用筛选应前置，低频筛选可收起。',
+        '列表要设计空态、加载态、错误态、无权限态、筛选无结果态，以及保存筛选条件和列配置。',
+      ],
+      pmApplication: [
+        'PRD 中明确每个搜索字段的匹配方式：标题模糊、编号精确、手机号后四位、标签多选、日期范围。',
+        '验收时用真实业务数据测试：同名、错别字、大小写、空格、特殊符号、无结果、超大结果集。',
+      ],
+      examples: [
+        '案例：工单列表只支持工单号精确搜索，客服不知道编号时无法定位。增加客户名、手机号后四位、设备 SN 模糊搜索后，查询效率明显提升。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-9-dashboard-metrics',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '9. 数据看板与指标体系',
+      summary: '平台看板不是堆图表，而是围绕角色决策提供可行动指标。',
+      tags: ['软件平台', '数据看板', '指标体系', '内部知识'],
+      content: [
+        '平台指标要区分经营指标、过程指标、质量指标、效率指标和风险指标。不同角色看不同指标。',
+        '看板要回答三个问题：现在怎么样、哪里异常、下一步该做什么。',
+        '常见指标包括：活跃用户、任务完成率、处理时长、超时率、异常率、转化率、留存、导出次数、配置变更次数。',
+        '指标必须定义口径：统计对象、时间范围、去重方式、状态范围、刷新频率、权限范围。',
+      ],
+      pmApplication: [
+        'PRD 中为每个指标写“指标口径卡”：指标名、定义、公式、数据源、刷新频率、展示角色、异常阈值。',
+        '不要只做展示。关键指标要能下钻到明细，并能触发处理动作，例如查看超时工单列表。',
+      ],
+      examples: [
+        '案例：管理者看到“工单处理时长上升”，但无法定位原因。补充分部门、分问题类型、分负责人下钻后，发现主要是某类设备问题等待备件导致。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-10-notification',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '10. 消息通知与待办体系',
+      summary: '平台通知要帮助用户及时处理任务，而不是制造噪音。',
+      tags: ['软件平台', '消息通知', '待办', '内部知识'],
+      content: [
+        '通知体系通常包含站内信、邮件、短信、企业 IM、浏览器通知和待办中心。',
+        '通知设计要明确：触发事件、接收人、渠道、文案、频率、是否可关闭、是否需要已读/未读、是否需要跳转处理。',
+        '待办和通知不同。通知偏提醒，待办偏需要用户行动。不要把所有通知都变成待办。',
+        '平台要避免通知风暴。高频事件应聚合，低优事件可日报汇总，关键事件才实时推送。',
+      ],
+      pmApplication: [
+        'PRD 中补通知矩阵：事件 × 接收角色 × 通知渠道 × 文案 × 跳转页 × 频控规则。',
+        '验收通知时检查：未登录、无权限、对象已删除、重复触发、已读状态、多端同步。',
+      ],
+      examples: [
+        '案例：审批流每一步都发 IM，用户很快屏蔽。优化后只有“轮到我处理”和“超时未处理”进入待办，普通状态变更改为站内消息。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-11-saas-tenant',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '11. SaaS、多租户与客户配置',
+      summary: '面向多个客户的平台，要提前设计租户隔离、客户配置和数据边界。',
+      tags: ['软件平台', 'SaaS', '多租户', '客户配置', '内部知识'],
+      content: [
+        'SaaS 平台通常多客户共用一套系统，因此必须有租户隔离。租户可以理解为客户、组织或业务空间。',
+        '多租户要隔离：数据、配置、权限、成员、日志、报表、文件、外部系统密钥。',
+        '客户配置包括：品牌、字段、流程、权限、菜单、通知、SLA、集成方式。配置能力越多，运营和测试成本越高。',
+        '租户级功能开关可以支持灰度、套餐差异和客户定制，但必须有清晰的管理入口和审计记录。',
+      ],
+      pmApplication: [
+        '做 SaaS 需求时，PRD 必须写“租户维度”：这个功能是全局配置、租户配置，还是用户个人配置。',
+        '测试用例要覆盖跨租户访问、租户删除/停用、租户配置变更、套餐权限变化。',
+      ],
+      examples: [
+        '案例：A 客户启用了自定义字段，B 客户没有。若报表查询没有按租户隔离字段配置，B 客户可能看到不存在的字段或错误空值。',
+      ],
+    },
+    {
+      id: 'admin-software-platform-12-release-ops',
+      groupId: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      title: '12. 发布、灰度与运营治理',
+      summary: '平台上线后会长期运营，PM 要设计发布节奏、灰度策略、回滚和治理机制。',
+      tags: ['软件平台', '发布', '灰度', '运营治理', '内部知识'],
+      content: [
+        '平台功能影响面广，上线不能只看开发完成。需要灰度、监控、告警、回滚、公告、客服知识库和用户反馈入口。',
+        '灰度可以按用户、角色、租户、区域、比例或功能开关放量。不同策略对应不同风险控制方式。',
+        '发布前要准备：上线说明、影响范围、配置清单、迁移脚本、数据备份、回滚方案、客服话术、验收指标。',
+        '运营治理包括：权限治理、配置治理、数据质量治理、重复功能治理、过期入口下线。',
+      ],
+      pmApplication: [
+        '每个较大平台需求都要写上线 checklist：灰度对象、监控指标、告警阈值、回滚条件、负责人。',
+        '上线后 1-2 周做复盘：使用率、失败率、反馈问题、客服咨询、是否产生新配置负担。',
+      ],
+      examples: [
+        '案例：新权限系统直接全量上线，部分用户当天无法操作。更稳妥的方式是先对内部管理员灰度，再选 1-2 个低风险租户试用，最后全量切换。',
+      ],
+    },
+  ].map((entry) => ({
+    ...entry,
+    seedVersion: ADMIN_SOFTWARE_PLATFORM_SEED_VERSION,
+  }))
+}
+
+function getAdminPrototypeDesignKnowledgeSeeds() {
+  return [
+    {
+      id: 'admin-prototype-design-1-prototype-purpose',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '1. 原型设计的目的与边界',
+      summary: '原型不是画好看的页面，而是用最低成本验证流程、信息、交互和业务规则。',
+      tags: ['原型设计', '产品经理', '需求表达', '内部知识'],
+      content: [
+        '产品经理做原型的核心目的，是把抽象需求变成团队可以讨论、评审、验证和开发的具体界面与流程。',
+        '原型需要回答四个问题：用户在哪里开始、要完成什么任务、过程中看到什么信息、遇到异常时怎么处理。',
+        '原型不是最终 UI。低保真用于讨论结构和流程，高保真用于对齐交互细节和视觉氛围，研发交付前还需要结合 PRD、字段、接口和状态规则。',
+        '不要把原型当成“美术稿”。PM 原型最重要的是表达业务逻辑、信息层级、状态流转和操作反馈。',
+      ],
+      pmApplication: [
+        '开始画原型前先写清目标：这张原型是用于需求评审、用户测试、研发估时，还是老板汇报。目标不同，精细度不同。',
+        '评审时主动说明“哪些是确定规则、哪些是示意布局、哪些待 UI 细化”，避免研发或设计误解。'
+      ],
+      examples: [
+        '案例：做“批量导入客户”时，原型不应该只画上传按钮，还要画模板下载、字段校验、错误行提示、导入中、导入成功、部分失败、重复数据处理等状态。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-2-user-flow',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '2. 用户流程与任务路径',
+      summary: '先画流程再画页面，避免页面堆出来但用户任务走不通。',
+      tags: ['原型设计', '用户流程', '任务路径', '内部知识'],
+      content: [
+        '用户流程描述用户从入口到完成目标的完整路径，包括触发点、关键步骤、判断条件、成功结果和失败兜底。',
+        '常见流程图节点包括：开始、页面、操作、判断、系统处理、通知、结束。复杂流程要标明角色和系统边界。',
+        '好的流程图能提前暴露问题：是否有重复步骤、是否缺少返回路径、异常是否无人处理、跨角色协作是否断裂。',
+        '流程图不是越复杂越好。主流程清晰，异常流程独立补充，才能让评审更高效。',
+      ],
+      pmApplication: [
+        '原型前先画“主流程 + 关键异常流程”，再进入页面设计。',
+        '对每个关键按钮追问：点击后去哪、失败怎么办、能否撤销、是否需要权限、是否要通知其他人。'
+      ],
+      examples: [
+        '案例：审批原型如果只画“提交审批”，会漏掉撤回、驳回、重新提交、审批人离职、超时提醒。先画流程图能把这些分支提前暴露。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-3-information-architecture',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '3. 信息架构与页面层级',
+      summary: '原型的信息架构决定用户能否快速理解页面重点。',
+      tags: ['原型设计', '信息架构', '页面层级', '内部知识'],
+      content: [
+        '页面信息架构包括：页面标题、核心操作、筛选搜索、主要内容、辅助信息、状态提示、底部操作区。',
+        'PM 画原型时要先确定页面优先级：用户最常做什么、最需要先看到什么、哪些信息可以折叠或后置。',
+        'B 端后台常见结构：列表页负责查找和批量操作，详情页负责查看全量信息，编辑页负责变更数据，配置页负责维护规则。',
+        '不要把所有字段平铺在一个页面。按用户任务分区，例如“基础信息、业务信息、权限信息、操作记录”。',
+      ],
+      pmApplication: [
+        '画页面前先列“信息优先级表”：必看、常看、偶尔看、仅管理员看。',
+        '评审原型时让业务用户用真实任务走一遍，看是否能在 3 秒内找到关键入口。'
+      ],
+      examples: [
+        '案例：客户详情页原来把合同、工单、设备、联系人混在一起，用户看不出重点。改成顶部摘要 + 分 Tab 展示后，客服能更快定位客户状态和历史问题。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-4-list-detail-form',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '4. 列表、详情、表单三大基础页面',
+      summary: '大多数后台原型都离不开列表、详情和表单，三者各有设计重点。',
+      tags: ['原型设计', '列表页', '详情页', '表单', '内部知识'],
+      content: [
+        '列表页用于查找、筛选、排序、批量操作和快速判断状态。重点是字段选择、筛选条件、空态、分页、批量操作。',
+        '详情页用于呈现完整对象信息。重点是信息分区、状态展示、操作入口、关联记录和操作日志。',
+        '表单页用于新增或编辑数据。重点是字段类型、必填规则、默认值、校验提示、保存反馈和取消确认。',
+        '三类页面要形成闭环：列表能进入详情，详情能编辑，编辑保存后能回到来源位置并看到更新结果。',
+      ],
+      pmApplication: [
+        '做后台原型时优先补齐列表、详情、表单的状态：加载、空、错误、无权限、保存中、保存成功、保存失败。',
+        '表单字段必须写清类型、默认值、必填、可编辑条件和错误提示，不要只在原型里放一个输入框。'
+      ],
+      examples: [
+        '案例：设备管理列表需要展示设备 SN、在线状态、电量、门店、版本号、最后在线时间；详情页再展示日志、任务、告警和维保记录。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-5-form-validation',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '5. 表单设计与字段校验',
+      summary: '表单原型要把字段规则和错误提示画清楚，否则研发无法准确实现。',
+      tags: ['原型设计', '表单设计', '字段校验', '内部知识'],
+      content: [
+        '表单字段不是简单输入框。每个字段都要明确字段名、类型、是否必填、取值范围、默认值、可编辑条件、提交校验和错误文案。',
+        '复杂表单要分步骤或分区，减少用户一次性填写压力。高风险操作要增加确认提示。',
+        '错误提示要靠近错误字段，并告诉用户怎么修正，而不是只提示“提交失败”。',
+        '有依赖关系的字段要画出联动规则，例如选择客户后自动带出合同、选择区域后筛选门店。',
+      ],
+      pmApplication: [
+        'PRD 中补字段规则表，并在原型里展示至少 2-3 个关键错误状态。',
+        '验收时用边界值测试：空值、超长、重复、非法字符、权限不足、网络失败。'
+      ],
+      examples: [
+        '案例：新增成员表单中，手机号格式错误时提示“请输入 11 位手机号”；邮箱重复时提示“该邮箱已绑定账号，可直接邀请加入组织”。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-6-interaction-states',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '6. 交互状态与反馈机制',
+      summary: '原型要覆盖用户操作后的反馈，让用户知道系统正在发生什么。',
+      tags: ['原型设计', '交互状态', '反馈', '内部知识'],
+      content: [
+        '交互状态包括默认、悬停、点击、加载中、成功、失败、禁用、选中、已读、未读、空态、异常态。',
+        '平台产品尤其要重视异步状态：提交后正在处理、后台任务执行中、导入中、同步中、部分成功、失败重试。',
+        '反馈机制要匹配操作风险。轻操作用 Toast，重要操作用弹窗确认，高风险操作要二次确认或输入确认词。',
+        '禁用按钮不能只变灰，要告诉用户为什么不能点，例如“请先选择至少 1 条数据”。',
+      ],
+      pmApplication: [
+        '每个关键操作至少补三种状态：操作前、操作中、操作后。',
+        '评审时检查所有按钮：点击后是否有反馈、能否重复点击、失败后用户是否知道下一步。'
+      ],
+      examples: [
+        '案例：批量导入 1000 条客户时，不能只显示“导入成功”。应展示进度、成功数量、失败数量、失败原因下载和重新导入入口。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-7-empty-error-permission',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '7. 空态、异常态与权限态',
+      summary: '好的原型不是只有理想状态，还要画用户最容易卡住的状态。',
+      tags: ['原型设计', '空态', '异常态', '权限态', '内部知识'],
+      content: [
+        '空态包括无数据、筛选无结果、搜索无结果、未配置、未登录、无权限等。不同空态需要不同引导。',
+        '异常态包括网络失败、接口超时、保存失败、数据冲突、对象已删除、版本过期。',
+        '权限态要告诉用户是“没有权限”还是“需要登录”还是“角色不支持”。如果允许申请权限，要提供申请入口。',
+        '空态不是装饰图。空态要告诉用户为什么为空，以及下一步可以做什么。',
+      ],
+      pmApplication: [
+        '关键页面必须补空态和异常态原型，尤其是列表页、详情页、配置页、导入导出。',
+        '权限相关页面要同步写角色矩阵，避免前端显示和后端接口权限不一致。'
+      ],
+      examples: [
+        '案例：用户搜索“张三”无结果时，不应只显示空白页；应提示“未找到相关客户”，并提供“清空筛选”“新增客户”或“检查搜索条件”。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-8-mobile-responsive',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '8. 移动端与响应式原型',
+      summary: '移动端不是桌面端缩小版，要重新规划信息密度和操作路径。',
+      tags: ['原型设计', '移动端', '响应式', '内部知识'],
+      content: [
+        '移动端空间有限，要优先保留核心任务。次要信息可以折叠、下钻或放到详情页。',
+        '移动端常见问题：按钮过小、顶部栏遮挡、搜索框溢出、表格无法阅读、返回路径不清晰、底部导航挡内容。',
+        '后台类产品在移动端应减少复杂表格，改用卡片、筛选抽屉、底部操作栏和分段详情。',
+        '移动端原型要考虑手指点击区域、键盘弹起、长页面返回、回到顶部、滚动位置保留。',
+      ],
+      pmApplication: [
+        '同一功能至少检查桌面和移动两种布局，不能只交桌面原型。',
+        '移动端优先画主任务路径：查看、搜索、筛选、提交、返回，而不是完整复刻所有后台能力。'
+      ],
+      examples: [
+        '案例：桌面端订单列表有 12 列，移动端直接缩放会看不清。改为订单卡片，只展示订单号、客户、状态、金额、更新时间，详情页再展示完整字段。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-9-usability-test',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '9. 原型评审与可用性测试',
+      summary: '原型做完不是结束，要用真实任务验证用户是否能走通。',
+      tags: ['原型设计', '可用性测试', '评审', '内部知识'],
+      content: [
+        '原型评审分三类：业务评审看流程是否符合业务，设计评审看体验和一致性，研发评审看实现边界和成本。',
+        '可用性测试不一定要很正式，找 3-5 个目标用户完成真实任务，就能发现大部分明显问题。',
+        '测试时不要教用户怎么点。观察他们在哪里犹豫、点错、找不到、误解文案。',
+        '原型测试结果要沉淀为问题清单：问题描述、影响用户、严重程度、修改方案、是否本期处理。',
+      ],
+      pmApplication: [
+        '评审前准备任务脚本，例如“请新增一个客户并分配给区域经理”。',
+        '评审后不要只改视觉意见，要优先处理阻断主流程、影响理解和造成错误操作的问题。'
+      ],
+      examples: [
+        '案例：新手用户在“保存配置”和“发布配置”之间犹豫，说明按钮命名不清。改成“保存草稿”和“发布到用户端”，并增加发布确认说明。',
+      ],
+    },
+    {
+      id: 'admin-prototype-design-10-handoff',
+      groupId: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      title: '10. 原型交付与研发协作',
+      summary: '原型交付给研发时，要配套规则、字段、状态和验收标准。',
+      tags: ['原型设计', '研发协作', '交付', '内部知识'],
+      content: [
+        '研发不能只靠原型开发。PM 需要同时提供 PRD、字段说明、状态流转、接口依赖、权限规则、埋点和验收标准。',
+        '原型标注要说明：按钮行为、跳转路径、弹窗逻辑、字段校验、默认排序、分页规则、异常提示。',
+        '如果原型与 PRD 不一致，研发会不知道以哪个为准。因此改原型后要同步更新 PRD 或评审纪要。',
+        '交付前要整理“待确认问题”，不要把未定规则藏在原型里。',
+      ],
+      pmApplication: [
+        '交付研发前跑一遍 checklist：页面齐全、状态齐全、字段齐全、权限齐全、异常齐全、验收齐全。',
+        '开发中若变更交互，要更新版本记录，说明改了什么、为什么改、影响哪些页面。'
+      ],
+      examples: [
+        '案例：原型里有“导出”按钮，但 PRD 没写导出字段、权限、文件格式和数据量限制，研发只能猜。正确做法是补导出字段表、权限要求和超大数据异步导出规则。',
+      ],
+    },
+  ].map((entry) => ({
+    ...entry,
+    seedVersion: ADMIN_PROTOTYPE_DESIGN_SEED_VERSION,
+  }))
+}
+
+function getAdminPmKnowledgeFrameworkSeeds() {
+  return [
+    {
+      id: 'admin-pm-framework-1-overview',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '1. 产品经理知识框架总览',
+      summary: '产品经理能力不是零散技能，而是从用户、业务、产品、技术、数据、协作到增长的完整系统。',
+      tags: ['产品经理知识体系', '能力框架', 'PM成长', '内部知识'],
+      content: [
+        '产品经理知识框架可以拆成 9 个模块：行业与商业、用户与场景、需求与规划、产品设计、项目交付、数据分析、技术理解、运营增长、沟通协作。',
+        '初级 PM 常从需求和原型开始，但长期成长必须补齐商业判断、系统思维、数据闭环和组织协作能力。',
+        '知识框架的意义不是一次学完，而是帮助你判断当前短板：是不会发现问题、不会定义问题、不会设计方案，还是不会推动落地。',
+        '一个成熟 PM 的工作闭环是：理解行业 → 洞察用户 → 定义问题 → 设计方案 → 推动交付 → 数据验证 → 复盘沉淀。',
+      ],
+      pmApplication: [
+        '每次学习新知识时，把它归到框架中的一个模块，避免知识碎片化。',
+        '做个人成长规划时，用 9 个模块给自己打分，优先补齐影响当前工作的短板。',
+      ],
+      examples: [
+        '案例：如果你正在做后台权限功能，只懂原型不够，还要懂组织角色、RBAC、数据权限、审计日志、异常提示、上线灰度和客服反馈，这就是知识框架的联动。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-2-industry-business',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '2. 行业与商业认知',
+      summary: 'PM 要理解产品为什么存在、服务谁、怎么赚钱、行业约束是什么。',
+      tags: ['行业认知', '商业模式', 'B端', '内部知识'],
+      content: [
+        '行业认知包括：产业链、客户类型、业务流程、竞争格局、政策约束、付费方式、采购决策链。',
+        '商业认知包括：目标客户、价值主张、收入模式、成本结构、毛利、续费、增长空间和商业风险。',
+        'B 端 PM 要尤其理解客户组织结构和采购逻辑：使用者、决策者、付费者、管理员往往不是同一个人。',
+        '商业判断决定需求优先级。不是声音最大的客户最重要，而是要看客户价值、复用价值、战略价值和交付成本。',
+      ],
+      pmApplication: [
+        '需求评估时补一列“商业价值”：影响收入、续费、交付成本、客户满意度还是战略样板。',
+        '写 PRD 背景时不要只写“客户要求”，要写清业务目标和为什么现在做。',
+      ],
+      examples: [
+        '案例：某客户要求定制报表。如果只是单客户需求，可能不优先；如果多个行业客户都有监管报送需求，就可以抽象成“可配置报表模板”平台能力。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-3-user-scenario',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '3. 用户、场景与问题定义',
+      summary: 'PM 的第一能力是定义真实问题，而不是马上给方案。',
+      tags: ['用户研究', '场景分析', '问题定义', '内部知识'],
+      content: [
+        '用户理解包括用户画像、角色分层、任务目标、痛点、动机、行为路径和使用环境。',
+        '场景分析要回答：谁，在什么情况下，为了什么目标，遇到什么阻碍，当前怎么解决，为什么现方案不够好。',
+        '问题定义要避免把方案当问题。例如“要加导出按钮”不是问题，真正的问题可能是“运营需要离线对账”。',
+        '好的问题定义通常包含：目标用户、业务场景、当前痛点、影响范围、成功标准。',
+      ],
+      pmApplication: [
+        '接需求时先问 5 个问题：谁用、什么时候用、现在怎么做、哪里卡、做好后怎么判断有效。',
+        'PRD 里单独写“问题定义”，帮助团队区分需求背景和具体方案。',
+      ],
+      examples: [
+        '案例：客服说“需要批量关闭工单”。追问后发现真实问题是重复工单太多。最终方案可能不是批量关闭，而是重复工单识别和合并。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-4-demand-planning',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '4. 需求管理与产品规划',
+      summary: '需求管理负责把想法变成有优先级、有边界、有节奏的产品计划。',
+      tags: ['需求管理', '产品规划', '优先级', 'Roadmap', '内部知识'],
+      content: [
+        '需求管理包括：需求收集、需求澄清、价值评估、优先级排序、版本规划、范围控制、变更管理。',
+        '常用方法包括 RICE、MoSCoW、KANO、优先级矩阵、影响地图、OKR 对齐。',
+        '产品规划要区分长期方向和短期版本。Roadmap 不是承诺清单，而是围绕目标分阶段推进的策略。',
+        '需求边界比功能清单更重要。要明确本期做什么、不做什么、为什么不做。',
+      ],
+      pmApplication: [
+        '评审需求时同时看用户价值、商业价值、技术成本、风险、复用性和紧急程度。',
+        '版本规划要输出“目标 + 范围 + 不做清单 + 指标 + 风险”，不要只有功能列表。',
+      ],
+      examples: [
+        '案例：V1 做客户列表、搜索、详情和手动分配；V2 再做批量导入、自动分配和数据看板。这样能先验证核心流程，再平台化高级能力。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-5-product-design',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '5. 产品设计与交互表达',
+      summary: '产品设计不是画界面，而是把业务规则转成用户可理解、可操作的流程。',
+      tags: ['产品设计', '交互设计', '原型', 'PRD', '内部知识'],
+      content: [
+        '产品设计包括信息架构、用户流程、页面结构、交互状态、异常兜底、文案提示和权限状态。',
+        'PM 的设计产物通常包括流程图、原型图、字段表、状态机、权限矩阵、PRD 和验收标准。',
+        '好的设计要兼顾三件事：用户能完成任务、研发能理解实现、业务能确认规则。',
+        '复杂后台产品要特别关注列表、详情、表单、配置、搜索筛选、批量操作、导入导出。',
+      ],
+      pmApplication: [
+        '画原型前先画流程，写 PRD 前先定义对象和状态。',
+        '每个关键页面至少补齐：默认态、空态、加载态、错误态、无权限态和成功反馈。',
+      ],
+      examples: [
+        '案例：新增成员功能需要原型展示邀请入口、邮箱校验、角色选择、发送中、邀请成功、邮箱已存在、无权限邀请等状态。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-6-project-delivery',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '6. 项目交付与研发协作',
+      summary: 'PM 不只负责想方案，还要推动方案按质量、节奏和边界落地。',
+      tags: ['项目管理', '研发协作', '交付', '内部知识'],
+      content: [
+        '交付能力包括需求评审、排期、任务拆分、风险识别、进度跟踪、测试验收、上线准备和复盘。',
+        'PM 要理解研发、测试、设计、运营、客服、销售等角色在交付链路中的职责。',
+        '常用协作方法包括 Scrum、看板、RACI、风险清单、上线 Checklist、UAT 验收。',
+        '交付中的核心能力是边界管理：需求变更怎么处理，延期怎么沟通，风险怎么升级。',
+      ],
+      pmApplication: [
+        '需求进入开发前，确认 PRD、原型、字段、接口、权限、埋点、验收标准都完整。',
+        '上线前准备公告、灰度策略、回滚方案、监控指标、客服话术和用户反馈渠道。',
+      ],
+      examples: [
+        '案例：一个导入功能上线前，PM 不只验上传成功，还要验模板下载、错误报告、重复数据、权限限制、大文件超时和失败重试。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-7-data-analysis',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '7. 数据分析与指标闭环',
+      summary: '数据能力帮助 PM 判断问题是否真实、方案是否有效、下一步该优化什么。',
+      tags: ['数据分析', '指标体系', '埋点', '内部知识'],
+      content: [
+        '数据分析包括指标定义、埋点设计、数据看板、漏斗分析、留存分析、A/B 测试、归因分析和复盘。',
+        '指标要分层：北极星指标、业务指标、过程指标、质量指标、风险指标。',
+        '指标必须有口径。没有口径的数据会造成争议，例如“活跃用户”到底是登录、浏览、完成任务还是产生价值行为。',
+        '数据闭环不是只看涨跌，而是要能解释原因，并推动下一轮产品动作。',
+      ],
+      pmApplication: [
+        '每个需求在 PRD 中写清成功指标、埋点事件、字段、触发时机和分析维度。',
+        '上线后用数据复盘：有没有人用、是否完成目标、哪里流失、是否带来副作用。',
+      ],
+      examples: [
+        '案例：搜索功能上线后搜索次数增加，但转化没提升。拆漏斗后发现搜索结果点击率低，说明问题不在搜索入口，而在结果排序和摘要信息。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-8-technical-literacy',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '8. 技术理解与系统思维',
+      summary: 'PM 不需要写代码，但要理解技术边界、系统依赖和实现成本。',
+      tags: ['技术理解', '系统架构', '接口', '内部知识'],
+      content: [
+        '技术理解包括前后端、数据库、缓存、接口、消息队列、权限、安全、日志、监控、部署和灰度。',
+        '系统思维要求 PM 能看懂一个功能背后的数据流、状态流、权限流和异常链路。',
+        '技术判断不是替研发做方案，而是能提出正确问题：数据在哪、同步还是异步、失败怎么办、是否可回滚。',
+        '技术理解越强，需求边界越清楚，评审效率越高，返工越少。',
+      ],
+      pmApplication: [
+        '复杂需求评审前，准备一张简化架构图或系统交互图。',
+        '涉及第三方、设备、支付、权限、数据同步时，一定补异常、幂等、日志和人工兜底。',
+      ],
+      examples: [
+        '案例：账号同步失败时，如果没有日志和重试机制，用户只看到“无法登录”。PM 应要求后台记录失败原因，并提供重新绑定或人工处理入口。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-9-growth-operation',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '9. 运营增长与用户生命周期',
+      summary: '产品上线后需要通过运营和增长手段持续提升使用、留存和转化。',
+      tags: ['运营增长', '用户生命周期', 'AARRR', '内部知识'],
+      content: [
+        '运营增长包括拉新、激活、留存、转化、召回、推荐和用户教育。',
+        '不同产品阶段关注不同指标：早期看激活和核心行为，中期看留存和转化，成熟期看效率和商业化。',
+        '用户生命周期要看新手期、成长期、成熟期、沉默期和流失期，每个阶段需要不同触达策略。',
+        'B 端增长不等于做活动，更多是提升使用深度、客户成功、续费、培训和组织内扩散。',
+      ],
+      pmApplication: [
+        '设计新功能时同步考虑新手引导、默认模板、帮助文档、消息触达和使用反馈。',
+        '如果用户不用功能，先分析是不知道、不理解、不会用、不信任，还是没有场景。',
+      ],
+      examples: [
+        '案例：知识库功能上线后没人用，原因不是功能差，而是用户不知道如何分类沉淀。增加首次引导、示例模板和首页入口后，新增知识数提升。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-10-communication-leadership',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '10. 沟通协作与影响力',
+      summary: '产品经理没有天然权力，靠结构化表达、共识构建和推进能力影响团队。',
+      tags: ['沟通协作', '影响力', '跨部门', '内部知识'],
+      content: [
+        'PM 的沟通对象包括用户、业务、研发、测试、设计、运营、销售、客服、管理层。',
+        '不同对象关心点不同：用户关心能否解决问题，研发关心边界和成本，管理层关心目标和结果。',
+        '结构化表达通常按“背景 → 问题 → 目标 → 方案 → 影响 → 风险 → 下一步”组织。',
+        '影响力来自持续可靠：需求清楚、判断有依据、承诺可兑现、问题能兜底。',
+      ],
+      pmApplication: [
+        '重要沟通前先写 1 页纸：目标是什么、要对方做什么决定、有哪些选项和风险。',
+        '冲突时先回到共同目标，再讨论方案取舍，不要陷入个人偏好争论。',
+      ],
+      examples: [
+        '案例：研发认为某需求成本高，业务认为必须做。PM 可以拆成 MVP 和后续版本，先满足关键流程，再把低频边界放到二期。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-11-pm-levels',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '11. 产品经理成长阶段',
+      summary: '不同阶段的 PM 关注点不同，从执行需求到定义方向，再到构建体系。',
+      tags: ['PM成长', '能力阶段', '职业发展', '内部知识'],
+      content: [
+        '初级 PM：能写清需求、画清原型、跟进开发、完成验收。重点是执行质量和基础方法。',
+        '中级 PM：能独立负责模块，理解业务目标，做需求取舍，推动跨角色协作。',
+        '高级 PM：能负责产品线或平台能力，搭建体系，处理复杂利益关系，推动长期指标。',
+        '负责人/专家：能定义方向、组织资源、建立机制，影响业务结果和团队能力。',
+      ],
+      pmApplication: [
+        '评估自己时不要只看工作年限，要看能独立负责多大问题、影响多少用户和业务结果。',
+        '成长最快的方法是每个项目后复盘：判断错在哪里、信息缺在哪里、协作卡在哪里、下次如何提前规避。',
+      ],
+      examples: [
+        '案例：初级 PM 接到“加筛选项”会直接画页面；中级 PM 会问筛选的业务场景和使用频率；高级 PM 会判断是否需要统一筛选配置能力。',
+      ],
+    },
+    {
+      id: 'admin-pm-framework-12-learning-roadmap',
+      groupId: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      title: '12. 产品经理学习路线图',
+      summary: '按阶段学习产品知识，先建立基础闭环，再补齐专项能力。',
+      tags: ['学习路线', 'PM成长', '知识体系', '内部知识'],
+      content: [
+        '第一阶段：产品基础。学习角色认知、用户场景、需求分析、PRD、原型、评审、上线和复盘。',
+        '第二阶段：业务与数据。学习商业模式、行业分析、指标体系、埋点、漏斗、留存和 A/B 测试。',
+        '第三阶段：平台与技术。学习权限、数据模型、接口、系统架构、配置化、流程引擎和多租户。',
+        '第四阶段：增长与组织。学习用户生命周期、运营增长、客户成功、路线图、跨部门推进和影响力。',
+        '学习方法：每学一个概念，都用“定义 + 场景 + 案例 + PM 应用 + 常见误区”沉淀到自己的知识库。',
+      ],
+      pmApplication: [
+        '如果你是新人，先不要贪多，优先掌握“需求 → 原型 → PRD → 评审 → 验收”的基础闭环。',
+        '如果你已进入平台/B端方向，重点补权限、组织、数据模型、流程、配置化和系统集成。',
+      ],
+      examples: [
+        '案例：学习 KANO 模型后，不只记住兴奋型需求，还要拿自己的功能做分类：哪些是基础必备、哪些是性能提升、哪些是惊喜点。',
+      ],
+    },
+  ].map((entry) => ({
+    ...entry,
+    seedVersion: ADMIN_PM_KNOWLEDGE_FRAMEWORK_SEED_VERSION,
+  }))
+}
+
 function ensureSuperAdminArchitectureKnowledgeSeed() {
   if (!Auth().isSuperAdmin?.()) return false
   if (adminArchitectureSeedPromise) return true
   const now = new Date().toISOString()
-  const group = {
-    id: ADMIN_ARCHITECTURE_GROUP_ID,
-    name: '系统架构（内部）',
-    description: '仅超级管理员可见的内部架构知识沉淀',
-    createdAt: now,
-    updatedAt: now,
-  }
+  const groupsToEnsure = [
+    {
+      id: ADMIN_ARCHITECTURE_GROUP_ID,
+      name: '系统架构（内部）',
+      description: '仅超级管理员可见的内部架构知识沉淀',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: ADMIN_SOFTWARE_PLATFORM_GROUP_ID,
+      name: '软件平台',
+      description: '仅超级管理员可见的软件平台产品经理知识体系',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: ADMIN_PROTOTYPE_DESIGN_GROUP_ID,
+      name: '产品经理原型设计',
+      description: '仅超级管理员可见的产品经理原型设计知识体系',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: ADMIN_PM_KNOWLEDGE_FRAMEWORK_GROUP_ID,
+      name: '产品经理知识框架体系',
+      description: '仅超级管理员可见的产品经理完整知识框架体系',
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]
   const groups = loadKnowledgeGroups()
   const items = loadCustomKnowledge()
-  const seeds = getAdminArchitectureKnowledgeSeeds()
+  const seeds = [
+    ...getAdminArchitectureKnowledgeSeeds(),
+    ...getAdminSoftwarePlatformKnowledgeSeeds(),
+    ...getAdminPrototypeDesignKnowledgeSeeds(),
+    ...getAdminPmKnowledgeFrameworkSeeds(),
+  ]
   let changed = false
-  const nextGroups = groups.some((g) => g.id === group.id)
-    ? groups.map((g) => (g.id === group.id ? { ...g, ...group, createdAt: g.createdAt || now } : g))
-    : [group, ...groups]
-  changed = changed || nextGroups.length !== groups.length
+  let nextGroups = groups
+  for (const group of groupsToEnsure) {
+    const hadGroup = nextGroups.some((g) => g.id === group.id)
+    nextGroups = hadGroup
+      ? nextGroups.map((g) => (g.id === group.id ? { ...g, ...group, createdAt: g.createdAt || now } : g))
+      : [group, ...nextGroups]
+    changed = changed || !hadGroup
+  }
   const byId = new Map(items.map((item) => [item.id, item]))
   for (const seed of seeds) {
     const existing = byId.get(seed.id)
-    if (!existing || Number(existing.seedVersion || 0) < ADMIN_ARCHITECTURE_SEED_VERSION) {
+    if (!existing || Number(existing.seedVersion || 0) < Number(seed.seedVersion || 0)) {
       byId.set(seed.id, {
         ...existing,
         ...seed,
@@ -5033,7 +5803,7 @@ async function renderAdminRolesRoute() {
 function syncSiteWatermark() {
   const el = document.getElementById('site-watermark')
   if (!el) return
-  el.textContent = t('home.siteWatermark', null, 'Developed by Justine WU')
+  el.textContent = t('home.siteWatermark', null, '\u00a9 2026 Justine WU. All rights reserved.')
 }
 
 function syncMobileScrollTopLabel() {

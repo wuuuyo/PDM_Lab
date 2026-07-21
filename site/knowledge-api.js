@@ -52,6 +52,10 @@ function myEntryToItem(entry, group) {
 
     content: entry.content || [],
 
+    cases: entry.cases || entry.examples || [],
+
+    pmApplication: entry.pmApplication || [],
+
     isCustom: true,
 
     updatedAt: entry.updatedAt,
@@ -515,4 +519,3 @@ window.PDMKnowledge = {
 }
 
 })()
-

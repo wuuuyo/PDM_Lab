@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDM Lab Vibe Coding"
+  short_description: "Maintain and ship the PDM Lab website safely."
+  default_prompt: "Use $pdm-lab-vibe-coding to improve the PDM Lab website and prepare a safe release."
